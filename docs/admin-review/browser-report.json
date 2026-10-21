@@ -1,0 +1,367 @@
+{
+  "checks": 108,
+  "errors": [],
+  "scans": [
+    {
+      "width": 1440,
+      "route": "",
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "route": "articles",
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "route": "categories",
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "route": "campaigns",
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "route": "applications",
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "route": "reviews",
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "route": "posts",
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "route": "comments",
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "route": "reports",
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "route": "members",
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "route": "points",
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "route": "exchanges",
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "route": "notices",
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "route": "inquiries",
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "route": "banners",
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "route": "checklist",
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "route": "settings",
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "route": "articles/i1/edit",
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "route": "campaigns/cp1/edit",
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "route": "applications/a4",
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "route": "reviews/r1",
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "route": "posts/p1",
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "route": "comments/cm1",
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "route": "members/m1",
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "route": "points/pt1",
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "route": "inquiries/q1",
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "route": "banners/home-campaign-discover/edit?return=%2Fadmin%2Fbanners",
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "route": "checklist/check1/edit",
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "route": "articles/new",
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "route": "categories/new",
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "route": "campaigns/new",
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "route": "notices/new",
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "route": "banners/new",
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "route": "checklist/new",
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "route": "reports/re_0cad72b5f2?return=%2Fadmin%2Freports",
+      "violations": []
+    },
+    {
+      "width": 1440,
+      "route": "exchanges/ex_a84350615a?return=%2Fadmin%2Fexchanges",
+      "violations": []
+    },
+    {
+      "width": 1280,
+      "route": "",
+      "violations": []
+    },
+    {
+      "width": 1280,
+      "route": "articles",
+      "violations": []
+    },
+    {
+      "width": 1280,
+      "route": "categories",
+      "violations": []
+    },
+    {
+      "width": 1280,
+      "route": "campaigns",
+      "violations": []
+    },
+    {
+      "width": 1280,
+      "route": "applications",
+      "violations": []
+    },
+    {
+      "width": 1280,
+      "route": "reviews",
+      "violations": []
+    },
+    {
+      "width": 1280,
+      "route": "posts",
+      "violations": []
+    },
+    {
+      "width": 1280,
+      "route": "comments",
+      "violations": []
+    },
+    {
+      "width": 1280,
+      "route": "reports",
+      "violations": []
+    },
+    {
+      "width": 1280,
+      "route": "members",
+      "violations": []
+    },
+    {
+      "width": 1280,
+      "route": "points",
+      "violations": []
+    },
+    {
+      "width": 1280,
+      "route": "exchanges",
+      "violations": []
+    },
+    {
+      "width": 1280,
+      "route": "notices",
+      "violations": []
+    },
+    {
+      "width": 1280,
+      "route": "inquiries",
+      "violations": []
+    },
+    {
+      "width": 1280,
+      "route": "banners",
+      "violations": []
+    },
+    {
+      "width": 1280,
+      "route": "checklist",
+      "violations": []
+    },
+    {
+      "width": 1280,
+      "route": "settings",
+      "violations": []
+    },
+    {
+      "width": 1280,
+      "route": "articles/i1/edit",
+      "violations": []
+    },
+    {
+      "width": 1280,
+      "route": "campaigns/cp1/edit",
+      "violations": []
+    },
+    {
+      "width": 1280,
+      "route": "applications/a4",
+      "violations": []
+    },
+    {
+      "width": 1280,
+      "route": "reviews/r1",
+      "violations": []
+    },
+    {
+      "width": 1280,
+      "route": "posts/p1",
+      "violations": []
+    },
+    {
+      "width": 1280,
+      "route": "comments/cm1",
+      "violations": []
+    },
+    {
+      "width": 1280,
+      "route": "members/m1",
+      "violations": []
+    },
+    {
+      "width": 1280,
+      "route": "points/pt1",
+      "violations": []
+    },
+    {
+      "width": 1280,
+      "route": "inquiries/q1",
+      "violations": []
+    },
+    {
+      "width": 1280,
+      "route": "banners/home-campaign-discover/edit?return=%2Fadmin%2Fbanners",
+      "violations": []
+    },
+    {
+      "width": 1280,
+      "route": "checklist/check1/edit",
+      "violations": []
+    },
+    {
+      "width": 1280,
+      "route": "articles/new",
+      "violations": []
+    },
+    {
+      "width": 1280,
+      "route": "categories/new",
+      "violations": []
+    },
+    {
+      "width": 1280,
+      "route": "campaigns/new",
+      "violations": []
+    },
+    {
+      "width": 1280,
+      "route": "notices/new",
+      "violations": []
+    },
+    {
+      "width": 1280,
+      "route": "banners/new",
+      "violations": []
+    },
+    {
+      "width": 1280,
+      "route": "checklist/new",
+      "violations": []
+    },
+    {
+      "width": 1280,
+      "route": "reports/re_0cad72b5f2?return=%2Fadmin%2Freports",
+      "violations": []
+    },
+    {
+      "width": 1280,
+      "route": "exchanges/ex_a84350615a?return=%2Fadmin%2Fexchanges",
+      "violations": []
+    }
+  ],
+  "violations": 0
+}

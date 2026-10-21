@@ -1,0 +1,36 @@
+<?php
+function entry(): void {financeHome();}
+function financeHome(): void {
+ global $repo;$articles=array_values(array_filter($repo->all('articles'),fn($a)=>$repo->visibleArticle($a)));
+ $featured=current(array_filter($articles,fn($a)=>$a['placement']==='featured'))?:($articles[0]??null);
+ contentStart(); ?>
+ <h1 class="sr-only">재테크 정보 홈</h1><p class="home-context"><strong class="home-context__name"><?=e($repo->member()['nickname']??'방문자')?>님</strong><span class="home-context__separator" aria-hidden="true">·</span><span class="home-context__message"><?=e(str_replace('\n',' ',$repo->find('settings','site')['financeIntro']))?></span></p>
+ <?php contentEnd();homeBannerSlider('finance'); ?><section class="group-section"><div class="card card--group">
+ <nav class="category-shortcuts" aria-label="정보 카테고리">
+ <?php $categoryImages=['subsidy'=>'support','policy'=>'policy','saving'=>'saving','card'=>'card-benefits','parenting'=>'baby','pet'=>'pet']; foreach(array_slice(homeCategories(),0,4) as $c): ?>
+ <a class="category-shortcut" href="/finance/categories?category=<?=e($c['id'])?>"><span class="category-art"><?php if(isset($categoryImages[$c['id']])): ?><img src="/assets/images/category/<?=e($categoryImages[$c['id']])?>.svg" alt="" width="64" height="64" decoding="async"><?php else: ?><?=icon($c['icon'])?><?php endif; ?></span><span><?=e($c['name'])?></span></a>
+ <?php endforeach; ?>
+ <a class="category-shortcut" href="/finance/categories"><span class="category-art"><?=icon('list')?></span><span>전체</span></a>
+ </nav>
+ </div></section><section class="group-section reveal-block" data-reveal><div class="card card--group"><?php sectionHead('지금 읽기 좋은 정보','/finance/categories');foreach(array_slice(array_values(array_filter($articles,fn($a)=>$a['id']!==($featured['id']??''))),0,3) as $a)articleRow($a);?></div></section>
+ <section class="group-section"><div class="card card--group"><?php sectionHead('나의 정보 모아보기');echo menuRow('/finance/saved','저장한 정보 다시 읽기','bookmark',count($repo->all('saved')[$_SESSION['member']??'']??[]).'개');echo menuRow('/community','함께 나누는 이야기','messages-square','경험과 생활 팁');?><div class="card__footer"><a href="/mypage?mode=finance" class="text-button">나의 활동 확인 <?=icon('chevron-right')?></a></div></div></section>
+ <?php modeBanner('finance');contentStart();?><p class="type-caption-2 muted--on-alternative my-16">화면 검토용 데모 · 2026.10.21 기준</p><?php contentEnd();
+}
+function financeList(): void {
+ global $repo;$cat=$_GET['category']??'';$articles=array_values(array_filter($repo->all('articles'),fn($a)=>$repo->visibleArticle($a)&&(!$cat||$a['categoryId']===$cat)));$articles=filtered($articles,['title','summary']);echo '<h1 class="sr-only">재테크 정보</h1>';contentStart(); ?>
+ <form class="pt-16 mb-16" action="/finance/categories"><label class="input-wrap"><input class="input" name="q" value="<?=e($_GET['q']??'')?>" placeholder="정보 검색" aria-label="정보 검색"><button class="icon-button" aria-label="검색 실행"><?=icon('search')?></button></label><?=hidden('category',$cat)?><?=hidden('sort',$_GET['sort']??'newest')?></form>
+ <?php contentEnd();chipSliderStart('카테고리');foreach([''=>'전체']+array_column(array_filter($repo->all('categories'),fn($c)=>$c['enabled']),'name','id') as $value=>$label):?>
+ <div class="chip-slider-item swiper-slide" data-chip-slide><button type="button" class="chip" aria-pressed="<?=$cat===$value?'true':'false'?>" data-chip-url="<?=e(queryUrl(['category'=>$value,'page'=>1]))?>"><?=e($label)?></button></div>
+ <?php endforeach;chipSliderEnd();contentStart();?><div class="between mt-8"><span class="type-label-2 muted--on-alternative"><strong class="text-brand"><?=count($articles)?></strong>개의 정보</span><button class="text-button" data-open="finance-filter" aria-haspopup="dialog"><?=($_GET['sort']??'')==='oldest'?'오래된순':'최신순'?> <?=icon('chevron-down')?></button></div><?php contentEnd();
+ sheetStart('finance-filter','정보 정렬');?><form action="/finance/categories" class="column"><?=hidden('q',$_GET['q']??'')?><?=hidden('category',$cat)?><?=hidden('page',1)?><?php foreach(['newest'=>'최신순','oldest'=>'오래된순'] as $value=>$label):?><label class="list-row list-row--choice"><span class="list-row__body"><?=$label?></span><span class="radio"><input type="radio" name="sort" value="<?=$value?>" <?=($_GET['sort']??'newest')===$value?'checked':''?> data-submit-change aria-label="<?=$label?>"></span></label><?php endforeach;?><noscript><button class="button button--full">정렬 적용</button></noscript></form><?php sheetEnd();
+ [$items,$p,$ps]=paginate($articles,6);echo '<section class="group-section"><div class="card card--group">';foreach($items as $a)articleRow($a);if(!$items)emptyState('찾는 정보가 없어요','검색어와 카테고리를 초기화하고 다시 찾아보세요.','search','<a class="button button--weak" href="/finance/categories">조건 초기화</a>');pagination($p,$ps);echo '</div></section>';
+}
+function articleDetail(string $id,bool $preview=false): void {
+ global $repo;$a=$repo->find('articles',$id);if(!$a||(!$preview&&!$repo->visibleArticle($a))){notFound();return;}$saved=in_array($id,$repo->all('saved')[$_SESSION['member']??'']??[]);contentStart(); ?>
+ <article class="column gap-16 py-16"><header class="column gap-8"><p class="type-label-2 muted"><?=e(categoryName($a['categoryId']))?></p><h1 class="type-fixed-title-2"><?=e($a['title'])?></h1><p class="type-caption-1 muted">주부테크 편집팀 · <?=dateLabel($a['publishedAt'],'Y.m.d')?></p></header><p class="paragraph weight-semibold"><?=e($a['summary'])?></p>
+ <div class="post post--flush"><?php editorialMedia($a);foreach($a['bodyBlocks'] as $block):if(trim($block['text'])===trim($a['summary']))continue;if($block['type']==='heading'):?><h2><?=e($block['text'])?></h2><?php else:?><?=proseParagraphs($block['text'])?><?php endif;endforeach;articleMedia($a);?></div>
+ <aside class="article-source"><p class="type-caption-1 muted">출처: <?=e($a['source'])?> · <?=dateLabel($a['publishedAt'],'Y.m.d')?> 기준</p><p class="type-caption-2 muted">화면 검토용 예시입니다. 실제 정책 금액·조건은 공식 안내를 확인해 주세요.</p><?php if($a['sourceUrl']):?><a class="text-button" href="<?=e($a['sourceUrl'])?>" target="_blank" rel="noopener noreferrer">공식 출처 <?=icon('external-link')?></a><?php endif;?></aside>
+ <?php if(!$preview):?><div class="two-actions"><?=actionForm('save_article',['id'=>$id,'return'=>'/finance/articles/'.$id],icon('bookmark').($saved?'저장됨':'저장'),'button button--weak')?><button type="button" class="button button--neutral" data-share><?=icon('share-2')?> 공유</button></div><?php endif;?></article><?php contentEnd();?>
+ <section class="home-section"><?php sectionHead('이런 이야기도 있어요');$related=array_values(array_filter($repo->all('articles'),fn($r)=>$r['id']!==$id&&$repo->visibleArticle($r)));foreach(array_slice($related,0,2) as $r)articleRow($r);?></section><?php
+}
+function savedArticles(): void {global $repo;pageTitle('저장한 정보');$ids=$repo->all('saved')[$_SESSION['member']??'']??[];$rows=array_filter($repo->all('articles'),fn($a)=>in_array($a['id'],$ids)&&$repo->visibleArticle($a));if(!$rows)emptyState('아직 저장한 정보가 없어요','마음에 드는 글의 북마크를 눌러보세요.','bookmark','<a class="button button--weak" href="/finance/categories">정보 둘러보기</a>');echo '<section class="group-section"><div class="card card--group">';foreach($rows as $a)articleRow($a);echo '</div></section>';}

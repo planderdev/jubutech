@@ -1,0 +1,6 @@
+{
+  "version": "4.14.0",
+  "source": "https://github.com/dequelabs/axe-core/releases/tag/v4.14.0",
+  "integrity": "sha512-9WTZxEjsZ7b13TH8JPmbV2z8CHbl80/2hm3XPEG4JgNdQLK81IBRXmSxHfMAOkSqQeRxT/0dwNDz2GOm3zzpcQ==",
+  "purpose": "Development accessibility audit only"
+}

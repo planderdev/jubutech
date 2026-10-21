@@ -1,0 +1,7 @@
+.runtime/
+public/assets/images/uploads/
+tests/results/
+*.log
+.DS_Store
+__pycache__/
+*.py[cod]

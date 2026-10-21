@@ -1,0 +1,92 @@
+{
+  "campaign-cp1-01.webp": {
+    "campaignId": "cp1",
+    "provider": "Unsplash",
+    "author": "Ella Olsson",
+    "source": "https://unsplash.com/photos/meal-prep-containers-with-healthy-food-lMcRyBx4G50",
+    "download": "https://images.unsplash.com/photo-1543352632-5a4b24e4d2a6?auto=format&fit=max&w=1080&q=85",
+    "license": "Unsplash License",
+    "licenseUrl": "https://unsplash.com/license",
+    "usage": "Food reference photograph for the demo campaign gallery",
+    "description": "Three glass containers with grains and vegetables",
+    "processing": "EXIF orientation, proportional resize to at most 1080px, WebP quality 82",
+    "dimensions": [
+      1080,
+      864
+    ],
+    "bytes": 190530,
+    "verifiedAt": "2026-10-22"
+  },
+  "campaign-cp1-02.webp": {
+    "campaignId": "cp1",
+    "provider": "Unsplash",
+    "author": "Ella Olsson",
+    "source": "https://unsplash.com/photos/cooked-food-on-tray-sosOqjx31Go",
+    "download": "https://images.unsplash.com/photo-1543353071-c953d88f7033?auto=format&fit=max&w=1080&q=85",
+    "license": "Unsplash License",
+    "licenseUrl": "https://unsplash.com/license",
+    "usage": "Food reference photograph for the demo campaign gallery",
+    "description": "Two meal-prep containers with vegetables and grains",
+    "processing": "EXIF orientation, proportional resize to at most 1080px, WebP quality 82",
+    "dimensions": [
+      1080,
+      864
+    ],
+    "bytes": 94550,
+    "verifiedAt": "2026-10-22"
+  },
+  "campaign-cp1-03.webp": {
+    "campaignId": "cp1",
+    "provider": "Pixabay",
+    "author": "finesseinstitutein",
+    "source": "https://pixabay.com/photos/salad-bowl-vegetables-healthy-8817310/",
+    "download": "https://cdn.pixabay.com/photo/2024/06/08/18/04/salad-8817310_1280.jpg",
+    "license": "Pixabay Content License",
+    "licenseUrl": "https://pixabay.com/service/license-summary/",
+    "usage": "Food reference photograph for the demo campaign gallery",
+    "description": "Vegetable bowl with avocado and chickpeas",
+    "processing": "EXIF orientation, proportional resize to at most 1080px, WebP quality 82",
+    "dimensions": [
+      1080,
+      720
+    ],
+    "bytes": 137690,
+    "verifiedAt": "2026-10-22"
+  },
+  "campaign-cp1-04.webp": {
+    "campaignId": "cp1",
+    "provider": "Pixabay",
+    "author": "HG-Fotografie",
+    "source": "https://pixabay.com/photos/salad-salad-bowl-tomatoes-2659143/",
+    "download": "https://cdn.pixabay.com/photo/2017/08/19/16/49/salad-2659143_1280.jpg",
+    "license": "Pixabay Content License",
+    "licenseUrl": "https://pixabay.com/service/license-summary/",
+    "usage": "Food reference photograph for the demo campaign gallery",
+    "description": "Tomato salad in a glass bowl",
+    "processing": "EXIF orientation, proportional resize to at most 1080px, WebP quality 82",
+    "dimensions": [
+      1080,
+      721
+    ],
+    "bytes": 93156,
+    "verifiedAt": "2026-10-22"
+  },
+  "campaign-cp1-05.webp": {
+    "campaignId": "cp1",
+    "provider": "Pixabay",
+    "author": "JillWellington",
+    "source": "https://pixabay.com/photos/salad-fresh-veggies-vegetables-791891/",
+    "download": "https://cdn.pixabay.com/photo/2015/05/31/13/59/salad-791891_1280.jpg",
+    "license": "Pixabay Content License",
+    "licenseUrl": "https://pixabay.com/service/license-summary/",
+    "usage": "Food reference photograph for the demo campaign gallery",
+    "description": "Fresh vegetable salad with carrots and tomatoes",
+    "processing": "EXIF orientation, proportional resize to at most 1080px, WebP quality 82",
+    "dimensions": [
+      1080,
+      720
+    ],
+    "bytes": 87358,
+    "verifiedAt": "2026-10-22"
+  }
+}

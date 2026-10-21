@@ -1,0 +1,59 @@
+{
+  "cosmetic-cutout.webp": {
+    "source": "https://www.magnific.com/kr/free-photo/front-view-makeup-foundation-glass-bottle-with-black-plastic_8738198.htm",
+    "author": "KamranAydinov",
+    "provider": "Magnific",
+    "license": "Free stock asset; visible author/provider attribution required",
+    "licenseUrl": "https://www.magnific.com/ai/docs/licenses-attribution",
+    "usage": "Stock photo used only as a labelled example, not as a photograph of a campaign product",
+    "editTool": "Built-in image_gen",
+    "prompt": "Remove only background, floor and mirrored reflection. Preserve the exact foundation bottle and photographic fidelity. True transparent alpha, no added props or labels.",
+    "processing": "Alpha-bounds crop, downsize, WebP encoding for delivery",
+    "dimensions": [
+      735,
+      1000
+    ],
+    "alphaExtrema": [
+      0,
+      255
+    ]
+  },
+  "support-envelope.svg": {
+    "source": "Original vector artwork created for this banner component"
+  },
+  "benefit-coupons.svg": {
+    "source": "Original vector artwork created for this banner component"
+  },
+  "discovery-gift.svg": {
+    "source": "Original vector artwork created for this banner component"
+  },
+  "cream-cutout.webp": {
+    "source": "https://www.magnific.com/kr/free-photo/luxury-cream-jar-with-golden-lid-spatula_425575558.htm",
+    "author": "wahyu_t",
+    "provider": "Magnific",
+    "license": "Free stock asset; visible author/provider attribution required",
+    "licenseUrl": "https://www.magnific.com/ai/docs/licenses-attribution",
+    "usage": "Component QA stock example only, not a campaign product",
+    "editTool": "Built-in image_gen",
+    "prompt": "Remove only the white background, floor and cast shadow. Preserve the photographed open glass cream jar and leaning gold lid, proportions and lighting. Full product, true transparent alpha, no labels.",
+    "processing": "Alpha-bounds crop, downsize, WebP delivery",
+    "dimensions": [
+      1000,
+      619
+    ],
+    "alphaExtrema": [
+      0,
+      255
+    ]
+  },
+  "support-envelope.webp": {
+    "source": "User-supplied artwork",
+    "originalFilename": "파란 봉투와 황금 동전-1.png",
+    "processing": "Lossless WebP encoding; original dimensions, RGBA pixels and transparency preserved"
+  },
+  "benefit-coupons.webp": {
+    "source": "User-supplied artwork",
+    "originalFilename": "글로시 핑크 카드와 할인 쿠폰-2.png",
+    "processing": "Lossless WebP encoding; original dimensions, RGBA pixels and transparency preserved"
+  }
+}
