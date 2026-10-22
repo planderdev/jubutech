@@ -1,0 +1,20 @@
+/* 자동 생성 — design/tokens.json 에서 `npm run tokens` 로 생성. 직접 수정 금지. (v3.0 · 2026-10-22) */
+:root {
+  --font-body: "Pretendard", "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", sans-serif;
+
+  --canvas: 247 247 249;      /* #F7F7F9 페이지 바닥 · ds.css --surface-alt(--background-normal-alternative) */
+  --paper: 255 255 255;       /* #FFFFFF 카드·헤더·시트 · --surface(--background-normal-normal) */
+  --inset: 249 250 251;       /* #F9FAFB 인풋 바닥·타일 · --background-elevated-alternative */
+  --stage: 25 31 40;          /* #191F28 반전 무대 · --inverse-background */
+  --ink: 25 31 40;            /* #191F28 본문 텍스트 · --label-normal */
+  --ink-2: 107 118 132;       /* #6B7684 보조 텍스트 · --label-alternative */
+  --ink-3: 176 184 193;       /* #B0B8C1 뮤트·플레이스홀더 · --label-assistive */
+  --hairline: 242 244 246;    /* #F2F4F6 카드 안 구분선 · --line-solid-neutral */
+  --edge: 229 232 235;        /* #E5E8EB 셸 경계·상단바·하단탭 · --line-solid-normal(--border) */
+  --red: 219 98 135;          /* #DB6287 Primary — Red 600 */
+  --red-hover: 199 89 123;    /* #C7597B Red 700 */
+  --red-pressed: 180 80 111;  /* #B4506F Red 800 */
+
+  --radius: 12px;
+  color-scheme: light;
+}

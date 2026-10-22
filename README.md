@@ -97,3 +97,30 @@ Get-ChildItem app,public -Recurse -Filter *.php | ForEach-Object { php -l $_.Ful
 - 모드 선호만 localStorage에 저장합니다. 거래·응모 데이터는 브라우저 저장소에 복제하지 않습니다.
 - 밀키트 체험단 상세는 Unsplash·Pixabay 음식 참고 사진 5장을 표시합니다. 갤러리 등록은 `app/data/campaign-galleries.php`, 사진 출처는 `public/assets/images/campaign-sources.json`에서 관리합니다. 다른 캠페인은 기존 분류 그래픽을 사용하며 출처·사용 조건은 `public/assets/NOTICE.txt`에 있습니다.
 - 체험단 상세의 리뷰와 상품정보·상세이미지는 체험 소개에 속합니다. 승인된 후기만 공개하며 화면 확인용 리뷰는 `app/data/campaign-reviews.php`에서 관리하고 예시임을 표시합니다. 관심 있을 만한 상품은 탭 영역 아래에 배치하며 `/campaigns/{id}/recommendations`에서 2개씩 추가 로딩합니다. 현재 상품·비공개·모집 종료 항목을 제외하고 중복 없이 표시하며, 자바스크립트 없이도 더 보기 링크로 이어서 볼 수 있습니다.
+
+---
+
+## 앱 작업분 (Expo·Next.js, 2026-10-22 추가)
+
+위 PHP 데모는 **UI/UX 사양**으로 유지하고, 실제 제품은 사용자 앱 Expo(React Native)·관리자 Next.js로 구현합니다(결정 배경: [docs/DECISION-codebase-direction.md](docs/DECISION-codebase-direction.md)). PHP 데모와 npm 워크스페이스는 같은 저장소에 나란히 있고 서로 빌드 의존이 없습니다.
+
+```text
+apps/web/        Next.js 관리자(/admin7)·랜딩·API — Vercel 배포
+apps/mobile/     Expo SDK 57 사용자 앱 (expo-router)
+packages/shared/ 공용 타입·목 데이터·유틸·디자인 토큰(tokens.ts, 생성물)
+supabase/        마이그레이션 SQL
+design/          tokens.json(생성물)·로고 원본
+scripts/         export_tokens.py(ds.css → tokens.json), tokens.mjs(tokens.json → 웹 CSS·shared tokens.ts), logo.py
+```
+
+```bash
+npm install
+npm run tokens        # public/assets/css/ds.css → design/tokens.json → 웹 tokens.css · packages/shared tokens.ts
+npm run tokens:check  # 생성물이 ds.css 와 일치하는지 검사
+npm run typecheck     # shared · web · mobile
+npm run dev           # Next.js (http://localhost:3000)
+npm run mobile        # Expo
+npm run php           # PHP 데모 (http://127.0.0.1:8088)
+```
+
+디자인 토큰의 단일 원본은 `public/assets/css/ds.css`입니다. 색·타이포·간격을 바꿀 때는 `ds.css`를 고친 뒤 `npm run tokens`를 실행합니다. `design/tokens.json`·`packages/shared/src/tokens.ts`·`apps/web/src/styles/tokens.css`는 직접 편집하지 않습니다.

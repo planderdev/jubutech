@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>주부테크 디자인 시스템</title>
+<meta name="description" content="주부테크(JubuTech) 디자인 시스템 v2 — 연분홍 캔버스 위 흰 라운드 카드, 비비드 레드 + 블랙, Pretendard 단일 서체. 컬러·타이포·모티프·아이콘·웹 토큰·컴포넌트">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="/design-system/tokens.css">
+<style>
+:root{
+  /* 색·서체·라디우스·섀도 토큰은 tokens.css(자동 생성)에서 온다 */
+  --sp-1:4px;--sp-2:8px;--sp-3:12px;--sp-4:16px;--sp-6:24px;--sp-8:32px;--sp-12:48px;--sp-16:64px;
+  --motion-fast:150ms;--motion-normal:220ms;--ease:cubic-bezier(.2,.8,.2,1);
+}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;background:var(--canvas);color:var(--ink);font-family:var(--font);letter-spacing:-.01em;-webkit-font-smoothing:antialiased;line-height:1.5;font-feature-settings:"ss01","cv01","cv02"}
+a{color:inherit}
+.label{font-size:12px;font-weight:600;line-height:1}
+.num{font-variant-numeric:tabular-nums}
+.display{font-weight:800;letter-spacing:-.03em;line-height:1.2}
+.layout{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
+.side{position:sticky;top:0;height:100vh;overflow:auto;background:var(--paper);padding:20px 14px;box-shadow:var(--sh-soft)}
+.logo{display:inline-flex;align-items:center;gap:8px;font-weight:800;font-size:19px;letter-spacing:-.02em}.logo i{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:7px;background:var(--red);color:#fff;font-style:normal;font-weight:900;font-size:13px}
+.side nav{margin-top:16px}.side nav a{display:block;padding:8px 12px;border-radius:var(--r-pill);text-decoration:none;font-size:13px;font-weight:600;color:var(--ink-2)}
+.side nav a.on,.side nav a:hover{background:var(--stage);color:#fff}
+main{padding:0 40px 80px;max-width:1120px}
+section{padding:56px 0}
+h2.sec{font-weight:800;letter-spacing:-.03em;font-size:28px;margin:0 0 6px}
+.eyebrow{color:var(--red);font-size:12px;font-weight:700}
+.lead{color:var(--ink-2);max-width:640px;margin:0 0 24px}
+.hero{margin-top:24px;background:var(--stage);color:#fff;border-radius:var(--r-2xl);padding:48px;position:relative;overflow:hidden;box-shadow:var(--sh-card)}
+.hero h1{font-weight:800;font-size:56px;margin:0;line-height:1.1;letter-spacing:-.04em}.hero h1 b{color:var(--red)}
+.hero .glow{position:absolute;right:-40px;top:-40px;width:200px;height:200px;border-radius:50%;background:rgba(232,35,47,.35);filter:blur(60px)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
+.meta{border-radius:var(--r-pill);padding:7px 12px;font-size:12px;font-weight:600;background:rgba(255,255,255,.1)}
+.grid{display:grid;gap:12px}.g2{grid-template-columns:repeat(2,1fr)}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}.g5{grid-template-columns:repeat(5,1fr)}
+.card{background:var(--paper);border-radius:var(--r-xl);padding:20px;box-shadow:var(--sh-soft)}
+.card.strong{box-shadow:var(--sh-card)}
+.sw{border-radius:var(--r-lg);overflow:hidden;cursor:pointer;background:var(--paper);box-shadow:var(--sh-soft);transition:transform var(--motion-fast) var(--ease),box-shadow var(--motion-fast)}
+.sw:hover{transform:translateY(-2px);box-shadow:var(--sh-card)}
+.sw .c{height:72px}.sw .t{padding:10px 12px;font-size:12px;display:flex;justify-content:space-between;color:var(--ink-2)}
+.sw .t b{color:var(--ink)}.sw.primary .t{background:var(--red);color:#fff}.sw.primary .t b{color:#fff}
+table{width:100%;border-collapse:collapse;font-size:14px}th,td{padding:10px 12px;border-bottom:1px solid var(--hairline);text-align:left;vertical-align:middle}th{font-size:12px;color:var(--ink-3);font-weight:600}
+pre{background:var(--stage);color:#fff;padding:20px;border-radius:var(--r-xl);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;overflow:auto;line-height:1.6}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 20px;border-radius:var(--r-md);font:600 15px var(--font);border:1px solid transparent;cursor:pointer;transition:all var(--motion-fast)}
+.btn-primary{background:var(--red);color:#fff;box-shadow:var(--sh-red)}.btn-primary:hover{background:var(--red-hover)}
+.btn-ink{background:var(--stage);color:#fff}.btn-ink:hover{background:#2c2c32}
+.btn-secondary{background:var(--paper);color:var(--ink);border-color:var(--hairline);box-shadow:var(--sh-soft)}.btn-secondary:hover{border-color:var(--ink-3)}
+.btn-soft{background:var(--inset);color:var(--ink-2)}.btn-soft:hover{background:var(--hairline)}
+.btn-ghost{background:transparent;color:var(--ink-2)}.btn-ghost:hover{background:rgba(26,26,30,.05)}
+.btn-danger{background:var(--red-50);color:var(--red)}
+.btn:disabled{opacity:.4;pointer-events:none}.btn.sm{height:36px;padding:0 14px;font-size:13px;border-radius:var(--r-sm)}.btn.lg{height:52px;padding:0 28px;font-size:16px;border-radius:var(--r-lg)}
+.badge{display:inline-flex;align-items:center;font-size:11px;font-weight:600;padding:5px 8px;border-radius:var(--r-pill);line-height:1}
+.b-red{background:var(--red);color:#fff}.b-ink{background:var(--stage);color:#fff}.b-outline{background:var(--paper);color:var(--ink-2);border:1px solid var(--hairline)}.b-sage{background:var(--sage-soft);color:var(--success)}.b-butter{background:var(--butter-soft);color:var(--warning)}.b-mute{background:var(--inset);color:var(--ink-3)}.b-sky{background:var(--sky-soft);color:var(--info)}
+.chip{height:36px;padding:0 14px;border-radius:var(--r-pill);border:1px solid var(--hairline);background:var(--paper);font:600 13px var(--font);cursor:pointer;color:var(--ink-2)}
+.chip.on{background:var(--stage);color:#fff;border-color:var(--stage)}
+.field{width:100%;background:var(--inset);border:1.5px solid transparent;border-radius:12px;padding:12px 14px;font:15px var(--font);color:var(--ink);outline:0;transition:all .15s}
+.field:focus{background:var(--paper);border-color:var(--red);box-shadow:0 0 0 3px rgba(232,35,47,.12)}
+.field.err{border-color:var(--red)}
+.tabs{display:flex;gap:24px;border-bottom:1px solid var(--hairline)}.tabs button{background:0;border:0;padding:4px 0 12px;font:600 15px var(--font);color:var(--ink-3);position:relative;cursor:pointer}.tabs button.on{color:var(--ink)}.tabs button.on:after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;border-radius:2px;background:var(--red)}
+.tile{border-radius:20px;background:var(--inset);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.tile .chipbox{background:var(--paper);border-radius:16px;padding:12px;box-shadow:var(--sh-soft);position:relative}
+.tile svg.sp{position:absolute;inset:0;width:100%;height:100%;color:var(--red)}
+.lift{transition:transform .18s var(--ease),box-shadow .18s}.lift:hover{transform:translateY(-2px);box-shadow:var(--sh-card)}
+.icon{width:32px;height:32px;color:var(--red)}
+.icons{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:8px}
+.icons div{background:var(--paper);border-radius:var(--r-lg);padding:14px 6px;text-align:center;font-size:11px;color:var(--ink-3);box-shadow:var(--sh-soft)}
+.notice{border-radius:var(--r-md);padding:10px 14px;font-size:13px;font-weight:500}.n-ok{background:var(--sage-soft);color:var(--success)}.n-err{background:var(--red-50);color:var(--red)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--stage);color:#fff;padding:12px 18px;border-radius:var(--r-md);font-size:13px;font-weight:500;opacity:0;pointer-events:none;transition:opacity .2s;box-shadow:var(--sh-float)}.toast.show{opacity:1}
+.step{height:2px;background:var(--hairline);border-radius:2px;position:relative}.step i{position:absolute;left:0;top:0;height:100%;width:50%;background:var(--red);border-radius:2px}
+.type-row{display:grid;grid-template-columns:150px 1fr 120px;align-items:baseline;gap:16px;padding:12px 0;border-bottom:1px solid var(--hairline)}
+.type-row small{font-size:11px;color:var(--ink-3);font-weight:500}
+.dont{color:var(--red)}.dont:before{content:"✕ ";}
+.phone{width:240px;background:var(--paper);border-radius:28px;box-shadow:var(--sh-card);padding:16px;margin:0 auto}
+.bnav{display:flex;justify-content:space-around;padding:10px 0 4px;border-top:1px solid var(--hairline);margin-top:12px}
+footer{padding:40px 0 0;font-size:12px;color:var(--ink-3)}
+@media (max-width:900px){.layout{grid-template-columns:1fr}.side{position:sticky;height:auto;padding:10px 12px}.side nav{display:flex;gap:4px;overflow:auto;margin-top:0;-ms-overflow-style:none;scrollbar-width:none}.side nav::-webkit-scrollbar{display:none}.side nav a{white-space:nowrap;padding:8px 12px}.side .logo{display:none}main{padding:0 16px 60px}.g3,.g4,.g5{grid-template-columns:repeat(2,1fr)}.hero{padding:28px;border-radius:20px}.hero h1{font-size:34px}.type-row{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+</style>
+</head>
+<body>
+<div class="layout">
+<aside class="side">
+  <img src="/logo/jubutech-wordmark.png" alt="주부테크" style="height:24px;display:block">
+  <nav id="nav">
+    <a href="#s00">00 브랜드</a><a href="#s01">01 로고</a><a href="#s02">02 컬러</a><a href="#s03">03 타이포</a><a href="#s04">04 표기법</a><a href="#s05">05 이미지</a><a href="#s06">06 모티프</a><a href="#s07">07 아이콘</a><a href="#s08">08 웹 토큰</a><a href="#s09">09 컴포넌트</a>
+  </nav>
+</aside>
+<main>
+  <div class="hero">
+    <span class="glow"></span>
+    <p class="eyebrow">Design System v3.0 · 2026.10.22</p>
+    <h1>주부의 일상이<br><b>돈</b>이 되는 곳</h1>
+    <p style="margin:16px 0 0;color:rgba(255,255,255,.7);max-width:560px">현명한 소비도, 소소한 공부도 모두 재테크가 됩니다. 연분홍 캔버스 위 흰 라운드 카드, 비비드 레드와 블랙, Pretendard 하나로 만든 깨끗한 앱 UI.</p>
+    <div class="chips"><span class="meta">Primary #DB6287</span><span class="meta">Canvas #F7F7F9</span><span class="meta">Stage #17171A</span><span class="meta">Pretendard Variable</span><span class="meta">Next.js 15 · Tailwind 3</span></div>
+  </div>
+
+  <section id="s00">
+    <p class="eyebrow">00</p><h2 class="sec">브랜드 개요</h2>
+    <p class="lead">주부의 소비·공부·부업·정보공유 활동에 가치를 부여하는 생활경제 커뮤니티 플랫폼. 투자 플랫폼이 아니라 <b>생활경제·소득 플랫폼</b>으로 포지셔닝한다.</p>
+    <div class="grid g5">
+      <div class="card"><p class="display" style="color:var(--red);font-size:20px;margin:0">SAVE</p><p style="margin:6px 0 0;font-size:14px;color:var(--ink-2)">생활비를 아끼기</p></div>
+      <div class="card"><p class="display" style="color:var(--red);font-size:20px;margin:0">LEARN</p><p style="margin:6px 0 0;font-size:14px;color:var(--ink-2)">경제와 자산관리를 공부하기</p></div>
+      <div class="card" style="background:var(--red);color:#fff;box-shadow:var(--sh-red)"><p class="display" style="font-size:20px;margin:0">EARN</p><p style="margin:6px 0 0;font-size:14px;opacity:.85">부업·미션으로 돈 벌기 (핵심)</p></div>
+      <div class="card"><p class="display" style="color:var(--red);font-size:20px;margin:0">GROW</p><p style="margin:6px 0 0;font-size:14px;color:var(--ink-2)">자산을 불리기</p></div>
+      <div class="card"><p class="display" style="color:var(--red);font-size:20px;margin:0">CAREER</p><p style="margin:6px 0 0;font-size:14px;color:var(--ink-2)">다시 일하기</p></div>
+    </div>
+    <div class="grid g3" style="margin-top:12px">
+      <div class="card"><p class="label" style="color:var(--red);margin:0 0 8px">키 메시지</p><p class="display" style="font-size:18px;margin:0">주부의 일상이 돈이 되는 곳</p><p style="font-size:14px;color:var(--ink-2);margin:6px 0 0">현명한 소비도, 소소한 공부도 모두 재테크가 됩니다 / 돈 버는 방법을 알려주는 곳에서, 돈 벌 기회를 주는 곳으로</p></div>
+      <div class="card"><p class="label" style="color:var(--red);margin:0 0 8px">타깃</p><p style="font-size:14px;margin:0">30~45세 기혼 여성. 육아·출산으로 경력이 단절되거나 휴직 중, 시간·장소 제약 속에서 재택 소득을 원하는 주부. 2차: 신혼·자녀교육비 가구·반려가구·재테크 입문자</p></div>
+      <div class="card"><p class="label" style="color:var(--red);margin:0 0 8px">톤앤보이스</p><p style="font-size:14px;margin:0">Warm & Clear(다정하지만 또렷하게) · Everyday(생활 언어) · Honest(과장 없는 숫자). 종목 추천·수익 보장 표현 금지, 기준과 원칙 중심.</p></div>
+    </div>
+  </section>
+
+  <section id="s01">
+    <p class="eyebrow">01</p><h2 class="sec">로고</h2>
+    <p class="lead">공식 워드마크 자산(<code>public/logo/</code>)을 사용한다. 서체로 조판해 흉내내지 않는다. 2026-09-24 교체된 워드마크(한글 "주부테크" · 영문 "JUBUTECH", 가는 획, 실측 #DE082F)를 쓴다. UI의 Primary는 로즈 #C77991(스케일 600)이며 로고 색은 로고 고유값으로 고정한다. 영문판은 <code>&lt;Logo en /&gt;</code>.</p>
+    <div class="grid g3">
+      <div class="card strong" style="text-align:center;padding:48px 20px"><img src="/logo/jubutech-wordmark.png" alt="주부테크" style="height:44px"><p class="label" style="margin:16px 0 0;color:var(--ink-3)">기본형 · 워드마크 #DE082F</p></div>
+      <div class="card strong" style="text-align:center;padding:48px 20px;background:var(--stage)"><img src="/logo/jubutech-wordmark-white.png" alt="주부테크" style="height:44px"><p class="label" style="margin:16px 0 0;color:var(--ink-3)">반전형 · 흰색판</p></div>
+      <div class="card strong" style="text-align:center;padding:36px 20px;display:flex;flex-direction:column;align-items:center;gap:14px"><img src="/logo/app-icon-192.png" alt="" style="width:72px;height:72px;border-radius:16px"><span style="background:var(--red);padding:8px 14px;border-radius:8px"><img src="/logo/jubutech-wordmark-white.png" alt="주부테크" style="height:20px;display:block"></span><p class="label" style="margin:0;color:var(--ink-3)">앱 아이콘 · 스탬프형</p></div>
+    </div>
+    <div class="grid g2" style="margin-top:12px">
+      <div class="card"><p class="label" style="margin:0 0 8px">사용 규정</p><ul style="font-size:14px;margin:0;padding-left:18px;line-height:1.8"><li>최소 여백: 심볼 한 변 길이의 1/2</li><li>최소 크기: 화면 16px(텍스트), 심볼 단독 20px</li><li>연회색·흰 배경 → Ink 텍스트 + Red 심볼 / 블랙 배경 → 흰 텍스트 + Red 심볼 / 레드 배경 → 흰 단색</li></ul></div>
+      <div class="card"><p class="label" style="margin:0 0 8px">금지</p><ul style="font-size:14px;margin:0;padding-left:0;list-style:none;line-height:1.8"><li class="dont">세리프·필기체·모노스페이스로 조판</li><li class="dont">심볼 색 변경 (레드 고정)</li><li class="dont">그라데이션·외곽선·드롭섀도 효과</li><li class="dont">비율 왜곡, 회전</li></ul></div>
+    </div>
+  </section>
+
+  <section id="s02">
+    <p class="eyebrow">02</p><h2 class="sec">컬러</h2>
+    <p class="lead">캔버스는 로즈 틴트(50), 면은 흰색. <b>프라이머리 로즈는 CTA·강조·배지에만</b>, 블랙은 히어로 카드와 보조 CTA. 스와치를 클릭하면 HEX가 복사된다.</p>
+<!-- tokens:colors:start (자동 생성 — design/tokens.json) -->
+    <p class="label" style="color:var(--ink-3);margin:0 0 8px">Base</p>
+    <div class="grid g5" style="margin-bottom:24px">
+      <div class="sw" data-hex="#F7F7F9"><div class="c" style="background:#F7F7F9;border-bottom:1px solid var(--hairline)"></div><div class="t"><b>Canvas</b>#F7F7F9</div></div>
+      <div class="sw" data-hex="#FFFFFF"><div class="c" style="background:#FFFFFF;border-bottom:1px solid var(--hairline)"></div><div class="t"><b>Paper</b>#FFFFFF</div></div>
+      <div class="sw" data-hex="#F9FAFB"><div class="c" style="background:#F9FAFB;border-bottom:1px solid var(--hairline)"></div><div class="t"><b>Inset</b>#F9FAFB</div></div>
+      <div class="sw" data-hex="#191F28"><div class="c" style="background:#191F28"></div><div class="t"><b>Stage</b>#191F28</div></div>
+      <div class="sw" data-hex="#191F28"><div class="c" style="background:#191F28"></div><div class="t"><b>Ink</b>#191F28</div></div>
+      <div class="sw" data-hex="#6B7684"><div class="c" style="background:#6B7684"></div><div class="t"><b>Ink-2</b>#6B7684</div></div>
+      <div class="sw" data-hex="#B0B8C1"><div class="c" style="background:#B0B8C1"></div><div class="t"><b>Ink-3</b>#B0B8C1</div></div>
+      <div class="sw" data-hex="#F2F4F6"><div class="c" style="background:#F2F4F6;border-bottom:1px solid var(--hairline)"></div><div class="t"><b>Hairline</b>#F2F4F6</div></div>
+      <div class="sw" data-hex="#E5E8EB"><div class="c" style="background:#E5E8EB"></div><div class="t"><b>Edge</b>#E5E8EB</div></div>
+    </div>
+    <p class="label" style="color:var(--ink-3);margin:0 0 8px">Web Color — 웹용 색상 스케일 (HEX)</p>
+    <div class="grid" style="grid-template-columns:repeat(6,1fr);margin-bottom:24px">
+      <div class="sw" data-hex="#FBEFF3"><div class="c" style="background:#FBEFF3;border-bottom:1px solid var(--hairline)"></div><div class="t"><b>50</b>#FBEFF3</div></div>
+      <div class="sw" data-hex="#F9EBF0"><div class="c" style="background:#F9EBF0;border-bottom:1px solid var(--hairline)"></div><div class="t"><b>100</b>#F9EBF0</div></div>
+      <div class="sw" data-hex="#F3D8E0"><div class="c" style="background:#F3D8E0"></div><div class="t"><b>200</b>#F3D8E0</div></div>
+      <div class="sw primary" data-hex="#EAB9C8"><div class="c" style="background:#EAB9C8"></div><div class="t"><b>300 · Primary light</b>#EAB9C8</div></div>
+      <div class="sw" data-hex="#E48BA6"><div class="c" style="background:#E48BA6"></div><div class="t"><b>400</b>#E48BA6</div></div>
+      <div class="sw" data-hex="#DC658A"><div class="c" style="background:#DC658A"></div><div class="t"><b>500</b>#DC658A</div></div>
+      <div class="sw primary" data-hex="#DB6287"><div class="c" style="background:#DB6287"></div><div class="t"><b>600 · Primary</b>#DB6287</div></div>
+      <div class="sw" data-hex="#C7597B"><div class="c" style="background:#C7597B"></div><div class="t"><b>700 · hover</b>#C7597B</div></div>
+      <div class="sw" data-hex="#B4506F"><div class="c" style="background:#B4506F"></div><div class="t"><b>800 · pressed</b>#B4506F</div></div>
+      <div class="sw" data-hex="#891F40"><div class="c" style="background:#891F40"></div><div class="t"><b>900</b>#891F40</div></div>
+      <div class="sw" data-hex="#5B152A"><div class="c" style="background:#5B152A"></div><div class="t"><b>950</b>#5B152A</div></div>
+    </div>
+    <p class="label" style="color:var(--ink-3);margin:0 0 8px">Pastel (일러스트·태그 보조)</p>
+    <div class="grid g4" style="margin-bottom:24px">
+      <div class="sw" data-hex="#FFD4D6"><div class="c" style="background:linear-gradient(90deg,#FFEEEE 50%,#FFD4D6 50%)"></div><div class="t"><b>Rose</b>#FFEEEE / #FFD4D6</div></div>
+      <div class="sw" data-hex="#AEEFD5"><div class="c" style="background:linear-gradient(90deg,#F0FAF6 50%,#AEEFD5 50%)"></div><div class="t"><b>Sage</b>#F0FAF6 / #AEEFD5</div></div>
+      <div class="sw" data-hex="#FFEFBF"><div class="c" style="background:linear-gradient(90deg,#FFF9E7 50%,#FFEFBF 50%)"></div><div class="t"><b>Butter</b>#FFF9E7 / #FFEFBF</div></div>
+      <div class="sw" data-hex="#C9E2FF"><div class="c" style="background:linear-gradient(90deg,#E8F3FF 50%,#C9E2FF 50%)"></div><div class="t"><b>Sky</b>#E8F3FF / #C9E2FF</div></div>
+    </div>
+    <p class="label" style="color:var(--ink-3);margin:0 0 8px">Semantic</p>
+    <div class="grid g4">
+      <div class="sw" data-hex="#03B26C"><div class="c" style="background:#03B26C"></div><div class="t"><b>Success · --status-positive</b>#03B26C</div></div>
+      <div class="sw" data-hex="#FE9800"><div class="c" style="background:#FE9800"></div><div class="t"><b>Warning · --status-cautionary</b>#FE9800</div></div>
+      <div class="sw" data-hex="#F04452"><div class="c" style="background:#F04452"></div><div class="t"><b>Danger · --status-negative</b>#F04452</div></div>
+      <div class="sw" data-hex="#3182F6"><div class="c" style="background:#3182F6"></div><div class="t"><b>Info · --palette-blue-500</b>#3182F6</div></div>
+      <div class="sw" data-hex="#DB6287"><div class="c" style="background:#DB6287"></div><div class="t"><b>Up(수익) · --primary-normal</b>#DB6287</div></div>
+      <div class="sw" data-hex="#3182F6"><div class="c" style="background:#3182F6"></div><div class="t"><b>Down(손실) · --palette-blue-500</b>#3182F6</div></div>
+    </div>
+    <!-- tokens:colors:end -->
+    <p style="font-size:13px;color:var(--ink-2);margin-top:16px">주식 손익 표기는 국내 관행: 수익 = Primary(로즈), 손실 = Blue(Info). 접근성: Red on White 4.6:1(AA) · Ink-2 on White 7.6:1 · Ink-3는 12px 이하 본문에 쓰지 않는다(플레이스홀더·보조 메타 전용).</p>
+  </section>
+
+  <section id="s03">
+    <p class="eyebrow">03</p><h2 class="sec">타이포그래피 — Pretendard 단일</h2>
+    <p class="lead">서체는 Pretendard Variable 하나. 위계는 굵기(800/700/600/500/400)·크기·자간으로만 만든다. 숫자는 항상 tabular-nums.</p>
+    <div class="card strong" style="margin-bottom:20px;display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:center"><div><p style="font-size:44px;font-weight:800;letter-spacing:-.04em;line-height:1.1;margin:0">주부테크<br><span style="font-weight:400">Pretendard</span></p></div><div style="font-size:13px;color:var(--ink-2)"><p style="margin:0 0 6px"><b style="color:var(--ink)">Pretendard Variable</b> — npm <code>pretendard</code> 동적 서브셋(<code>pretendardvariable-dynamic-subset.css</code>)</p><p style="margin:0 0 6px">Display 800 · Heading 700 · Label 600 · Body 500/400</p><p style="margin:0">font-feature-settings: ss01, cv01, cv02 · 자간 -1% 기본, 헤드라인 -3%</p></div></div>
+    <div class="type-row"><small>Display 1 · 52/1.15</small><span class="display" style="font-size:52px;line-height:1.15">일상이 돈이 되는 곳</span><small>800 · -3%</small></div>
+    <div class="type-row"><small>Display 2 · 40</small><span class="display" style="font-size:40px">현명한 소비도 재테크</span><small>800 · -3%</small></div>
+    <div class="type-row"><small>H1 · 34</small><span style="font-size:34px;font-weight:800;letter-spacing:-.03em">트레이딩 매매 체크리스트</span><small>800</small></div>
+    <div class="type-row"><small>H2 · 26</small><span style="font-size:26px;font-weight:800;letter-spacing:-.03em">오늘의 돈되는 정보</span><small>800</small></div>
+    <div class="type-row"><small>H3 · 22</small><span style="font-size:22px;font-weight:700;letter-spacing:-.02em">커뮤니티 최신글</span><small>700</small></div>
+    <div class="type-row"><small>H4 · 18</small><span style="font-size:18px;font-weight:700;letter-spacing:-.02em">저염 밀키트 3종 인스타 릴스 체험단</span><small>700</small></div>
+    <div class="type-row"><small>Body L · 17/1.5</small><span style="font-size:17px">지원금 찾고, 영수증 인증하고, 체험단 미션하고, 매매일지 쓰는 하루.</span><small>400</small></div>
+    <div class="type-row"><small>Body M · 15/1.5</small><span style="font-size:15px">작은 활동도 포인트와 실제 수익으로 이어져요.</span><small>400</small></div>
+    <div class="type-row"><small>Body S · 14</small><span style="font-size:14px;color:var(--ink-2)">모든 금융 정보에는 출처와 기준일을 표기합니다.</span><small>400</small></div>
+    <div class="type-row"><small>Label · 12</small><span class="label">오늘의 미션 · 모집중 · D-7</span><small>600</small></div>
+    <div class="type-row"><small>Caption · 11</small><span style="font-size:11px;color:var(--ink-3)">보건복지부 · 정부24 · 2026.09.10</span><small>500</small></div>
+    <div class="type-row"><small>Number</small><span class="num" style="font-size:28px;font-weight:800;color:var(--red);letter-spacing:-.02em">+187,000원 <span style="color:var(--down)">-3.93%</span></span><small>tabular-nums</small></div>
+  </section>
+
+  <section id="s04">
+    <p class="eyebrow">04</p><h2 class="sec">표기법</h2>
+    <div class="grid g2">
+      <div class="card"><p class="label" style="margin:0 0 8px">브랜드명</p><table><tr><td>국문</td><td><b>주부테크</b> (붙여 씀)</td></tr><tr><td>영문</td><td><b>JubuTech</b> (J·T 대문자)</td></tr><tr><td>인스타그램</td><td>@jubutech2026</td></tr><tr><td>슬로건</td><td>주부의 일상이 돈이 되는 곳</td></tr></table></div>
+      <div class="card"><p class="label" style="margin:0 0 8px">Do / Don't</p><ul style="font-size:14px;margin:0;padding-left:0;list-style:none;line-height:1.9"><li>✓ 광고·협찬·제휴 콘텐츠에 [광고] [체험단] 표시</li><li>✓ 금융 정보에 출처 · 기준일 표기</li><li>✓ 금액·수익률은 tabular 숫자, 단위 붙여 씀 (187,000원 · +3.2%)</li><li class="dont">"수익 보장" "확정 수익" "종목 추천" 표현</li><li class="dont">주부 테크 / 주부Tech 등 띄어쓰기·혼용 표기</li><li class="dont">자녀 실명·사진을 요구하거나 노출하는 카피</li></ul></div>
+    </div>
+  </section>
+
+  <section id="s05">
+    <p class="eyebrow">05</p><h2 class="sec">이미지 디렉션</h2>
+    <p class="lead">Clean · Rounded · Vivid · Friendly · App-like. 사진보다 <b>레드 액센트 플랫 일러스트</b>를 우선하고, 사진은 밝은 배경·인물 중심(레드 의상·소품 포인트)으로 쓴다.</p>
+    <div class="grid g4">
+      <div class="card"><p class="display" style="color:var(--red);font-size:18px;margin:0">Clean</p><p style="font-size:13px;color:var(--ink-2);margin:6px 0 0">연분홍 캔버스, 흰 카드, 넉넉한 여백</p></div>
+      <div class="card"><p class="display" style="color:var(--red);font-size:18px;margin:0">Rounded</p><p style="font-size:13px;color:var(--ink-2);margin:6px 0 0">20~24px 라운드, 알약 칩·배지</p></div>
+      <div class="card" style="background:var(--stage);color:#fff"><p class="display" style="color:var(--red);font-size:18px;margin:0">Vivid</p><p style="font-size:13px;opacity:.8;margin:6px 0 0">블랙 카드 위 레드 포인트 하나</p></div>
+      <div class="card" style="background:var(--inset)"><p class="display" style="color:var(--red);font-size:18px;margin:0">Friendly</p><p style="font-size:13px;color:var(--ink-2);margin:6px 0 0">플랫 일러스트 + 레드 스파클</p></div>
+    </div>
+    <p style="font-size:13px;color:var(--ink-3);margin-top:12px">금지: 어두운 톤 스톡 사진, 과한 보정, 그라데이션 남용, 돈다발·차트 급등 이미지, 공포·조급함을 자극하는 연출.</p>
+  </section>
+
+  <section id="s06">
+    <p class="eyebrow">06</p><h2 class="sec">그래픽 모티프</h2>
+    <div class="grid g4">
+      <div class="card" style="display:flex;flex-direction:column;align-items:center;gap:12px"><div class="tile" style="width:100%;height:130px"><svg class="sp" viewBox="0 0 100 100" preserveAspectRatio="none" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 22l6-4M80 18l5 5M86 70l-6 3M18 76l4 5M50 10v5"/><circle cx="26" cy="64" r="1.6" fill="currentColor" stroke="none"/><circle cx="74" cy="34" r="1.6" fill="currentColor" stroke="none"/></svg><div class="chipbox"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#D73B50" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-2-1.5L14 21l-2-1.5L10 21l-2-1.5L6 21z"/><path d="M9 8h6M9 11.5h6M9 15h4"/></svg></div></div><p class="label" style="margin:0">Illust tile</p><p style="font-size:12px;color:var(--ink-2);text-align:center;margin:0">연회색 타일 + 흰 칩 + 레드 아이콘 + 스파클</p></div>
+      <div class="card" style="background:var(--stage);color:#fff;position:relative;overflow:hidden"><p class="label" style="color:var(--red);margin:0 0 8px">당신은</p><p class="display" style="font-size:20px;margin:0">새로움을 갈망하는<br>모험가 타입</p><span style="position:absolute;right:16px;top:16px;width:36px;height:36px;border-radius:50%;background:var(--red);display:inline-flex;align-items:center;justify-content:center">→</span><p class="label" style="margin:28px 0 0;color:var(--ink-3)">Black hero card</p></div>
+      <div class="card" style="display:flex;flex-direction:column;justify-content:center;gap:12px"><div style="display:flex;justify-content:space-between"><span class="label" style="color:var(--red)">STEP 1</span><span class="label" style="color:var(--ink-3)">STEP 2</span></div><div class="step"><i></i></div><div style="display:flex;gap:8px;margin-top:8px"><span class="badge b-red">D-7</span><span class="badge b-red">모집중</span></div><p class="label" style="margin:8px 0 0">Step bar · Red pill</p></div>
+      <div class="card" style="display:flex;flex-direction:column;justify-content:center"><p class="label" style="color:var(--ink-3);margin:0">실현 손익</p><p class="num" style="font-size:28px;font-weight:800;color:var(--up);margin:4px 0 0;letter-spacing:-.02em">+51,000원</p><p class="num" style="font-size:11px;color:var(--ink-3);margin:2px 0 0">2승 1패 · 승률 67%</p><p class="label" style="margin:16px 0 0">Stat card</p></div>
+    </div>
+  </section>
+
+  <section id="s07">
+    <p class="eyebrow">07</p><h2 class="sec">아이콘</h2>
+    <p class="lead">24 그리드, stroke 1.6, round cap/join, fill 없음, 단일 굵기, currentColor(기본 Red). 코드: <code>src/components/ui/line-icon.tsx</code></p>
+    <div class="icons" id="icons"></div>
+  </section>
+
+  <section id="s08">
+    <p class="eyebrow">08</p><h2 class="sec">웹 토큰</h2>
+    <p class="lead">단일 소스는 <code>design/tokens.json</code>. <code>npm run tokens</code>가 <code>src/styles/tokens.css</code>(앱)·<code>tokens.css</code>(이 가이드)·아래 컬러 섹션을 생성하고, <code>tailwind.config.ts</code>·<code>layout.tsx</code>는 JSON을 직접 읽는다.</p>
+    <div class="grid g2" style="margin-bottom:16px">
+      <div class="card"><p class="label" style="margin:0 0 8px">Spacing · Radius</p><table><tr><th>토큰</th><th>값</th></tr><tr><td>space</td><td class="num">4 · 8 · 12 · 16 · 24 · 32 · 48 · 64</td></tr><tr><td>radius xs / sm / md</td><td class="num">6 / 10 / 12 (버튼·인풋)</td></tr><tr><td>radius lg / xl / 2xl</td><td class="num">16 / 20 (카드) / 24 (히어로)</td></tr><tr><td>radius pill</td><td class="num">999 (칩·배지)</td></tr><tr><td>container</td><td class="num">max 1200 · gutter 16/24/32</td></tr><tr><td>breakpoints</td><td class="num">sm 640 · md 768 · lg 1024 · xl 1280</td></tr></table></div>
+      <div class="card"><p class="label" style="margin:0 0 8px">Shadow · Motion · Z</p><table><tr><th>토큰</th><th>값</th></tr><tr><td>shadow soft</td><td class="num">0 2px 12px rgba(20,20,30,.05)</td></tr><tr><td>shadow card</td><td class="num">0 6px 20px rgba(20,20,30,.07)</td></tr><tr><td>shadow float</td><td class="num">0 12px 32px rgba(20,20,30,.12)</td></tr><tr><td>shadow red</td><td class="num">0 8px 20px rgba(232,35,47,.28)</td></tr><tr><td>motion fast / normal</td><td class="num">150 / 220ms · cubic-bezier(.2,.8,.2,1)</td></tr><tr><td>z header / bottom-nav / drawer</td><td class="num">30 / 30 / 50 · 탭바 68px + safe-area</td></tr></table></div>
+    </div>
+<pre id="tokens">/* src/styles/tokens.css — design/tokens.json 에서 자동 생성 */
+:root {
+  --canvas: 247 247 249;    /* #F7F7F9 페이지 바닥 · ds.css --surface-alt(--background-normal-alternative) */
+  --paper: 255 255 255;     /* #FFFFFF 카드·헤더·시트 · --surface(--background-normal-normal) */
+  --inset: 249 250 251;     /* #F9FAFB 인풋 바닥·타일 · --background-elevated-alternative */
+  --stage: 25 31 40;        /* #191F28 반전 무대 · --inverse-background */
+  --ink: 25 31 40;          /* #191F28 본문 텍스트 · --label-normal */
+  --ink-2: 107 118 132;     /* #6B7684 보조 텍스트 · --label-alternative */
+  --ink-3: 176 184 193;     /* #B0B8C1 뮤트·플레이스홀더 · --label-assistive */
+  --hairline: 242 244 246;  /* #F2F4F6 카드 안 구분선 · --line-solid-neutral */
+  --edge: 229 232 235;      /* #E5E8EB 셸 경계·상단바·하단탭 · --line-solid-normal(--border) */
+  --red: 219 98 135;        /* #DB6287 Primary (Red 600) */
+  --font-body: "Pretendard", "Noto Sans KR", system-ui, sans-serif;
+  --radius: 12px;
+}
+/* Tailwind: bg-canvas bg-paper bg-inset bg-stage text-ink text-ink-2 text-ink-3 border-hairline border-edge text-red bg-red · red-50~950 · rounded-{xs..2xl} · shadow-{soft,card,float,red} */</pre>
+    <button class="btn btn-secondary sm" onclick="copyText(document.getElementById('tokens').innerText,'토큰 CSS 복사됨')">:root 블록 복사</button>
+  </section>
+
+  <section id="s09">
+    <p class="eyebrow">09</p><h2 class="sec">컴포넌트</h2>
+    <p class="lead">실제 앱 컴포넌트(<code>src/components/ui</code>)와 1:1 대응. 모두 동작하는 데모.</p>
+    <div class="card strong" style="margin-bottom:12px"><p class="label" style="margin:0 0 12px">Button — primary / ink / secondary / soft / ghost / danger / lg / sm / disabled</p>
+      <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center"><button class="btn btn-primary">응모하기</button><button class="btn btn-ink">완료</button><button class="btn btn-secondary">매매일지 쓰기</button><button class="btn btn-soft">테스트 다시하기</button><button class="btn btn-ghost">취소</button><button class="btn btn-danger">삭제</button><button class="btn btn-primary lg">대화보단 호응을 열심히 해요</button><button class="btn btn-ink sm">선정</button><button class="btn btn-primary" disabled>비활성</button></div></div>
+    <div class="grid g2" style="margin-bottom:12px">
+      <div class="card strong"><p class="label" style="margin:0 0 12px">Input — Inset 면 + 라운드 12, focus 레드 링</p>
+        <p class="label" style="color:var(--ink-2);margin:0 0 6px">종목명 <span style="color:var(--red)">*</span></p><input class="field" placeholder="삼성전자" style="margin-bottom:12px">
+        <p class="label" style="color:var(--ink-2);margin:0 0 6px">매수 단가</p><input class="field num err" value="abc"><p style="color:var(--red);font-size:12px;margin:4px 0 12px;font-weight:500">숫자만 입력해 주세요.</p>
+        <select class="field"><option>KOSPI</option><option>KOSDAQ</option><option>ETF</option></select></div>
+      <div class="card strong"><p class="label" style="margin:0 0 12px">Chip · Badge · Tabs</p>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px" id="chips"><button class="chip on">전체</button><button class="chip">지원금</button><button class="chip">카드혜택</button><button class="chip">절약</button><button class="chip">금융기초</button></div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px"><span class="badge b-red">모집중</span><span class="badge b-butter">선정발표</span><span class="badge b-sage">미션진행</span><span class="badge b-mute">마감</span><span class="badge b-sky">검수중</span><span class="badge b-ink">완료</span><span class="badge b-outline">수익인증</span></div>
+        <div class="tabs" id="tabs"><button class="on">캘린더</button><button>리스트</button><button>통계</button></div></div>
+    </div>
+    <div class="grid g3" style="margin-bottom:12px">
+      <a class="card lift" href="#" style="text-decoration:none;padding:12px;overflow:hidden" onclick="return false">
+        <div class="tile" style="height:130px"><svg class="sp" viewBox="0 0 100 100" preserveAspectRatio="none" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 22l6-4M80 18l5 5M86 70l-6 3M18 76l4 5"/><circle cx="26" cy="64" r="1.6" fill="currentColor" stroke="none"/></svg><div class="chipbox"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#D73B50" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16v2a8 8 0 0 1-16 0z"/><path d="M8 12V6M12 12V5M16 12V6"/><path d="M7 4c1 1 3 1 4 0s3-1 4 0"/></svg></div><span class="badge b-red" style="position:absolute;left:10px;top:10px">D-7</span></div>
+        <div style="padding:12px 4px 4px"><p style="margin:0 0 6px;font-size:12px;font-weight:700;color:var(--red)">그린테이블 <span class="badge b-red" style="margin-left:4px">모집중</span></p><p style="font-size:15px;font-weight:700;margin:0 0 4px;line-height:1.35">저염 밀키트 3종 인스타 릴스 체험단</p><p style="font-size:13px;color:var(--ink-2);margin:0">밀키트 3종 + 30,000P</p><p class="num" style="font-size:12px;color:var(--ink-3);margin:12px 0 0;display:flex;justify-content:space-between"><span>신청 4 / 모집 15</span><span>09.22 마감</span></p></div></a>
+      <div class="card" style="padding:0 16px"><p class="label" style="margin:14px 0 0;color:var(--ink-3)">Feed item</p>
+        <div style="padding:14px 0;border-bottom:1px solid var(--hairline)"><div style="display:flex;gap:6px;margin-bottom:6px;align-items:center"><span class="badge b-outline">수익인증</span><span class="num" style="color:var(--red);font-size:12px;font-weight:700">+187,000원</span></div><p style="font-size:16px;font-weight:700;margin:0;line-height:1.35">9월 첫째 주 체험단 + 설문으로 187,000원 벌었어요</p><p style="font-size:14px;color:var(--ink-2);margin:4px 0 0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">아이 등원시키고 오전 10시부터 12시까지 딱 두 시간만 써요.</p><p class="num" style="font-size:12px;color:var(--ink-3);margin:10px 0 0">서연맘 · ♡ 4 · 💬 3 · 9시간 전</p></div>
+        <div style="padding:14px 0"><div style="display:flex;gap:6px;margin-bottom:6px"><span class="badge b-red">광고</span><span class="badge b-outline">부업후기</span></div><p style="font-size:16px;font-weight:700;margin:0">[광고] 밀키트 릴스 체험단 15명 모집</p></div></div>
+      <div class="card strong"><p class="label" style="margin:0 0 12px">Notice · Toast · Phone frame</p><div class="notice n-ok" style="margin-bottom:8px">응모가 완료되었어요. 선정 결과는 알림으로 알려드려요.</div><div class="notice n-err" style="margin-bottom:14px">채널 URL을 https://부터 입력해 주세요.</div><button class="btn btn-secondary sm" onclick="toast('저장했어요')">토스트 띄우기</button>
+        <div class="phone" style="margin-top:16px;width:100%"><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--ink-3)"><span>9:41</span><span>●●●</span></div><div class="step" style="margin:10px 0"><i style="width:33%"></i></div><p style="font-size:14px;font-weight:700;margin:0 0 10px">Q 사교모임보다 책이나 비디오 게임을 더 좋아합니다.</p><div style="display:flex;gap:8px"><button class="btn btn-ink sm" style="flex:1">맞습니다</button><button class="btn btn-secondary sm" style="flex:1">아닙니다</button></div><div class="bnav"><span style="color:var(--red)">●</span><span style="color:var(--ink-3)">●</span><span style="color:var(--ink-3)">●</span></div></div></div>
+    </div>
+    <div class="card strong"><p class="label" style="margin:0 0 12px">Checklist row · MA trend toggle (매매일지)</p>
+      <div style="border-radius:12px;overflow:hidden;background:var(--inset);margin-bottom:12px"><div style="display:grid;grid-template-columns:150px 1fr auto;gap:12px;align-items:center;padding:12px 14px;background:var(--red-50)"><b style="font-size:14px">이평선 배열</b><span style="font-size:13px;color:var(--ink-2)">5일선·20일선 골든크로스 발생 여부 및 정배열 초입 확인</span><span style="width:28px;height:28px;background:var(--red);border-radius:8px;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:700">✓</span></div><div style="display:grid;grid-template-columns:150px 1fr auto;gap:12px;align-items:center;padding:12px 14px"><b style="font-size:14px">수급 분석</b><span style="font-size:13px;color:var(--ink-2)">기관 평단가 부근 및 외국인 지속 수급/평단 확인 여부</span><span style="width:28px;height:28px;border:1.5px solid var(--hairline);border-radius:8px;background:var(--paper)"></span></div></div>
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);background:var(--inset);border-radius:12px;overflow:hidden;text-align:center;gap:1px" id="ma"></div></div>
+  </section>
+
+  <footer>
+    <img src="/logo/jubutech-wordmark.png" alt="주부테크" style="height:28px;display:block">
+    <p style="margin-top:12px">© 2026 JubuTech · Design System v2 · 주부의 일상이 돈이 되는 곳 · 원천: 사용자 제공 무드보드(2026-09-16, v2) + 사업기획 mindmap · BRAND.md 참조</p>
+  </footer>
+</main>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const P={home:'<path d="M4 11.5 12 5l8 6.5"/><path d="M6 10v9h12v-9"/><path d="M10 19v-5h4v5"/>',info:'<path d="M5 4h11l3 3v13H5z"/><path d="M8 9h8M8 12.5h8M8 16h5"/>',community:'<circle cx="9" cy="8" r="3"/><circle cx="16.5" cy="9.5" r="2.5"/><path d="M3.5 19c.5-3.5 2.8-5.5 5.5-5.5s5 2 5.5 5.5"/><path d="M15 19c.2-2.2 1.4-3.8 3.3-4.2"/>',campaign:'<path d="M4 9.5 15 6v12L4 14.5z"/><path d="M4 9.5v5"/><path d="M15 9.5c1.7 0 3 1.1 3 2.5s-1.3 2.5-3 2.5"/><path d="M6.5 14.5 8 19"/>',my:'<circle cx="12" cy="8" r="4"/><path d="M4.5 20c.8-3.8 3.8-6 7.5-6s6.7 2.2 7.5 6"/>',stock:'<path d="M3 18 9 11l4 3.5L20 6"/><path d="M16 6h4v4"/>',receipt:'<path d="M6 3h12v18l-2-1.5L14 21l-2-1.5L10 21l-2-1.5L6 21z"/><path d="M9 8h6M9 11.5h6M9 15h4"/>',coin:'<ellipse cx="12" cy="7" rx="7" ry="3"/><path d="M5 7v10c0 1.7 3.1 3 7 3s7-1.3 7-3V7"/><path d="M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3"/>',basket:'<path d="M3 10h18l-2 9H5z"/><path d="M8 10l3-6M16 10l-3-6"/><path d="M9 14v2M12 14v2M15 14v2"/>',baby:'<circle cx="12" cy="9" r="5"/><path d="M9.5 8.5v.5M14.5 8.5v.5"/><path d="M10 11.5c1 1 3 1 4 0"/><path d="M12 4c0-1.5 1-2 2-2"/><path d="M6 21c1-3.5 3.3-5 6-5s5 1.5 6 5"/>',paw:'<ellipse cx="12" cy="15" rx="4" ry="3.2"/><circle cx="7" cy="10" r="1.6"/><circle cx="10.2" cy="6.8" r="1.6"/><circle cx="13.8" cy="6.8" r="1.6"/><circle cx="17" cy="10" r="1.6"/>',gift:'<path d="M4 10h16v10H4z"/><path d="M4 7h16v3H4z"/><path d="M12 7v13"/><path d="M12 7c-1.5-3-5-3-5-1s3.5 1 5 1zm0 0c1.5-3 5-3 5-1s-3.5 1-5 1z"/>',search:'<circle cx="10.5" cy="10.5" r="6"/><path d="m20 20-5-5"/>',bell:'<path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20a2 2 0 0 0 4 0"/>',heart:'<path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.5-7 10-7 10z"/>',comment:'<path d="M4 5h16v11H9l-5 4z"/>',calendar:'<path d="M4 6h16v14H4z"/><path d="M4 10h16M8 3v5M16 3v5"/>',bag:'<path d="M5 8h14l-1 13H6z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>',bulb:'<path d="M9 18h6"/><path d="M10 21h4"/><path d="M8.5 14A5.5 5.5 0 1 1 15.5 14c-.8.8-1.5 1.5-1.5 3h-4c0-1.5-.7-2.2-1.5-3z"/>',edit:'<path d="m4 20 4-1L19 8l-3-3L5 16z"/><path d="m14 7 3 3"/>',noodle:'<path d="M4 12h16v2a8 8 0 0 1-16 0z"/><path d="M8 12V6M12 12V5M16 12V6"/><path d="M7 4c1 1 3 1 4 0s3-1 4 0"/>',chef:'<path d="M8 10a4 4 0 1 1 8 0v1H8z"/><path d="M9 11v4h6v-4"/><path d="M7 18c1.5-1 3-1.5 5-1.5s3.5.5 5 1.5"/><path d="M12 6V4"/>',hand:'<path d="M8 13V6a1.5 1.5 0 0 1 3 0v6"/><path d="M11 12V5a1.5 1.5 0 0 1 3 0v7"/><path d="M14 12V7a1.5 1.5 0 0 1 3 0v6c0 4-2.5 7-6 7-3 0-4.5-1.5-6.5-4.5L5 12a1.4 1.4 0 0 1 2.4-1.5L8 12"/>',bank:'<path d="M4 10 12 5l8 5H4z"/><path d="M6 10v7M10 10v7M14 10v7M18 10v7"/><path d="M4 19h16"/>',card:'<path d="M3 7h18v11H3z"/><path d="M3 11h18"/><path d="M7 15h4"/>',study:'<path d="M4 5h7a2 2 0 0 1 2 2v13a2 2 0 0 0-2-2H4z"/><path d="M20 5h-7a2 2 0 0 0-2 2v13a2 2 0 0 1 2-2h7z"/>',star:'<path d="m12 4 2.4 5 5.6.7-4 3.8 1 5.5-5-2.7-5 2.7 1-5.5-4-3.8L9.6 9z"/>',share:'<circle cx="18" cy="6" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="m8.2 10.8 7.6-3.6M8.2 13.2l7.6 3.6"/>',camera:'<path d="M4 8h4l1.5-2h5L16 8h4v11H4z"/><circle cx="12" cy="13" r="3"/>',building:'<path d="M5 21V4h9v17M14 9h5v12"/><path d="M8 8h3M8 12h3M8 16h3M16 13h1M16 17h1"/>',cat:'<path d="M6 9 5 4l4 3h6l4-3-1 5a7 7 0 1 1-12 0z"/><path d="M9.5 12h.01M14.5 12h.01"/><path d="M11 14.5c.5.5 1.5.5 2 0"/>'};
+document.getElementById('icons').innerHTML=Object.entries(P).map(([k,v])=>`<div><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${v}</svg><br>${k}</div>`).join('');
+const ma=document.getElementById('ma');['5','10','20','60','120','224','448'].forEach((k,i)=>{const s=['up','up','up','down','down','up','up'][i];ma.insertAdjacentHTML('beforeend',`<div style="background:var(--paper)"><p class="label" style="margin:0;padding:10px 0;color:var(--ink-3)">${k}일선</p><div style="display:flex"><button data-t="up" style="flex:1;border:0;padding:10px 0;font-size:15px;cursor:pointer;background:${s==='up'?'var(--red)':'transparent'};color:${s==='up'?'#fff':'var(--ink-3)'}">▲</button><button data-t="down" style="flex:1;border:0;padding:10px 0;font-size:15px;cursor:pointer;background:${s==='down'?'var(--info)':'transparent'};color:${s==='down'?'#fff':'var(--ink-3)'}">▼</button></div></div>`)});
+ma.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const row=b.parentElement;[...row.children].forEach(x=>{x.style.background='transparent';x.style.color='var(--ink-3)'});b.style.background=b.dataset.t==='up'?'var(--red)':'var(--info)';b.style.color='#fff'});
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),2200)}
+function copyText(s,m){navigator.clipboard?.writeText(s).then(()=>toast(m||'복사됨'))}
+document.querySelectorAll('.sw').forEach(el=>el.addEventListener('click',()=>copyText(el.dataset.hex,el.dataset.hex+' 복사됨')));
+document.getElementById('chips').addEventListener('click',e=>{const c=e.target.closest('.chip');if(!c)return;c.classList.toggle('on')});
+document.getElementById('tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;[...b.parentElement.children].forEach(x=>x.classList.remove('on'));b.classList.add('on')});
+const links=[...document.querySelectorAll('#nav a')];const secs=links.map(a=>document.querySelector(a.getAttribute('href')));
+const io=new IntersectionObserver(es=>{es.forEach(en=>{if(en.isIntersecting){links.forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#'+en.target.id))}})},{rootMargin:'-30% 0px -60% 0px'});secs.forEach(s=>s&&io.observe(s));
+</script>
+</body>
+</html>
