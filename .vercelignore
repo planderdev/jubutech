@@ -5,3 +5,12 @@ docs
 __pycache__
 public/index.php
 public/router.php
+# 앱 작업분(Expo·Next.js)은 PHP 검토용 배포에 올리지 않는다 — Next.js는 별도 Vercel 프로젝트(rootDirectory=apps/web)
+apps
+packages
+supabase
+design
+node_modules
+package.json
+package-lock.json
+.claude
