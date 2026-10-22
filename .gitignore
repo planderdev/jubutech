@@ -5,3 +5,22 @@ tests/results/
 .DS_Store
 __pycache__/
 *.py[cod]
+
+# ── 앱 작업분 (Expo·Next.js 모노레포, PHP 데모와 별개) ──
+node_modules/
+*.tsbuildinfo
+.env*.local
+.vercel/
+apps/web/.next/
+apps/web/out/
+apps/mobile/.expo/
+apps/mobile/dist/
+apps/mobile/ios/
+apps/mobile/android/
+apps/mobile/*.jks
+apps/mobile/*.p8
+apps/mobile/*.p12
+apps/mobile/*.key
+apps/mobile/*.mobileprovision
+apps/mobile/*.orig.*
+apps/mobile/web-build/

@@ -1,0 +1,23 @@
+{
+  "name": "jubutech",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w apps/web",
+    "web": "npm run dev -w apps/web",
+    "mobile": "npm run start -w apps/mobile",
+    "android": "ANDROID_HOME=$HOME/Library/Android/sdk PATH=$HOME/Library/Android/sdk/platform-tools:$HOME/Library/Android/sdk/emulator:$PATH npm run android -w apps/mobile",
+    "ios": "npm run ios -w apps/mobile",
+    "build:web": "npm run build -w apps/web",
+    "typecheck": "npm run typecheck -w packages/shared -w apps/web -w apps/mobile",
+    "tokens": "python3 scripts/export_tokens.py && node scripts/tokens.mjs",
+    "tokens:check": "python3 scripts/export_tokens.py --check && node scripts/tokens.mjs --check",
+    "logo": "python3 scripts/logo.py",
+    "capture": "bash scripts/capture-landing.sh",
+    "tokens:export": "python3 scripts/export_tokens.py",
+    "php": "php -S 127.0.0.1:8088 -t public public/router.php"
+  }
+}

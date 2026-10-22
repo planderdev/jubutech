@@ -1,0 +1,11 @@
+/* 자동 생성 — design/tokens.json (v3.0 · 2026-10-22). 직접 수정 금지. */
+:root{
+  --canvas:#F7F7F9;--paper:#FFFFFF;--inset:#F9FAFB;--stage:#191F28;--ink:#191F28;--ink-2:#6B7684;--ink-3:#B0B8C1;--hairline:#F2F4F6;--edge:#E5E8EB;
+  --red:#DB6287;--red-hover:#C7597B;--red-pressed:#B4506F;--red-light:#EAB9C8;
+  --red-50:#FBEFF3;--red-100:#F9EBF0;--red-200:#F3D8E0;--red-300:#EAB9C8;--red-400:#E48BA6;--red-500:#DC658A;--red-600:#DB6287;--red-700:#C7597B;--red-800:#B4506F;--red-900:#891F40;--red-950:#5B152A;
+  --rose:#FFD4D6;--rose-soft:#FFEEEE;--sage:#AEEFD5;--sage-soft:#F0FAF6;--butter:#FFEFBF;--butter-soft:#FFF9E7;--sky:#C9E2FF;--sky-soft:#E8F3FF;
+  --success:#03B26C;--warning:#FE9800;--danger:#F04452;--info:#3182F6;--up:#DB6287;--down:#3182F6;
+  --font:"Pretendard", "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", sans-serif;
+  --r-xs:4px;--r-sm:8px;--r-md:12px;--r-lg:16px;--r-xl:24px;--r-2xl:24px;--r-pill:999px;
+  --sh-soft:0px 2px 4px -2px #191f280f, 0px 4px 6px -1px #191f280f;--sh-card:0px 4px 6px -2px #191f2812, 0px 10px 15px -3px #191f2812;--sh-float:0px 6px 10px -4px #191f2814, 0px 16px 24px -6px #191f2814;--sh-red:0 8px 20px rgba(219, 98, 135, .28);
+}
