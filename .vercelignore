@@ -1,0 +1,7 @@
+tests
+scripts
+docs
+.git
+__pycache__
+public/index.php
+public/router.php
