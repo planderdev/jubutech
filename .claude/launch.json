@@ -1,0 +1,28 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "php-demo",
+      "runtimeExecutable": "php",
+      "runtimeArgs": [
+        "-S",
+        "127.0.0.1:8088",
+        "-t",
+        "public",
+        "public/router.php"
+      ],
+      "port": 8088
+    },
+    {
+      "name": "web",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "-w",
+        "apps/web"
+      ],
+      "port": 3000
+    }
+  ]
+}

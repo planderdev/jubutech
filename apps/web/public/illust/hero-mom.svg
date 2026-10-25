@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="240" height="240" role="img" aria-label="스마트폰으로 포인트를 모으는 주부 일러스트">
+  <!-- 배경 블롭 -->
+  <circle cx="120" cy="128" r="96" fill="#F3DBE2"/>
+  <circle cx="176" cy="60" r="14" fill="#EAC3CF"/>
+  <!-- 스파클 -->
+  <path d="M196 96l3 8 8 3-8 3-3 8-3-8-8-3 8-3z" fill="#C77991"/>
+  <path d="M40 76l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" fill="#C77991"/>
+  <path d="M58 176l1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5 4-1.5z" fill="#C77991" opacity=".6"/>
+  <!-- 코인 -->
+  <g transform="translate(168 140)">
+    <circle r="20" fill="#C77991"/>
+    <circle r="14" fill="none" stroke="#fff" stroke-width="2.5"/>
+    <text x="0" y="5.5" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="15" font-weight="800" fill="#fff">P</text>
+  </g>
+  <!-- 몸통 -->
+  <path d="M74 214c0-32 14-54 46-54s46 22 46 54z" fill="#C77991"/>
+  <path d="M104 162c4 8 10 12 16 12s12-4 16-12" fill="none" stroke="#B95574" stroke-width="3" stroke-linecap="round"/>
+  <!-- 목 -->
+  <rect x="112" y="146" width="16" height="18" rx="6" fill="#F2C7B3"/>
+  <!-- 머리 -->
+  <circle cx="120" cy="118" r="34" fill="#F6D2C0"/>
+  <path d="M86 116c0-24 14-40 34-40s34 16 34 40c-8-14-20-20-34-20s-26 6-34 20z" fill="#2B2226"/>
+  <circle cx="120" cy="80" r="12" fill="#2B2226"/>
+  <!-- 눈/입 -->
+  <circle cx="108" cy="120" r="2.6" fill="#2B2226"/>
+  <circle cx="132" cy="120" r="2.6" fill="#2B2226"/>
+  <path d="M112 132c4 4 12 4 16 0" fill="none" stroke="#2B2226" stroke-width="2.4" stroke-linecap="round"/>
+  <circle cx="100" cy="129" r="4" fill="#DDA7B7" opacity=".8"/>
+  <circle cx="140" cy="129" r="4" fill="#DDA7B7" opacity=".8"/>
+  <!-- 팔 + 스마트폰 -->
+  <path d="M74 186c-8-8-12-18-2-24 8-4 16 4 22 12" fill="#F6D2C0"/>
+  <g transform="rotate(-12 60 168)">
+    <rect x="42" y="136" width="40" height="66" rx="8" fill="#17171A"/>
+    <rect x="46" y="142" width="32" height="54" rx="5" fill="#fff"/>
+    <rect x="50" y="150" width="24" height="5" rx="2.5" fill="#E8E9EE"/>
+    <rect x="50" y="160" width="16" height="5" rx="2.5" fill="#E8E9EE"/>
+    <rect x="50" y="176" width="24" height="12" rx="6" fill="#C77991"/>
+    <text x="62" y="185" text-anchor="middle" font-family="Pretendard, sans-serif" font-size="8" font-weight="700" fill="#fff">+500P</text>
+  </g>
+  <!-- 영수증 -->
+  <g transform="rotate(10 178 196)">
+    <rect x="164" y="176" width="30" height="40" rx="3" fill="#fff" stroke="#E8E9EE"/>
+    <rect x="169" y="184" width="20" height="3" rx="1.5" fill="#E8E9EE"/>
+    <rect x="169" y="191" width="14" height="3" rx="1.5" fill="#E8E9EE"/>
+    <rect x="169" y="198" width="20" height="3" rx="1.5" fill="#C77991"/>
+    <path d="M164 216l4-3 4 3 4-3 4 3 4-3 4 3 4-3 2 3" fill="none" stroke="#E8E9EE"/>
+  </g>
+</svg>
