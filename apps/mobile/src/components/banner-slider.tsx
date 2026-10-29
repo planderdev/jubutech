@@ -8,6 +8,7 @@ import { P, RAD, SHELL, SP, T, typo } from "@/theme";
 const BANNER_IMAGES: Record<string, ImageSource> = {
   "support-envelope": require("../../assets/images/banners/support-envelope.webp"),
   "benefit-coupons": require("../../assets/images/banners/benefit-coupons.webp"),
+  "discovery-gift": require("../../assets/images/banners/discovery-gift.svg"),
 };
 
 /** `.banner-card[data-banner-background=…]` — 그라데이션 대신 시작 색으로 근사 */

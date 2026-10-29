@@ -232,7 +232,7 @@ export interface DemoApplication {
   consentRecords: { required: boolean; optional: boolean; version: string };
   selectionStatus: DemoSelectionStatus;
   appliedAt: string;
-  shipping: { name: string; address: string } | null;
+  shipping: { recipient: string; address: string } | null;
 }
 
 /** PHP `points` + 1-3 내역 유형. 금액 단위는 원(= 1P) */
@@ -407,3 +407,95 @@ export function demoWalletSummary(memberId: string, points = DEMO_POINTS, now = 
     productValue: mine.filter((p) => p.kind === "product_value").reduce((n, p) => n + p.amount, 0),
   };
 }
+
+/* ───────── PHP 표시 헬퍼 (helpers.php 의 dateLabel · campaignDeadline · appStatus · applicationNext) ───────── */
+
+/** PHP `dateLabel()` 의 자주 쓰는 형식. ISO 문자열의 날짜 부분을 그대로 읽어 시간대 오차가 없다 */
+export function demoDateLabel(iso: string, format: "Y.m.d" | "m.d" | "n.j" | "n월 j일" = "Y.m.d"): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
+  if (!m) return "날짜 없음";
+  const [, y, mo, d] = m;
+  switch (format) {
+    case "Y.m.d":
+      return `${y}.${mo}.${d}`;
+    case "m.d":
+      return `${mo}.${d}`;
+    case "n.j":
+      return `${Number(mo)}.${Number(d)}`;
+    case "n월 j일":
+      return `${Number(mo)}월 ${Number(d)}일`;
+  }
+}
+
+/** PHP `campaignDeadline()`: "모집 종료" / "n.j 모집 시작" / "오늘 마감" / "D-n" */
+export function demoCampaignDeadline(c: DemoCampaign, now = DEMO_NOW): string {
+  const state = demoCampaignState(c, now);
+  if (state === "closed") return "모집 종료";
+  if (state === "upcoming") return `${demoDateLabel(c.recruitmentStartAt, "n.j")} 모집 시작`;
+  const days = Math.round((Date.parse(c.recruitmentEndAt.slice(0, 10)) - Date.parse(now.slice(0, 10))) / 86400_000);
+  return days === 0 ? "오늘 마감" : `D-${days}`;
+}
+
+export const DEMO_CAMPAIGN_STATE_LABEL: Record<DemoCampaignState, string> = { open: "모집 중", upcoming: "모집 예정", closed: "모집 종료" };
+
+/** PHP `appStatus()`: 후기가 있으면 검토 상태, 없으면 선정 상태 */
+export type DemoAppStatusLabel = "신청 완료" | "선정" | "미선정" | "취소" | "후기 제출" | "보완 요청" | "완료" | "반려";
+export function demoAppStatus(a: DemoApplication, review?: Review): DemoAppStatusLabel {
+  if (review) return ({ pending: "후기 제출", revision: "보완 요청", approved: "완료", rejected: "반려" } as const)[review.status];
+  return ({ applied: "신청 완료", selected: "선정", not_selected: "미선정", cancelled: "취소" } as const)[a.selectionStatus];
+}
+
+/** PHP `applicationNext()`: 목록 카드 아랫줄 "다음 할 일" 문구 */
+export function demoApplicationNext(a: DemoApplication, c: DemoCampaign, review?: Review): string {
+  if (review) {
+    switch (review.status) {
+      case "revision":
+        return `보완 요청 · ${review.feedback || "후기 내용을 보완해 주세요"}`;
+      case "approved":
+        return "후기 승인 완료 · 참여해 주셔서 감사합니다";
+      case "rejected":
+        return `후기 반려 · ${review.feedback || "검토 사유를 확인해 주세요"}`;
+      default:
+        return "제출 완료 · 운영팀이 검토 중이에요";
+    }
+  }
+  switch (a.selectionStatus) {
+    case "selected":
+      return `${demoDateLabel(c.reviewDueAt, "n.j")}까지 후기 제출${c.shipping && !a.shipping ? " · 배송 정보 입력 필요" : ""}`;
+    case "not_selected":
+      return "이번 체험은 미선정 · 다른 체험을 둘러보세요";
+    case "cancelled":
+      return "취소 완료 · 모집 중에는 다시 응모할 수 있어요";
+    default:
+      return `${demoDateLabel(c.announcementAt, "n.j")} 선정 발표 예정`;
+  }
+}
+
+/** PHP `campaignRecommendationRows()`: 같은 분류 우선 → 모집 중 → 모집 예정 → id 순, 종료 제외 */
+export function demoRecommendedCampaigns(c: DemoCampaign, campaigns = DEMO_CAMPAIGNS, now = DEMO_NOW): DemoCampaign[] {
+  const priority: Record<DemoCampaignState, number> = { open: 0, upcoming: 1, closed: 2 };
+  return demoVisibleCampaigns(campaigns, now)
+    .filter((r) => r.id !== c.id && demoCampaignState(r, now) !== "closed")
+    .sort((a, b) => Number(a.categoryId !== c.categoryId) - Number(b.categoryId !== c.categoryId) || priority[demoCampaignState(a, now)] - priority[demoCampaignState(b, now)] || a.id.localeCompare(b.id));
+}
+
+/** PHP `campaign-reviews.php` — 검토용 예시 리뷰(화면에 "예시" 표시). 사진은 cp1 갤러리 번호 */
+export interface DemoExampleReview {
+  id: string;
+  nickname: string;
+  rating: number;
+  date: string;
+  content: string;
+  /** cp1 갤러리 사진 번호(1~5), 없으면 0 */
+  photo: number;
+}
+export const DEMO_EXAMPLE_REVIEWS: Record<string, DemoExampleReview[]> = {
+  cp1: [
+    { id: "sample-cp1-1", nickname: "서*맘", rating: 5, date: "2026-10-18", content: "퇴근하고 저녁 준비할 때 재료 손질 시간이 줄어서 좋았어요. 채소를 곁들이니 한 끼 차리기 편했습니다.", photo: 1 },
+    { id: "sample-cp1-2", nickname: "민*림", rating: 5, date: "2026-10-16", content: "한 번에 먹을 만큼 나눠 준비하기 좋았어요. 조리 순서가 간단해서 바쁜 날에도 부담 없이 꺼내 먹었습니다.", photo: 2 },
+    { id: "sample-cp1-3", nickname: "지*숲", rating: 4, date: "2026-10-14", content: "평소 먹는 식단에 채소를 더해 봤어요. 가족마다 입맛이 달라 소스 양을 따로 조절하니 좋았습니다.", photo: 3 },
+    { id: "sample-cp1-4", nickname: "윤*하", rating: 5, date: "2026-10-12", content: "주말 점심으로 간단하게 차려 봤어요. 재료가 나뉘어 있어서 필요한 만큼 준비하기 편했어요.", photo: 4 },
+    { id: "sample-cp1-5", nickname: "하*네", rating: 4, date: "2026-10-10", content: "처음에는 양이 적을까 걱정했는데 집에 있던 채소와 함께 먹으니 괜찮았어요. 다음에는 다른 조합으로도 만들어 보고 싶어요.", photo: 5 },
+    { id: "sample-cp1-6", nickname: "다*맘", rating: 5, date: "2026-10-08", content: "장보기 어려운 날 한 끼 준비하기 편했어요. 먹기 전에 재료를 한 번에 펼쳐 놓으니 조리하기도 수월했습니다.", photo: 0 },
+  ],
+};

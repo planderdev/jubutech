@@ -12,7 +12,7 @@ import { CTRL, RAD, SHELL, SP, T, typo } from "@/theme";
  * `.app-header > .top-nav--app` — 왼쪽 서비스 전환 버튼(`.top-nav__mode`), 오른쪽 검색·알림.
  * 상세 화면(뒤로가기 + 가운데 제목)은 `title`·`onBack` 을 주면 된다.
  */
-export function AppHeader({ title, onBack, scrolled }: { title?: string; onBack?: () => void; scrolled?: boolean }) {
+export function AppHeader({ title, onBack, right, scrolled }: { title?: string; onBack?: () => void; right?: React.ReactNode; scrolled?: boolean }) {
   const insets = useSafeAreaInsets();
   const service = useService();
   const [open, setOpen] = useState(false);
@@ -25,7 +25,7 @@ export function AppHeader({ title, onBack, scrolled }: { title?: string; onBack?
         <View style={s.bar}>
           <IconButton name="chevron-left" label="뒤로가기" onPress={onBack} />
           <Text style={[typo("headline1", "bold"), s.title]} numberOfLines={1}>{title}</Text>
-          <View style={{ width: CTRL.md }} />
+          {right ?? <View style={{ width: CTRL.md }} />}
         </View>
       ) : (
         <View style={[s.bar, { paddingLeft: SHELL.gutter }]}>

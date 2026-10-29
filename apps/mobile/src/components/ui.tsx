@@ -80,11 +80,12 @@ export function CardFooterLink({ label, onPress }: { label: string; onPress?: ()
 }
 
 /** `.button` 기본(primary) / `.button--neutral` / `.button--weak` */
-export function Button({ label, variant = "primary", onPress, full }: { label: string; variant?: "primary" | "neutral" | "weak"; onPress?: () => void; full?: boolean }) {
-  const bg = { primary: T.primary.normal, neutral: T.fill.normal, weak: T.primary.soft }[variant];
-  const fg = { primary: T.alias.staticWhite, neutral: T.label.normal, weak: T.primary.normal }[variant];
+export function Button({ label, variant = "primary", onPress, full, disabled, size = "xl", style }: { label: string; variant?: "primary" | "neutral" | "weak" | "danger-weak"; onPress?: () => void; full?: boolean; disabled?: boolean; size?: "md" | "lg" | "xl"; style?: StyleProp<ViewStyle> }) {
+  const bg = { primary: T.primary.normal, neutral: T.fill.normal, weak: T.primary.soft, "danger-weak": T.background.statusNegative }[variant];
+  const fg = { primary: T.alias.staticWhite, neutral: T.label.normal, weak: T.primary.normal, "danger-weak": P.red[600] }[variant];
+  const height = { md: CTRL.md, lg: CTRL.lg, xl: CTRL.xl }[size];
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" style={({ pressed }) => [s.button, { backgroundColor: bg }, pressed && s.pressed, full && { alignSelf: "stretch" }]}>
+    <Pressable onPress={onPress} disabled={disabled} accessibilityRole="button" accessibilityState={{ disabled: !!disabled }} style={({ pressed }) => [s.button, { backgroundColor: bg, height }, pressed && s.pressed, full && { alignSelf: "stretch" }, disabled && { opacity: 0.4 }, style]}>
       <Text style={typo("body1", "semibold", fg)}>{label}</Text>
     </Pressable>
   );
