@@ -93,11 +93,11 @@ export function Accordion({ title, children, defaultOpen, inset }: { title: stri
  * 반투명 흰 배경 + 윗선, 패딩 16 + 안전 영역. 본문 쪽은 `BOTTOM_CTA_SPACE` 만큼 비워 둔다.
  */
 export const BOTTOM_CTA_SPACE = SP[16] + CTRL.xl + SP[16];
-export function BottomCta({ children, status }: { children: ReactNode; status?: string }) {
+export function BottomCta({ children, status, tone = "neutral" }: { children: ReactNode; status?: string; tone?: "neutral" | "error" }) {
   const insets = useSafeAreaInsets();
   return (
     <View style={[s.cta, { paddingBottom: SP[16] + insets.bottom }]}>
-      {status ? <Text style={[typo("label2", "regular", T.label.alternative), { textAlign: "center" }]}>{status}</Text> : null}
+      {status ? <Text style={[typo("label2", tone === "error" ? "semibold" : "regular", tone === "error" ? T.status.negative : T.label.alternative), { textAlign: "center" }]} accessibilityLiveRegion="polite">{status}</Text> : null}
       <View style={s.ctaButtons}>{children}</View>
     </View>
   );

@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { DEMO_APPLICATIONS, DEMO_MEMBERS, DEMO_NOW, DEMO_SAVED, demoApplication, demoCampaignState, type DemoApplication, type DemoCampaign, type DemoMember } from "@jubutech/shared";
+import { DEFAULT_RULES, DEMO_APPLICATIONS, DEMO_CAMPAIGNS, DEMO_MEMBERS, DEMO_NOW, DEMO_REVIEWS, DEMO_SAVED, demoApplication, demoCampaignState, type DemoApplication, type DemoCampaign, type DemoMember, type Review, type ReviewCheck, type ReviewStatus } from "@jubutech/shared";
+import { planReviewReminders, syncReviewReminders } from "@/lib/reminders";
 
 /**
  * 모바일 데모 상태 — PHP `DemoRepository`(세션 저장)의 역할. Supabase 연결(W8) 전까지의 데이터 어댑터 자리.
@@ -10,7 +11,15 @@ const STORAGE_KEY = "jubutech.demo.v1";
 
 interface Persisted {
   applications: DemoApplication[];
+  reviews: Review[];
   saved: string[];
+}
+
+export interface ReviewInput {
+  url: string;
+  content: string;
+  photoCount: number;
+  check: ReviewCheck;
 }
 
 export interface ApplyInput {
@@ -31,11 +40,15 @@ interface DemoStore extends Persisted {
   apply: (c: DemoCampaign, input: ApplyInput) => { ok: true; id: string } | { ok: false; message: string };
   cancelApplication: (id: string) => { ok: boolean; message: string };
   saveShipping: (id: string, shipping: { recipient: string; address: string }) => void;
+  /** PHP actions.php `submit_review` — 선정 건만, 승인·반려 뒤에는 불가. 보완 요청이면 같은 레코드를 pending 으로 되돌린다 */
+  submitReview: (applicationId: string, input: ReviewInput) => { ok: true; id: string; message: string } | { ok: false; message: string };
+  /** PHP `admin_review` 의 자리 — 관리자(admin7)가 할 일을 데모 확인용으로 기기에서 흉내 낸다 */
+  decideReview: (reviewId: string, status: ReviewStatus, feedback?: string) => void;
   toggleSaved: (articleId: string) => void;
   reset: () => void;
 }
 
-const seed = (): Persisted => ({ applications: DEMO_APPLICATIONS, saved: DEMO_SAVED[DEMO_MEMBERS[0].id] ?? [] });
+const seed = (): Persisted => ({ applications: DEMO_APPLICATIONS, reviews: DEMO_REVIEWS, saved: DEMO_SAVED[DEMO_MEMBERS[0].id] ?? [] });
 
 const Ctx = createContext<DemoStore | null>(null);
 
@@ -52,7 +65,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
         if (!alive) return;
         if (raw) {
           const parsed = JSON.parse(raw) as Partial<Persisted>;
-          setState({ applications: parsed.applications ?? DEMO_APPLICATIONS, saved: parsed.saved ?? [] });
+          setState({ applications: parsed.applications ?? DEMO_APPLICATIONS, reviews: parsed.reviews ?? DEMO_REVIEWS, saved: parsed.saved ?? [] });
         }
       })
       .catch(() => {})
@@ -107,6 +120,33 @@ export function DemoProvider({ children }: { children: ReactNode }) {
     setState((s) => ({ ...s, applications: s.applications.map((x) => (x.id === id ? { ...x, shipping: { recipient: shipping.recipient.trim(), address: shipping.address.trim() } } : x)) }));
   }, []);
 
+  const submitReview = useCallback<DemoStore["submitReview"]>(
+    (applicationId, input) => {
+      const a = state.applications.find((x) => x.id === applicationId && x.memberId === member.id);
+      const r = state.reviews.find((x) => x.applicationId === applicationId);
+      if (!a || a.selectionStatus !== "selected" || (r && (r.status === "approved" || r.status === "rejected"))) return { ok: false, message: "후기 제출 대상이 아니에요." };
+      const url = input.url.trim();
+      const content = input.content.trim();
+      if (r && r.status === "pending" && (r.url ?? "") === url && (r.content ?? "") === content) return { ok: false, message: "이미 제출한 후기예요. 검토 결과를 기다려 주세요." };
+      const submittedAt = new Date().toISOString();
+      const next: Review = { id: r?.id ?? `r${Date.now().toString(36)}`, applicationId, url: url || undefined, content: content || undefined, photoCount: input.photoCount, check: input.check, status: "pending", feedback: undefined, submittedAt };
+      setState((s) => ({ ...s, reviews: r ? s.reviews.map((x) => (x.id === r.id ? next : x)) : [next, ...s.reviews] }));
+      return { ok: true, id: next.id, message: "후기를 제출했어요. 검토 결과를 기다려 주세요." };
+    },
+    [member.id, state.applications, state.reviews],
+  );
+
+  const decideReview = useCallback<DemoStore["decideReview"]>((reviewId, status, feedback) => {
+    setState((s) => ({ ...s, reviews: s.reviews.map((x) => (x.id === reviewId ? { ...x, status, feedback: feedback?.trim() || undefined, reviewedAt: new Date().toISOString(), reviewedBy: "demo" } : x)) }));
+  }, []);
+
+  // 후기 기한 로컬 알림 — 상태가 바뀔 때마다 우리 알림을 다시 예약한다 (실패해도 조용히)
+  useEffect(() => {
+    if (!hydrated) return;
+    const mine = state.applications.filter((a) => a.memberId === member.id);
+    syncReviewReminders(planReviewReminders(mine, DEMO_CAMPAIGNS, state.reviews, DEFAULT_RULES)).catch(() => {});
+  }, [hydrated, state.applications, state.reviews, member.id]);
+
   const toggleSaved = useCallback<DemoStore["toggleSaved"]>((articleId) => {
     setState((s) => ({ ...s, saved: s.saved.includes(articleId) ? s.saved.filter((x) => x !== articleId) : [...s.saved, articleId] }));
   }, []);
@@ -117,8 +157,8 @@ export function DemoProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<DemoStore>(
-    () => ({ ...state, hydrated, member, now: DEMO_NOW, apply, cancelApplication, saveShipping, toggleSaved, reset }),
-    [state, hydrated, member, apply, cancelApplication, saveShipping, toggleSaved, reset],
+    () => ({ ...state, hydrated, member, now: DEMO_NOW, apply, cancelApplication, saveShipping, submitReview, decideReview, toggleSaved, reset }),
+    [state, hydrated, member, apply, cancelApplication, saveShipping, submitReview, decideReview, toggleSaved, reset],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

@@ -56,6 +56,10 @@ export interface AppRules {
     /** 서로 다른 신고자 몇 명부터 자동 숨김 (2단계) */
     autoHideCount: number;
   };
+  assist: {
+    /** 후기 작성 화면의 AI 교정·이어쓰기 버튼 — 1단계는 자리만, 모델·비용 확정 전까지 꺼 둔다 */
+    aiReviewEdit: boolean;
+  };
 }
 
 /** 코드 기본값 = 기획안 초안. 확정되면 `app_settings` 로 덮어쓴다 */
@@ -71,6 +75,7 @@ export const DEFAULT_RULES: AppRules = {
   },
   invite: { bonus: "priority" },
   report: { autoHideCount: 3 },
+  assist: { aiReviewEdit: false },
 };
 
 export type RuleKey =
@@ -92,7 +97,8 @@ export type RuleKey =
   | "trust.delta.postHidden"
   | "trust.delta.inviteBonus"
   | "invite.bonus"
-  | "report.autoHideCount";
+  | "report.autoHideCount"
+  | "assist.aiReviewEdit";
 
 export type RuleValueType = "number" | "text" | "date" | "boolean" | "numbers" | "choice";
 
@@ -127,6 +133,7 @@ export const RULE_META: Record<RuleKey, RuleMeta> = {
   "trust.delta.inviteBonus": { label: "초대 보너스", type: "number", unit: "점", note: "2-3 · 보너스가 '생활력 가산'일 때", group: "생활력" },
   "invite.bonus": { label: "초대 보너스 종류", type: "choice", choices: ["priority", "trust"], note: "2-3 · 우선 선정권 / 생활력 가산", group: "초대·운영" },
   "report.autoHideCount": { label: "자동 숨김 신고 건수", type: "number", unit: "명", note: "2-4(2단계) · 몇 건부터 숨길지 미정", group: "초대·운영" },
+  "assist.aiReviewEdit": { label: "AI 후기 교정 버튼", type: "boolean", note: "1-1 · 자리만, 모델·비용 확정 뒤 켠다", group: "미션·기한" },
 };
 
 export const RULE_KEYS = Object.keys(RULE_META) as RuleKey[];

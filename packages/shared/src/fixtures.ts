@@ -5,6 +5,7 @@
  */
 
 import type { InviteCode, MissionCard, Review, TrustEvent, WalletEntryKind } from "./types";
+import { checkReview } from "./review-check";
 
 export const DEMO_NOW = "2026-10-21T12:00:00+09:00";
 
@@ -321,25 +322,14 @@ export const DEMO_APPLICATIONS: DemoApplication[] = applicationRows.map(([id, ca
   shipping: null,
 }));
 
-/** PHP `reviews` r1 — 민정살림(m2)의 맑은생활 후기, 검토 대기. 자동 검사는 글자 수 부족으로 미통과 */
+/** PHP `reviews` r1 — 민정살림(m2)의 맑은생활 후기, 검토 대기. 자동 검사(`checkReview`)는 글자 수·키워드·해시태그 부족으로 미통과 */
+const r1Submission = { url: "https://example.com/demo-review", content: "향이 강하지 않아 설거지할 때 쓰기 좋았어요.", photoCount: 5 };
 export const DEMO_REVIEWS: Review[] = [
   {
     id: "r1",
     applicationId: "a5",
-    url: "https://example.com/demo-review",
-    content: "향이 강하지 않아 설거지할 때 쓰기 좋았어요.",
-    photoCount: 5,
-    check: {
-      passed: false,
-      checkedAt: "2026-10-20T12:00:00+09:00",
-      items: [
-        { key: "chars", ok: false, required: 800, actual: 24, message: "글자 수가 776자 더 필요해요" },
-        { key: "photos", ok: true, required: 5, actual: 5, message: "사진 5장 확인" },
-        { key: "keywords", ok: false, required: ["맑은생활"], actual: [], message: "'맑은생활' 키워드를 넣어 주세요" },
-        { key: "hashtags", ok: false, required: ["주부테크", "협찬"], actual: [], message: "#주부테크 #협찬 해시태그가 필요해요" },
-        { key: "link", ok: true, required: "열리는 링크", actual: "HTTP 200", message: "링크 확인" },
-      ],
-    },
+    ...r1Submission,
+    check: checkReview(DEMO_CAMPAIGNS[7].mission, { ...r1Submission, linkStatus: "ok" }, "2026-10-20T12:00:00+09:00"),
     status: "pending",
     submittedAt: "2026-10-20T12:00:00+09:00",
   },

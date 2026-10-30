@@ -307,6 +307,8 @@ export type ReviewCheckKey = "chars" | "photos" | "keywords" | "hashtags" | "lin
 export interface ReviewCheckItem {
   key: ReviewCheckKey;
   ok: boolean;
+  /** 자동으로 볼 수 없어 건너뜀(링크만 제출) — 운영팀이 직접 확인. `ok` 는 true 로 둔다 */
+  skipped?: boolean;
   required: number | string | string[];
   actual: number | string | string[];
   message: string;

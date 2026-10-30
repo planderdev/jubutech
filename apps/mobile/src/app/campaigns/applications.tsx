@@ -6,7 +6,7 @@ import { CampaignVisual, ChipRow, EmptyState, PageTitle } from "@/components/cam
 import { Icon } from "@/components/icon";
 import { AppScreen, ContentSection } from "@/components/screen";
 import { Badge, GroupCard, GroupSection } from "@/components/ui";
-import { useMyApplications } from "@/lib/demo-store";
+import { useDemo, useMyApplications } from "@/lib/demo-store";
 import { CTRL, SP, T, typo } from "@/theme";
 
 type Filter = "" | DemoAppStatusLabel;
@@ -26,8 +26,9 @@ export default function Applications() {
   const router = useRouter();
   const [filter, setFilter] = useState<Filter>("");
   const mine = useMyApplications();
+  const { reviews } = useDemo();
   const rows = mine
-    .map((a) => ({ a, c: DEMO_CAMPAIGNS.find((c) => c.id === a.campaignId), r: demoReview(a.id) }))
+    .map((a) => ({ a, c: DEMO_CAMPAIGNS.find((c) => c.id === a.campaignId), r: demoReview(a.id, reviews) }))
     .filter(({ a, r }) => !filter || demoAppStatus(a, r) === filter);
 
   return (

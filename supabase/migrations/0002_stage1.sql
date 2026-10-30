@@ -138,5 +138,6 @@ insert into public.app_settings (key, value) values
   ('trust.delta.postHidden',     '-10'),
   ('trust.delta.inviteBonus',    '5'),
   ('invite.bonus',               '"priority"'),
-  ('report.autoHideCount',       '3')
+  ('report.autoHideCount',       '3'),
+  ('assist.aiReviewEdit',        'false')
 on conflict (key) do nothing;
