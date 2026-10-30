@@ -99,7 +99,7 @@ export default function ApplicationDetail() {
         <GroupSection>
           <GroupCard style={[s.content, { gap: SP[8] }]}>
             <Text style={typo("headline2", "bold")}>후기 검토: {REVIEW_STATUS[r.status].label}</Text>
-            <Text style={typo("body2", "regular", T.label.alternative)}>{r.feedback || "제출해 주신 후기를 확인하고 있어요."}</Text>
+            <Text style={typo("body2", "regular", T.label.alternative)}>{r.feedback || ({ pending: "제출해 주신 후기를 확인하고 있어요.", revision: "후기 내용을 보완해 주세요.", approved: "후기가 승인됐어요. 리워드가 지갑에 쌓였어요.", rejected: "검토 사유를 확인해 주세요." } as const)[r.status]}</Text>
             {r.url ? <TextButton label="내 후기 보기" icon="external-link" style={{ alignSelf: "flex-start", paddingHorizontal: 0 }} onPress={() => Linking.openURL(r.url!).catch(() => {})} /> : null}
             {r.check ? (
               <Accordion title={`자동 검사 · ${reviewCheckSummary(r.check).text}`}>

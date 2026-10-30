@@ -243,6 +243,9 @@ export interface DemoPoint {
   amount: number;
   kind: WalletEntryKind;
   reason: string;
+  /** 어떤 기록에서 생긴 내역인지 (review · campaign · invite …) */
+  refType?: string;
+  refId?: string;
   createdAt: string;
 }
 
@@ -340,6 +343,7 @@ export const DEMO_POINTS: DemoPoint[] = [
   { id: "pt2", memberId: "m1", amount: 3000, kind: "event", reason: "설문 완료 · 예시", createdAt: "2026-10-18" },
   { id: "pt3", memberId: "m1", amount: 1000, kind: "review", reason: "기록 활동 · 예시", createdAt: "2026-10-20" },
   { id: "pt4", memberId: "m1", amount: 1000, kind: "review", reason: "후기 리워드 · 맑은생활 (예시)", createdAt: "2026-10-21" },
+  { id: "pt5", memberId: "m1", amount: 29000, kind: "product_value", reason: "받은 제품 · 그린테이블 밀키트 3종 (지난 체험 예시)", refType: "campaign", refId: "cp1", createdAt: "2026-09-20" },
 ];
 
 /** 1-2 생활력 변동 이력 — 관리자 화면에서만 본다 */

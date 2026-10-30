@@ -12,7 +12,7 @@ PHP 데모(`app/pages/*.php`, `public/assets/css/ds.css`)를 **UI/UX 사양**으
 
 ```text
 src/app/
-  _layout.tsx              루트 Stack
+  _layout.tsx              루트 Stack (+ 상세 라우트 campaign/[id]*, application/[id]*, wallet)
   index.tsx                진입 → 마지막 서비스 홈으로 Redirect (기본 /finance)
   finance/                 재테크 정보: index(홈) · categories(정보) · community · my   ← PHP /finance, /finance/categories, /community, /mypage?mode=finance
   journal/                 주식매매일지: index(요약) · entries(일지) · analysis(분석) · my ← PHP /journal, /journal/entries, /journal/analysis
@@ -30,6 +30,8 @@ src/components/
   campaign.tsx             CampaignVisual · CampaignCard/Grid(.card--product, 2열) · CampaignShortcuts · ChipRow · EmptyState(.result) · Pagination · PageTitle · MissionRow · DateRow · Stars
   form.tsx                 Field(.field) · SearchInput(.input-wrap) · Checkbox · InfoBox(.box) · Accordion · BottomCta(.bottom-cta--app, 고정 CTA, tone=error 로 오류 문구)
   review.tsx               MissionChecklist(미션 카드 → 행, 검사 결과로 통과/미달/운영팀 확인 표시) · CheckResultList · PhotoStepper
+  wallet.tsx               useWallet(집계·다음 할 일) · WalletCard(마이 탭 "오늘 번 돈" 카드) · NextActionRow · WalletEntryRow · Stat
+  my-page.tsx              MyPage(mode) — PHP myPage(): 프로필 → 지갑 카드(PHP 포인트 패널 자리) → 나의 활동 → 주부테크와 함께. 세 서비스의 my.tsx 가 공용
 src/lib/demo-store.tsx     DemoProvider/useDemo — PHP DemoRepository 역할(응모·후기·저장을 AsyncStorage 에), submitReview/decideReview
 src/lib/reminders.ts       후기 기한 로컬 알림(expo-notifications, rules.mission.reminderDaysBefore) — Expo Go 에서는 건너뜀
 src/theme.ts               T(baseui.light 의미 색) · P(팔레트) · SP · RAD · CTRL · typo(name, weight, color) · ELEV · SHELL
@@ -38,7 +40,9 @@ assets/images/banners/     PHP 배너 이미지를 640px 로 줄인 webp (+ disc
 assets/images/campaigns/   PHP campaign-cp1-0*.webp 를 720px 로 줄인 것 — 사진이 있는 캠페인은 cp1 뿐, 나머지는 분류 일러스트(PHP objectArt 대신)
 ```
 
-구현된 화면 (2026-10-30): 재테크 홈(`/finance`), 체험단 홈·탐색·내 응모(`/campaigns*`), 체험단 상세·응모·응모 내역·후기 제출(`/campaign/[id]*`, `/application/[id]`, `/application/[id]/review`). 나머지 탭은 `Placeholder` 로 PHP 대응 경로만 표시한다.
+구현된 화면 (2026-10-30): 재테크 홈(`/finance`), 체험단 홈·탐색·내 응모(`/campaigns*`), 체험단 상세·응모·응모 내역·후기 제출(`/campaign/[id]*`, `/application/[id]`, `/application/[id]/review`), 마이(세 서비스 공통, `*/my`)·나의 지갑(`/wallet`). 나머지 탭은 `Placeholder` 로 PHP 대응 경로만 표시한다.
+
+지갑 메모(W4): 집계·"다음 할 일"·출금 상태는 shared `wallet.ts`(walletSummary·walletNextAction·walletWithdrawState). 후기 승인(`decideReview` approved)이 `reward.reviewAmount` 를 `points` 에 쌓고, 캠페인 `benefitValue` 가 있으면 "받은 제품 가치"를 따로 기록한다. 금액 시각은 데모 시계 `DEMO_NOW` 기준. 출금은 `wallet.withdrawOpenAt` 전엔 안내 버튼만.
 
 후기 제출 메모(W3): 미션 체크리스트는 입력에 따라 실시간으로 `checkReview`(shared) 결과를 보여 주고, CTA 는 링크 HEAD 확인 뒤 다시 검사해 미달이면 결과 시트(수정 / 그대로 제출)를 띄운다. 사진은 업로드 대신 장수만 센다(W8 뒤). AI 교정 버튼은 `rules.assist.aiReviewEdit` 가 켜질 때까지 자리만. 응모 내역의 "검토용 데모" 버튼(`__DEV__`)은 관리자 검수를 기기에서 흉내 내는 용도다.
 

@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { DEFAULT_RULES, DEMO_APPLICATIONS, DEMO_CAMPAIGNS, DEMO_MEMBERS, DEMO_NOW, DEMO_REVIEWS, DEMO_SAVED, demoApplication, demoCampaignState, type DemoApplication, type DemoCampaign, type DemoMember, type Review, type ReviewCheck, type ReviewStatus } from "@jubutech/shared";
+import { DEFAULT_RULES, DEMO_APPLICATIONS, DEMO_CAMPAIGNS, DEMO_MEMBERS, DEMO_NOW, DEMO_POINTS, DEMO_REVIEWS, DEMO_SAVED, demoApplication, demoCampaignState, type DemoApplication, type DemoCampaign, type DemoMember, type DemoPoint, type Review, type ReviewCheck, type ReviewStatus } from "@jubutech/shared";
 import { planReviewReminders, syncReviewReminders } from "@/lib/reminders";
 
 /**
@@ -12,6 +12,8 @@ const STORAGE_KEY = "jubutech.demo.v1";
 interface Persisted {
   applications: DemoApplication[];
   reviews: Review[];
+  /** 1-3 지갑 내역 (원 = P). 후기 승인 시 `reward.reviewAmount` 가 여기 쌓인다 */
+  points: DemoPoint[];
   saved: string[];
 }
 
@@ -48,7 +50,7 @@ interface DemoStore extends Persisted {
   reset: () => void;
 }
 
-const seed = (): Persisted => ({ applications: DEMO_APPLICATIONS, reviews: DEMO_REVIEWS, saved: DEMO_SAVED[DEMO_MEMBERS[0].id] ?? [] });
+const seed = (): Persisted => ({ applications: DEMO_APPLICATIONS, reviews: DEMO_REVIEWS, points: DEMO_POINTS, saved: DEMO_SAVED[DEMO_MEMBERS[0].id] ?? [] });
 
 const Ctx = createContext<DemoStore | null>(null);
 
@@ -65,7 +67,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
         if (!alive) return;
         if (raw) {
           const parsed = JSON.parse(raw) as Partial<Persisted>;
-          setState({ applications: parsed.applications ?? DEMO_APPLICATIONS, reviews: parsed.reviews ?? DEMO_REVIEWS, saved: parsed.saved ?? [] });
+          setState({ applications: parsed.applications ?? DEMO_APPLICATIONS, reviews: parsed.reviews ?? DEMO_REVIEWS, points: parsed.points ?? DEMO_POINTS, saved: parsed.saved ?? [] });
         }
       })
       .catch(() => {})
@@ -137,8 +139,22 @@ export function DemoProvider({ children }: { children: ReactNode }) {
   );
 
   const decideReview = useCallback<DemoStore["decideReview"]>((reviewId, status, feedback) => {
-    setState((s) => ({ ...s, reviews: s.reviews.map((x) => (x.id === reviewId ? { ...x, status, feedback: feedback?.trim() || undefined, reviewedAt: new Date().toISOString(), reviewedBy: "demo" } : x)) }));
-  }, []);
+    setState((s) => {
+      const reviews = s.reviews.map((x) => (x.id === reviewId ? { ...x, status, feedback: feedback?.trim() || undefined, reviewedAt: new Date().toISOString(), reviewedBy: "demo" } : x));
+      const r = reviews.find((x) => x.id === reviewId);
+      let points = s.points;
+      // 1-3: 후기 승인 1건 = `reward.reviewAmount` 적립 (같은 후기에 두 번 쌓지 않는다) + 받은 제품 가치를 따로 기록
+      if (r && status === "approved" && !s.points.some((p) => p.refType === "review" && p.refId === r.id)) {
+        const a = s.applications.find((x) => x.id === r.applicationId);
+        const c = a ? DEMO_CAMPAIGNS.find((x) => x.id === a.campaignId) : undefined;
+        const createdAt = DEMO_NOW; // 데모 시계(DEMO_NOW) 기준 — 지갑의 "오늘 번 돈" 과 맞춘다 (apply 의 appliedAt 과 같은 규칙)
+        points = [{ id: `pt${Date.now().toString(36)}`, memberId: a?.memberId ?? member.id, amount: DEFAULT_RULES.reward.reviewAmount, kind: "review", reason: `후기 리워드 · ${c?.brand ?? "체험단"}`, refType: "review", refId: r.id, createdAt }, ...points];
+        if (c && c.benefitValue && c.benefitValue > 0 && !s.points.some((p) => p.refType === "campaign" && p.refId === c.id && p.memberId === (a?.memberId ?? member.id)))
+          points = [{ id: `pv${Date.now().toString(36)}`, memberId: a?.memberId ?? member.id, amount: c.benefitValue, kind: "product_value", reason: `받은 제품 · ${c.benefit}`, refType: "campaign", refId: c.id, createdAt }, ...points];
+      }
+      return { ...s, reviews, points };
+    });
+  }, [member.id]);
 
   // 후기 기한 로컬 알림 — 상태가 바뀔 때마다 우리 알림을 다시 예약한다 (실패해도 조용히)
   useEffect(() => {
