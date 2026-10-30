@@ -7,6 +7,7 @@ import { Avatar } from "@/components/feature/avatar";
 import { Reveal, CountUp, FloatIn } from "@/components/landing/motion";
 import { Phone } from "@/components/landing/phone";
 import { Faq } from "@/components/landing/faq";
+import { WaitlistForm } from "@/components/landing/waitlist-form";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -215,6 +216,8 @@ export default function LandingPage() {
           <h2 className="display text-[28px] md:text-[44px] break-keep">오늘 장본 영수증 한 장으로<br />시작해 보세요</h2>
           <p className="mt-3 text-paper/85 text-[15px]">가입 즉시 1,000P. 첫 인증까지 3분.</p>
           <div className="mt-7 flex flex-wrap justify-center gap-3"><Link href="/login"><Button size="lg" variant="ink">카카오 · 네이버로 시작</Button></Link><Link href="/"><Button size="lg" variant="soft" className="bg-paper/15 text-paper hover:bg-paper/25">먼저 둘러보기</Button></Link></div>
+          <p className="mt-10 text-paper/85 text-[14px]">앱은 준비 중이에요. 출시되면 가장 먼저 알려 드릴게요.</p>
+          <WaitlistForm dark className="mt-3" />
         </Reveal>
       </section>
 

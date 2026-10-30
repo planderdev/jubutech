@@ -1,11 +1,13 @@
 import { useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
-import { useRouter, type Href } from "expo-router";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useLocalSearchParams, useRouter, type Href } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Field } from "@/components/form";
 import { Icon } from "@/components/icon";
 import { KakaoButton } from "@/components/kakao-button";
 import { Button, TextButton } from "@/components/ui";
 import { useAuth } from "@/lib/auth";
+import { useDemo } from "@/lib/demo-store";
 import { DEFAULT_SERVICE, SERVICES, saveLastService, saveOnboarded, type ServiceMode } from "@/lib/service";
 import { RAD, SHELL, SP, T, typo } from "@/theme";
 
@@ -24,14 +26,28 @@ export default function Onboarding() {
   const insets = useSafeAreaInsets();
   const [choice, setChoice] = useState<ServiceMode | null>(null);
   const auth = useAuth();
+  const store = useDemo();
+  const { code: codeParam } = useLocalSearchParams<{ code?: string }>();
+  // 2-3 초대 코드 — 링크(?code=)로 들어오면 미리 채운다. 적용은 "적용" 버튼 또는 시작할 때
+  const [code, setCode] = useState(typeof codeParam === "string" ? codeParam : "");
+  const [codeMsg, setCodeMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const used = store.usedInviteCode();
+  const applyCode = () => {
+    if (!code.trim()) return true;
+    const r = store.redeemInvite(code);
+    setCodeMsg({ ok: r.ok, text: r.message });
+    return r.ok;
+  };
 
   const start = (key: ServiceMode) => {
+    if (code.trim() && !used && !applyCode()) return;
     saveOnboarded();
     saveLastService(key);
     router.replace(`/${key}` as Href);
   };
   /** 카카오로 시작 — 목적을 저장한 뒤 로그인 화면으로. 키가 없으면 로그인 화면이 데모 안내를 띄운다 */
   const startWithKakao = () => {
+    if (code.trim() && !used && !applyCode()) return;
     const key = choice ?? DEFAULT_SERVICE;
     saveOnboarded();
     saveLastService(key);
@@ -39,7 +55,7 @@ export default function Onboarding() {
   };
 
   return (
-    <View style={[s.screen, { paddingTop: insets.top + SP[40], paddingBottom: insets.bottom + SP[16] }]}>
+    <ScrollView style={s.screen} contentContainerStyle={{ flexGrow: 1, paddingTop: insets.top + SP[40], paddingBottom: insets.bottom + SP[16] }} keyboardShouldPersistTaps="handled">
       <View style={{ gap: SP[8] }}>
         <Text style={typo("label1", "semibold", T.primary.normal)}>주부테크</Text>
         <Text style={typo("title1", "bold")}>어떤 일상을 시작할까요?</Text>
@@ -63,14 +79,26 @@ export default function Onboarding() {
           );
         })}
       </View>
-      <View style={{ flex: 1 }} />
+      <View style={{ marginTop: SP[24], gap: SP[8] }}>
+        {used ? (
+          <Text style={typo("label2", "regular", T.label.alternative)}>초대 코드 {used.code} 적용됨 · 보너스는 첫 체험단 응모 때 반영돼요</Text>
+        ) : (
+          <View style={s.codeRow}>
+            <View style={{ flex: 1 }}>
+              <Field label="초대 코드가 있나요? (선택)" value={code} onChangeText={(v) => { setCode(v); setCodeMsg(null); }} placeholder="JUBU-ABC234" autoCapitalize="none" error={codeMsg && !codeMsg.ok ? codeMsg.text : undefined} help={codeMsg?.ok ? codeMsg.text : "친구가 보낸 코드를 넣으면 둘 다 보너스"} />
+            </View>
+            <Button label="적용" variant="weak" size="lg" onPress={applyCode} disabled={!code.trim()} style={{ marginTop: SP[24] + 4 }} />
+          </View>
+        )}
+      </View>
+      <View style={{ flex: 1, minHeight: SP[24] }} />
       <View style={{ gap: SP[8] }}>
         {auth.status !== "signed-in" ? <KakaoButton label="카카오로 시작" onPress={startWithKakao} /> : null}
         <Button label={choice ? `${SERVICES.find((x) => x.key === choice)?.shortLabel} 홈으로 시작` : "로그인 없이 시작하기"} variant={auth.status === "signed-in" ? "primary" : "neutral"} full onPress={() => start(choice ?? DEFAULT_SERVICE)} />
         <TextButton label="건너뛰기 · 체험단 홈으로" icon={null} onPress={() => start(DEFAULT_SERVICE)} style={{ alignSelf: "center" }} />
         <Text style={[typo("caption1", "regular", T.label.assistive), { textAlign: "center" }]}>{auth.status === "demo" ? "검토용 데모 · 로그인 키 등록 전에는 서연맘 계정으로 봅니다" : "로그인하면 응모·후기·지갑이 내 계정에 저장돼요"}</Text>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -79,4 +107,5 @@ const s = StyleSheet.create({
   choice: { flexDirection: "row", alignItems: "center", gap: SP[16], padding: SP[16], borderRadius: RAD.xl, borderWidth: 1, borderColor: T.line.normalNormal, backgroundColor: T.background.normalNormal },
   choiceActive: { borderColor: T.primary.normal, backgroundColor: T.primary.soft },
   choiceIcon: { width: SP[48], height: SP[48], borderRadius: RAD.lg, backgroundColor: T.fill.normal, alignItems: "center", justifyContent: "center" },
+  codeRow: { flexDirection: "row", alignItems: "flex-start", gap: SP[8] },
 });

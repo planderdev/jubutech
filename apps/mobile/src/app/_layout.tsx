@@ -25,6 +25,7 @@ export default function RootLayout() {
         <Stack.Screen name="application/[id]/index" />
         <Stack.Screen name="application/[id]/review" />
         <Stack.Screen name="wallet" />
+        <Stack.Screen name="invite" />
       </Stack>
     </DemoProvider>
     </AuthProvider>

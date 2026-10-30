@@ -4,7 +4,7 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import { useShallow } from "zustand/react/shallow";
 import type { Application, ApplicationStatus, AuditLog, Campaign, Comment, Notification, PointLog, Post, Report, ReportStatus, Role, Trade, User } from "./types";
 import { APPLICATIONS, CAMPAIGNS, COMMENTS, INFO, NOTIFICATIONS, POINT_LOGS, POSTS, REPORTS, TRADES, USERS } from "./mock";
-import { DEMO_REVIEWS, type Review, type ReviewStatus } from "@jubutech/shared";
+import { DEMO_INVITE_CODES, DEMO_REVIEWS, DEMO_WAITLIST, type InviteCode, type Review, type ReviewStatus, type WaitlistEntry } from "@jubutech/shared";
 
 /**
  * 주부테크 데모 스토어 — localStorage에 영속(키 jubutech:demo:v2 — 시드 변경 시 버전을 올린다).
@@ -38,6 +38,11 @@ interface State {
   notices: { id: string; title: string; body: string; pinned: boolean; createdAt: string }[];
   /** 1-1 후기 검수 대기열 — 체험단 데모 픽스처(`DEMO_REVIEWS`)에서 시작. 모바일 앱의 제출분은 Supabase 연결(W8) 뒤 합쳐진다 */
   reviews: Review[];
+  /** 2-3 랜딩 「출시 알림 받기」 대기자 (Supabase 연결 전 보관) */
+  waitlist: WaitlistEntry[];
+  inviteCodes: InviteCode[];
+  /** 앱 다운로드 수 — 스토어 콘솔 연동 전 수동 기록 */
+  downloadCount: number;
 }
 
 interface Actions {
@@ -88,6 +93,8 @@ interface Actions {
   adminForceApplication: (id: string, status: ApplicationStatus) => void;
   /** PHP `admin_review` — 승인·보완 요청·반려(+사유)·별점. 리워드 적립은 W4 에서 연결 */
   adminDecideReview: (id: string, status: ReviewStatus, feedback?: string, rating?: number) => { ok: boolean; message: string };
+  joinWaitlist: (contact: string, channel: "email" | "phone", source?: string) => void;
+  setDownloadCount: (n: number) => void;
 }
 
 const seed = (): State => ({
@@ -101,6 +108,9 @@ const seed = (): State => ({
   campaigns: CAMPAIGNS,
   applications: APPLICATIONS,
   reviews: DEMO_REVIEWS,
+  waitlist: DEMO_WAITLIST,
+  inviteCodes: DEMO_INVITE_CODES,
+  downloadCount: 23,
   trades: TRADES,
   notifications: NOTIFICATIONS,
   pointLogs: POINT_LOGS,
@@ -271,6 +281,8 @@ const baseStore = create<State & Actions>()(
       adminAddNotice: (title, body, pinned) => { set((s) => ({ notices: [{ id: "nt" + uid(), title, body, pinned, createdAt: now() }, ...s.notices] })); get().log("공지 등록", title); },
       adminDeleteNotice: (id) => { set((s) => ({ notices: s.notices.filter((n) => n.id !== id) })); get().log("공지 삭제", id); },
       adminForceApplication: (id, status) => { get().decideApplication(id, status); get().log("응모 상태 강제 변경", `${id} → ${status}`); },
+      joinWaitlist: (contact, channel, source) => set((s) => (s.waitlist.some((w) => w.contact === contact) ? s : { waitlist: [{ id: "wl" + uid(), contact, channel, source, createdAt: now() }, ...s.waitlist] })),
+      setDownloadCount: (n) => { set({ downloadCount: n }); get().log("다운로드 수 기록", String(n)); },
       adminDecideReview: (id, status, feedback, rating) => {
         const r = get().reviews.find((x) => x.id === id);
         if (!r) return { ok: false, message: "후기를 찾을 수 없어요." };

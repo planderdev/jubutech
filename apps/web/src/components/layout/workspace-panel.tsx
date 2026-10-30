@@ -27,6 +27,7 @@ export function WorkspacePanel({ kind }: { kind: "advertiser" | "admin" }) {
     { href: "/admin7/campaigns", label: "캠페인 검수", icon: "campaign", count: pendingCampaigns },
     { href: "/admin7/applications", label: "응모·미션", icon: "check" },
     { href: "/admin7/reviews", label: "후기 검수", icon: "comment", count: pendingReviews },
+    { href: "/admin7/waitlist", label: "대기자·초대", icon: "bell" },
     { href: "/admin7/info", label: "돈되는정보", icon: "info" },
     { href: "/admin7/points", label: "포인트", icon: "coin" },
     { href: "/admin7/notices", label: "공지", icon: "bulb" },

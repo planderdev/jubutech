@@ -20,6 +20,7 @@ export function MyPage({ mode = "campaigns" }: { mode?: ServiceMode }) {
   const auth = useAuth();
   // 로그인돼 있으면 카카오 프로필 이름을, 아니면 데모 회원(서연맘)을 보여 준다. 데이터 연결(W8) 전까지 응모·지갑은 데모 회원 기준
   const nickname = auth.user?.nickname ?? member.nickname;
+  const invited = useDemo().inviteCodes.find((c) => c.ownerId === member.id)?.uses.length ?? 0;
   const soon = (what: string) => () => Alert.alert(what, "이 화면은 다음 작업에서 들어와요.");
   const applications = { icon: "gift", title: "내 응모 현황", sub: `${mine.length}건`, onPress: () => router.push("/campaigns/applications" as Href) };
   const journals = { icon: "notebook-pen", title: "나의 매매일지", sub: "0건", onPress: () => router.push("/journal/entries" as Href) };
@@ -64,6 +65,7 @@ export function MyPage({ mode = "campaigns" }: { mode?: ServiceMode }) {
       <GroupSection>
         <GroupCard>
           <ListHeader title="주부테크와 함께" />
+          <MenuRow icon="gift" title="친구 초대" sub={`${invited}명 가입`} onPress={() => router.push("/invite" as Href)} />
           <MenuRow icon="megaphone" title="공지사항" onPress={soon("공지사항")} />
           <MenuRow icon="message-circle" title="문의하기" onPress={soon("문의하기")} />
           <MenuRow icon="sprout" title="서비스 소개·제휴 문의" onPress={soon("서비스 소개")} />

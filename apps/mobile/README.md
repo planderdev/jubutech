@@ -14,7 +14,7 @@ PHP 데모(`app/pages/*.php`, `public/assets/css/ds.css`)를 **UI/UX 사양**으
 src/app/
   _layout.tsx              루트 Stack: index · onboarding · (tabs) · 상세 라우트(campaign/[id]*, application/[id]*, wallet)
   index.tsx                진입 → 첫 실행이면 /onboarding, 아니면 마지막 서비스 홈(기본 /campaigns)
-  onboarding.tsx           1-4 온보딩 "어떤 일상을 시작할까요?" — 목적 하나 → 기본 서비스 저장(미선택 시 체험단), 카카오로 시작
+  onboarding.tsx           1-4 온보딩 "어떤 일상을 시작할까요?" — 목적 하나 → 기본 서비스 저장(미선택 시 체험단), 카카오로 시작, 초대 코드 입력(?code= 미리 채움)
   login.tsx                로그인(모달) — 카카오 버튼 + 키 등록 전 데모 둘러보기. `next` 로 복귀
   auth/callback.tsx        OAuth 콜백 딥링크(jubutech://auth/callback) 처리
   (tabs)/_layout.tsx       하단 5탭 (B안): campaigns(체험단) · finance(지원금) · journal(주식) · community · my
@@ -23,6 +23,7 @@ src/app/
   (tabs)/journal/          주식 Stack: index(요약) · entries(일지) · analysis(분석)           ← PHP /journal, /journal/entries, /journal/analysis
   (tabs)/community.tsx     커뮤니티 탭(자리) ← PHP /community
   (tabs)/my.tsx            마이 탭(공용) ← PHP /mypage
+  invite.tsx               2-3 친구 초대 — 내 코드(회원당 하나, 결정적 생성)·복사·공유 시트, 보너스 안내(`invite.bonus`), 초대한 친구 목록
 src/lib/service.ts         SERVICES(서비스 이름·상단 세그먼트 = PHP $navs 에서 마이·커뮤니티 제외), ROOT_TABS(하단 5탭), useService(), 마지막 서비스·온보딩 저장
 src/components/
   app-header.tsx           .top-nav--app — 제목(서비스 이름 또는 heading)·검색·알림. B안이라 서비스 드롭다운(▾)은 없음

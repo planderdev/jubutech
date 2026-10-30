@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { DEFAULT_RULES, DEMO_APPLICATIONS, DEMO_CAMPAIGNS, DEMO_MEMBERS, DEMO_NOW, DEMO_POINTS, DEMO_REVIEWS, DEMO_SAVED, demoApplication, demoCampaignState, type DemoApplication, type DemoCampaign, type DemoMember, type DemoPoint, type Review, type ReviewCheck, type ReviewStatus } from "@jubutech/shared";
+import { DEFAULT_RULES, DEMO_APPLICATIONS, DEMO_CAMPAIGNS, DEMO_INVITE_CODES, DEMO_MEMBERS, DEMO_NOW, DEMO_POINTS, DEMO_REVIEWS, DEMO_SAVED, REDEEM_MESSAGE, demoApplication, demoCampaignState, ensureInviteCode, redeemInviteCode, type DemoApplication, type DemoCampaign, type DemoMember, type DemoPoint, type InviteCode, type Review, type ReviewCheck, type ReviewStatus } from "@jubutech/shared";
 import { planReviewReminders, syncReviewReminders } from "@/lib/reminders";
 
 /**
@@ -15,6 +15,8 @@ interface Persisted {
   /** 1-3 지갑 내역 (원 = P). 후기 승인 시 `reward.reviewAmount` 가 여기 쌓인다 */
   points: DemoPoint[];
   saved: string[];
+  /** 2-3 초대 코드 (내 코드 + 데모 회원 코드). 사용 기록은 `uses` 에 */
+  inviteCodes: InviteCode[];
 }
 
 export interface ReviewInput {
@@ -46,11 +48,17 @@ interface DemoStore extends Persisted {
   submitReview: (applicationId: string, input: ReviewInput) => { ok: true; id: string; message: string } | { ok: false; message: string };
   /** PHP `admin_review` 의 자리 — 관리자(admin7)가 할 일을 데모 확인용으로 기기에서 흉내 낸다 */
   decideReview: (reviewId: string, status: ReviewStatus, feedback?: string) => void;
+  /** 내 초대 코드 (없으면 만들어 저장) */
+  myInviteCode: () => InviteCode;
+  /** 초대 코드 입력 — 양쪽 보너스는 `rules.invite.bonus` 에 따라 W5(생활력)/선정(우선권)에서 반영 */
+  redeemInvite: (input: string) => { ok: boolean; message: string };
+  /** 내가 쓴 초대 코드 */
+  usedInviteCode: () => InviteCode | undefined;
   toggleSaved: (articleId: string) => void;
   reset: () => void;
 }
 
-const seed = (): Persisted => ({ applications: DEMO_APPLICATIONS, reviews: DEMO_REVIEWS, points: DEMO_POINTS, saved: DEMO_SAVED[DEMO_MEMBERS[0].id] ?? [] });
+const seed = (): Persisted => ({ applications: DEMO_APPLICATIONS, reviews: DEMO_REVIEWS, points: DEMO_POINTS, saved: DEMO_SAVED[DEMO_MEMBERS[0].id] ?? [], inviteCodes: DEMO_INVITE_CODES });
 
 const Ctx = createContext<DemoStore | null>(null);
 
@@ -67,7 +75,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
         if (!alive) return;
         if (raw) {
           const parsed = JSON.parse(raw) as Partial<Persisted>;
-          setState({ applications: parsed.applications ?? DEMO_APPLICATIONS, reviews: parsed.reviews ?? DEMO_REVIEWS, points: parsed.points ?? DEMO_POINTS, saved: parsed.saved ?? [] });
+          setState({ applications: parsed.applications ?? DEMO_APPLICATIONS, reviews: parsed.reviews ?? DEMO_REVIEWS, points: parsed.points ?? DEMO_POINTS, saved: parsed.saved ?? [], inviteCodes: parsed.inviteCodes ?? DEMO_INVITE_CODES });
         }
       })
       .catch(() => {})
@@ -156,6 +164,24 @@ export function DemoProvider({ children }: { children: ReactNode }) {
     });
   }, [member.id]);
 
+  const myInviteCode = useCallback<DemoStore["myInviteCode"]>(() => {
+    const r = ensureInviteCode(state.inviteCodes, member.id, DEMO_NOW);
+    if (r.created) setState((s) => ({ ...s, inviteCodes: ensureInviteCode(s.inviteCodes, member.id, DEMO_NOW).codes }));
+    return r.code;
+  }, [state.inviteCodes, member.id]);
+
+  const redeemInvite = useCallback<DemoStore["redeemInvite"]>(
+    (input) => {
+      const r = redeemInviteCode(state.inviteCodes, input, member.id, DEMO_NOW);
+      if (!r.ok) return { ok: false, message: REDEEM_MESSAGE[r.reason] };
+      setState((s) => ({ ...s, inviteCodes: r.codes }));
+      return { ok: true, message: `${r.code.code} 적용! 가입 보너스는 첫 체험단 응모 때 반영돼요.` };
+    },
+    [state.inviteCodes, member.id],
+  );
+
+  const usedInviteCode = useCallback<DemoStore["usedInviteCode"]>(() => state.inviteCodes.find((c) => c.uses.some((u) => u.userId === member.id)), [state.inviteCodes, member.id]);
+
   // 후기 기한 로컬 알림 — 상태가 바뀔 때마다 우리 알림을 다시 예약한다 (실패해도 조용히)
   useEffect(() => {
     if (!hydrated) return;
@@ -173,8 +199,8 @@ export function DemoProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<DemoStore>(
-    () => ({ ...state, hydrated, member, now: DEMO_NOW, apply, cancelApplication, saveShipping, submitReview, decideReview, toggleSaved, reset }),
-    [state, hydrated, member, apply, cancelApplication, saveShipping, submitReview, decideReview, toggleSaved, reset],
+    () => ({ ...state, hydrated, member, now: DEMO_NOW, apply, cancelApplication, saveShipping, submitReview, decideReview, myInviteCode, redeemInvite, usedInviteCode, toggleSaved, reset }),
+    [state, hydrated, member, apply, cancelApplication, saveShipping, submitReview, decideReview, myInviteCode, redeemInvite, usedInviteCode, toggleSaved, reset],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

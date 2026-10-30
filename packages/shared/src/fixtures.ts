@@ -4,7 +4,7 @@
  * 기준 시각 2026-10-21 12:00 KST. 모든 데이터는 가상이다.
  */
 
-import type { InviteCode, MissionCard, Review, TrustEvent, WalletEntryKind } from "./types";
+import type { InviteCode, MissionCard, Review, TrustEvent, WaitlistEntry, WalletEntryKind } from "./types";
 import { checkReview } from "./review-check";
 
 export const DEMO_NOW = "2026-10-21T12:00:00+09:00";
@@ -369,6 +369,13 @@ export const DEMO_TRUST_EVENTS: TrustEvent[] = [
 export const DEMO_INVITE_CODES: InviteCode[] = [
   { code: "JUBU-SEOYEON", ownerId: "m1", createdAt: "2026-10-10", uses: [{ userId: "m3", usedAt: "2026-10-12" }] },
   { code: "JUBU-MINJUNG", ownerId: "m2", createdAt: "2026-10-11", uses: [] },
+];
+
+/** 2-3 랜딩 「출시 알림 받기」 대기자 — 검토용 예시 */
+export const DEMO_WAITLIST: WaitlistEntry[] = [
+  { id: "wl1", contact: "mom.seoyeon@example.com", channel: "email", source: "landing", createdAt: "2026-10-18T09:10:00+09:00" },
+  { id: "wl2", contact: "010-1234-5678", channel: "phone", source: "landing", createdAt: "2026-10-19T21:40:00+09:00" },
+  { id: "wl3", contact: "jihye.forest@example.com", channel: "email", source: "instagram", createdAt: "2026-10-20T13:05:00+09:00" },
 ];
 
 /** PHP `visibleCampaign()`: 공개 상태이고 노출 기간 안 */
