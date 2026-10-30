@@ -10,9 +10,9 @@ import { RAD, SP, T, typo } from "@/theme";
 /**
  * 마이 — PHP `myPage()` (`/mypage?mode=…`) 그대로:
  * 프로필 카드 → (PHP 포인트 패널 자리에) 1-3 지갑 카드 → 나의 활동 → 주부테크와 함께 → 캡션.
- * 세 서비스가 같은 화면을 쓰고, `mode` 에 따라 나의 활동 첫 두 줄 순서만 바뀐다(PHP 와 같음).
+ * B안에서는 루트 `마이` 탭 하나가 이 화면을 쓴다. `mode` 는 나의 활동 첫 두 줄 순서(PHP 와 같음)만 바꾼다.
  */
-export function MyPage({ mode }: { mode: ServiceMode }) {
+export function MyPage({ mode = "campaigns" }: { mode?: ServiceMode }) {
   const router = useRouter();
   const { member, saved } = useDemo();
   const mine = useMyApplications();
@@ -22,7 +22,7 @@ export function MyPage({ mode }: { mode: ServiceMode }) {
   const first = mode === "journal" ? [journals, applications] : [applications, journals];
 
   return (
-    <AppScreen>
+    <AppScreen heading="마이">
       <GroupSection>
         <GroupCard style={s.profile}>
           <View style={s.avatar} accessibilityRole="image" accessibilityLabel={`${member.nickname} 아바타`}>
@@ -44,7 +44,7 @@ export function MyPage({ mode }: { mode: ServiceMode }) {
           {first.map((it) => <MenuRow key={it.title} icon={it.icon} title={it.title} sub={it.sub} onPress={it.onPress} />)}
           <MenuRow icon="bookmark" title="저장한 정보" sub={`${saved.length}개`} subAccent={false} onPress={() => router.push("/finance/categories" as Href)} />
           <MenuRow icon="clipboard-check" title="진행 중인 미션" sub={`${mine.filter((a) => a.selectionStatus === "selected").length}건`} onPress={() => router.push("/campaigns/applications" as Href)} />
-          <MenuRow icon="messages-square" title="내가 쓴 글" onPress={() => router.push("/finance/community" as Href)} last />
+          <MenuRow icon="messages-square" title="내가 쓴 글" onPress={() => router.push("/community" as Href)} last />
         </GroupCard>
       </GroupSection>
 

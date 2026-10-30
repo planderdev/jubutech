@@ -2,6 +2,8 @@ import { useState, type ReactNode, type RefObject } from "react";
 import { ScrollView, StyleSheet, View, type NativeScrollEvent, type NativeSyntheticEvent, type ViewStyle, type StyleProp } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AppHeader } from "@/components/app-header";
+import { ServiceSegments } from "@/components/service-segments";
+import type { ServiceMode } from "@/lib/service";
 import { BOTTOM_CTA_SPACE } from "@/components/form";
 import { SHELL, SP, T } from "@/theme";
 
@@ -10,7 +12,7 @@ import { SHELL, SP, T } from "@/theme";
  * 홈 계열(grouped)은 회색 캔버스(`surface-alt`) 위에 흰 그룹 카드를 얹고, 플로팅 탭바 높이만큼 아래 여백을 둔다.
  * 탭 밖 상세 화면은 `tabBar={false}`, 고정 CTA 는 `bottom` 으로 넘긴다(본문 아래 여백도 그만큼).
  */
-export function AppScreen({ children, grouped = true, title, onBack, right, contentStyle, scroll = true, tabBar = true, bottom, scrollRef, onScroll: onScrollProp }: { children: ReactNode; grouped?: boolean; title?: string; onBack?: () => void; right?: ReactNode; contentStyle?: StyleProp<ViewStyle>; scroll?: boolean; tabBar?: boolean; bottom?: ReactNode; scrollRef?: RefObject<ScrollView | null>; onScroll?: (e: NativeSyntheticEvent<NativeScrollEvent>) => void }) {
+export function AppScreen({ children, grouped = true, title, heading, segments, onBack, right, contentStyle, scroll = true, tabBar = true, bottom, scrollRef, onScroll: onScrollProp }: { children: ReactNode; grouped?: boolean; title?: string; /** 홈형 헤더 제목(기본: 현재 서비스 이름) */ heading?: string; /** 서비스 상단 세그먼트(B안) */ segments?: ServiceMode; onBack?: () => void; right?: ReactNode; contentStyle?: StyleProp<ViewStyle>; scroll?: boolean; tabBar?: boolean; bottom?: ReactNode; scrollRef?: RefObject<ScrollView | null>; onScroll?: (e: NativeSyntheticEvent<NativeScrollEvent>) => void }) {
   const insets = useSafeAreaInsets();
   const [scrolled, setScrolled] = useState(false);
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -22,7 +24,8 @@ export function AppScreen({ children, grouped = true, title, onBack, right, cont
   const paddingBottom = space + insets.bottom;
   return (
     <View style={[s.shell, { backgroundColor: bg }]}>
-      <AppHeader title={title} onBack={onBack} right={right} scrolled={scrolled} />
+      <AppHeader title={title} heading={heading} onBack={onBack} right={right} scrolled={scrolled && !segments} />
+      {segments ? <ServiceSegments service={segments} /> : null}
       {scroll ? (
         <ScrollView ref={scrollRef} onScroll={onScroll} scrollEventThrottle={32} contentContainerStyle={[{ paddingBottom }, contentStyle]} showsVerticalScrollIndicator={false} contentInsetAdjustmentBehavior="never" keyboardShouldPersistTaps="handled">
           {children}

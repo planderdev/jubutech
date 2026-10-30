@@ -66,7 +66,7 @@ export default function CampaignExplore() {
   const openDetail = (c: DemoCampaign) => router.push(`/campaign/${c.id}` as Href);
 
   return (
-    <AppScreen>
+    <AppScreen segments="campaigns">
       <ContentSection style={{ paddingTop: SP[16], paddingBottom: SP[8] }}>
         <SearchInput value={q} onChangeText={setQ} onSubmit={() => { setQuery(q); setPage(1); }} placeholder="제품이나 브랜드를 검색하세요" label="체험단 검색" icon="arrow-right" />
       </ContentSection>

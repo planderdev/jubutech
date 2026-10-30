@@ -22,7 +22,7 @@ export default function Wallet() {
   const rows = entries.filter((e) => !filter || walletKindOf(e) === filter);
   const withdraw = walletWithdrawState(rules, summary.balance, now);
   const progress = dailyGoalProgress(rules, summary.today);
-  const back = () => (router.canGoBack() ? router.back() : router.replace("/campaigns/my" as Href));
+  const back = () => (router.canGoBack() ? router.back() : router.replace("/my" as Href));
 
   return (
     <AppScreen title="나의 지갑" onBack={back} tabBar={false}>

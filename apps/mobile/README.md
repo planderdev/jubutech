@@ -12,17 +12,22 @@ PHP 데모(`app/pages/*.php`, `public/assets/css/ds.css`)를 **UI/UX 사양**으
 
 ```text
 src/app/
-  _layout.tsx              루트 Stack (+ 상세 라우트 campaign/[id]*, application/[id]*, wallet)
-  index.tsx                진입 → 마지막 서비스 홈으로 Redirect (기본 /finance)
-  finance/                 재테크 정보: index(홈) · categories(정보) · community · my   ← PHP /finance, /finance/categories, /community, /mypage?mode=finance
-  journal/                 주식매매일지: index(요약) · entries(일지) · analysis(분석) · my ← PHP /journal, /journal/entries, /journal/analysis
-  campaigns/               체험단 응모: index(홈) · explore(탐색) · applications(내 응모) · my ← PHP /campaigns, /campaigns/explore, /applications
-src/lib/service.ts         SERVICES(이름·설명·아이콘·탭 = PHP user.php 의 $modes·$navs), useService(), 마지막 서비스 저장
+  _layout.tsx              루트 Stack: index · onboarding · (tabs) · 상세 라우트(campaign/[id]*, application/[id]*, wallet)
+  index.tsx                진입 → 첫 실행이면 /onboarding, 아니면 마지막 서비스 홈(기본 /campaigns)
+  onboarding.tsx           1-4 온보딩 "어떤 일상을 시작할까요?" — 목적 하나 → 기본 서비스 저장(미선택 시 체험단)
+  (tabs)/_layout.tsx       하단 5탭 (B안): campaigns(체험단) · finance(지원금) · journal(주식) · community · my
+  (tabs)/campaigns/        체험단 Stack: index(홈) · explore(탐색) · applications(내 응모) ← PHP /campaigns, /campaigns/explore, /applications
+  (tabs)/finance/          지원금 Stack: index(홈) · categories(정보)                       ← PHP /finance, /finance/categories
+  (tabs)/journal/          주식 Stack: index(요약) · entries(일지) · analysis(분석)           ← PHP /journal, /journal/entries, /journal/analysis
+  (tabs)/community.tsx     커뮤니티 탭(자리) ← PHP /community
+  (tabs)/my.tsx            마이 탭(공용) ← PHP /mypage
+src/lib/service.ts         SERVICES(서비스 이름·상단 세그먼트 = PHP $navs 에서 마이·커뮤니티 제외), ROOT_TABS(하단 5탭), useService(), 마지막 서비스·온보딩 저장
 src/components/
-  app-header.tsx           .top-nav--app — 서비스 전환 버튼(▾)·검색·알림
-  service-sheet.tsx        mode-sheet — "어떤 일상을 시작할까요?" 바텀시트, 선택 시 router.replace(`/${service}`)
-  service-tabs.tsx         서비스별 Tabs 레이아웃 (탭 구성은 SERVICES 에서)
-  floating-tab-bar.tsx     .bottom-nav--floating — 떠 있는 알약형 하단 탭
+  app-header.tsx           .top-nav--app — 제목(서비스 이름 또는 heading)·검색·알림. B안이라 서비스 드롭다운(▾)은 없음
+  service-stack.tsx        서비스 탭 안의 Stack(홈·하위 화면)
+  service-segments.tsx     서비스 상단 세그먼트(.chip) — PHP 서비스별 하단 탭이 옮겨 온 자리. replace 로 전환
+  floating-tab-bar.tsx     .bottom-nav--floating — 떠 있는 알약형 하단 탭 (루트 5탭)
+  money-cards.tsx          1-4 「돈 되는 일 카드」 3종(마감 임박 체험단·내 지역 지원금·지갑 요약) — 각 서비스 홈 상단
   screen.tsx               AppScreen(헤더+스크롤, 탭바 여백) · ContentSection(거터)
   ui.tsx                   GroupCard · ListHeader · TextButton · IconButton · Badge · MenuRow · CardFooterLink · Button · Placeholder
   banner-slider.tsx        .banner-slider — 홈 배너 (슬라이드 너비 = 화면-48, 비율 1.55, "1 | 2")
@@ -40,7 +45,9 @@ assets/images/banners/     PHP 배너 이미지를 640px 로 줄인 webp (+ disc
 assets/images/campaigns/   PHP campaign-cp1-0*.webp 를 720px 로 줄인 것 — 사진이 있는 캠페인은 cp1 뿐, 나머지는 분류 일러스트(PHP objectArt 대신)
 ```
 
-구현된 화면 (2026-10-30): 재테크 홈(`/finance`), 체험단 홈·탐색·내 응모(`/campaigns*`), 체험단 상세·응모·응모 내역·후기 제출(`/campaign/[id]*`, `/application/[id]`, `/application/[id]/review`), 마이(세 서비스 공통, `*/my`)·나의 지갑(`/wallet`). 나머지 탭은 `Placeholder` 로 PHP 대응 경로만 표시한다.
+구현된 화면 (2026-10-30): 온보딩(`/onboarding`), 재테크 홈(`/finance`), 체험단 홈·탐색·내 응모(`/campaigns*`), 체험단 상세·응모·응모 내역·후기 제출(`/campaign/[id]*`, `/application/[id]`, `/application/[id]/review`), 마이(`/my`)·나의 지갑(`/wallet`). 커뮤니티·정보·매매일지 화면은 `Placeholder` 로 PHP 대응 경로만 표시한다.
+
+탭 구조 메모(W6, B안): PHP 데모는 상단 드롭다운으로 서비스를 바꾸고 서비스마다 하단 4탭이지만, 앱은 하단 5탭 고정 + 서비스 상단 세그먼트다(대표님 결정, 팀장과 공유 필요). 서비스 탭을 다시 누르면 마지막 세그먼트가 유지된다(중첩 Stack).
 
 지갑 메모(W4): 집계·"다음 할 일"·출금 상태는 shared `wallet.ts`(walletSummary·walletNextAction·walletWithdrawState). 후기 승인(`decideReview` approved)이 `reward.reviewAmount` 를 `points` 에 쌓고, 캠페인 `benefitValue` 가 있으면 "받은 제품 가치"를 따로 기록한다. 금액 시각은 데모 시계 `DEMO_NOW` 기준. 출금은 `wallet.withdrawOpenAt` 전엔 안내 버튼만.
 

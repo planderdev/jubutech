@@ -37,6 +37,8 @@ export interface DemoArticle {
   publishedAt: string;
   status: "published" | "hidden";
   placement: "featured" | "list";
+  /** 지역 지원금 정보면 해당 지역명 (1-4 「내 지역 지원금」) */
+  region?: string;
 }
 
 export interface DemoBanner {
@@ -63,6 +65,8 @@ export interface DemoMember {
   id: string;
   nickname: string;
   maskedContact: string;
+  /** 1-4 「내 지역 지원금」 카드 기준 (User.region) */
+  region?: string;
   joinedAt: string;
   accountStatus: "active" | "suspended";
 }
@@ -112,8 +116,11 @@ const articleRows: [string, string, string, string][] = [
   ["subsidy", "아이돌봄 지원, 신청 전 준비할 정보", "지원 조건과 신청 기간은 공식 안내에서 확인하세요.", "landmark"],
   ["saving", "가계부를 오래 쓰는 작은 방법", "모든 지출을 완벽히 적기보다, 꾸준히 돌아보세요.", "wallet"],
 ];
+/** 지역 지원금 정보 — 검토용으로 i1 만 성남시 */
+const ARTICLE_REGION: Record<string, string> = { i1: "성남시" };
 export const DEMO_ARTICLES: DemoArticle[] = articleRows.map(([categoryId, title, summary, icon], i) => ({
   id: `i${i + 1}`,
+  region: ARTICLE_REGION[`i${i + 1}`],
   categoryId,
   title,
   summary,
@@ -140,7 +147,7 @@ export const DEMO_BANNERS: DemoBanner[] = [
 ];
 
 export const DEMO_MEMBERS: DemoMember[] = [
-  { id: "m1", nickname: "서연맘", maskedContact: "010-****-0101", joinedAt: "2026-08-01", accountStatus: "active" },
+  { id: "m1", nickname: "서연맘", maskedContact: "010-****-0101", region: "성남시", joinedAt: "2026-08-01", accountStatus: "active" },
   { id: "m2", nickname: "민정살림", maskedContact: "010-****-0202", joinedAt: "2026-08-12", accountStatus: "active" },
   { id: "m3", nickname: "지혜의숲", maskedContact: "010-****-0303", joinedAt: "2026-09-02", accountStatus: "active" },
 ];
@@ -175,6 +182,11 @@ export function demoVisibleArticles(articles = DEMO_ARTICLES, now = DEMO_NOW): D
 }
 
 /** PHP `visibleBanners()`: 서비스별 사용 중·노출 기간 내 배너를 order 순으로 */
+/** 내 지역 지원금 정보 (게시 중, 지역명 일치) */
+export function demoRegionalArticles(region: string, articles = DEMO_ARTICLES, now = DEMO_NOW): DemoArticle[] {
+  return demoVisibleArticles(articles, now).filter((a) => a.region && (a.region === region || region.includes(a.region) || a.region.includes(region)));
+}
+
 export function demoVisibleBanners(mode: ServiceMode, banners = DEMO_BANNERS, now = DEMO_NOW): DemoBanner[] {
   const t = Date.parse(now);
   return banners

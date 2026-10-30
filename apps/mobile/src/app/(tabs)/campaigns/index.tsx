@@ -3,6 +3,7 @@ import { StyleSheet, Text } from "react-native";
 import { useRouter, type Href } from "expo-router";
 import { DEMO_MEMBERS, DEMO_SETTINGS, demoCampaignState, demoVisibleBanners, demoVisibleCampaigns } from "@jubutech/shared";
 import { BannerSlider } from "@/components/banner-slider";
+import { MoneyCards } from "@/components/money-cards";
 import { CampaignGrid, CampaignShortcuts } from "@/components/campaign";
 import { HomeContext } from "@/components/finance";
 import { SearchInput } from "@/components/form";
@@ -22,11 +23,14 @@ export default function CampaignHome() {
   const explore = (params: Record<string, string>) => router.push({ pathname: "/campaigns/explore", params } as Href);
 
   return (
-    <AppScreen>
+    <AppScreen segments="campaigns">
       <ContentSection>
         <HomeContext name={me.nickname} message={DEMO_SETTINGS.campaignsIntro.replace("\n", " ")} />
         <SearchInput value={q} onChangeText={setQ} onSubmit={() => explore({ q })} placeholder="어떤 체험을 찾으세요?" label="체험단 검색" />
       </ContentSection>
+
+      <MoneyCards />
+
 
       <BannerSlider banners={demoVisibleBanners("campaigns")} onPress={() => explore({})} />
 

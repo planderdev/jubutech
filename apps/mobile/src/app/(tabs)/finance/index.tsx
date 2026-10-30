@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { StyleSheet, Text } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, type Href } from "expo-router";
 import { DEMO_MEMBERS, DEMO_SAVED, DEMO_SETTINGS, demoHomeCategories, demoVisibleArticles, demoVisibleBanners } from "@jubutech/shared";
 import { BannerSlider } from "@/components/banner-slider";
+import { MoneyCards } from "@/components/money-cards";
 import { ArticleRow, CategoryShortcuts, HomeContext } from "@/components/finance";
 import { AppScreen, ContentSection } from "@/components/screen";
 import { CardFooterLink, GroupCard, GroupSection, ListHeader, MenuRow } from "@/components/ui";
@@ -33,10 +34,12 @@ export default function FinanceHome() {
   const goCategories = () => router.push("/finance/categories");
 
   return (
-    <AppScreen>
+    <AppScreen segments="finance">
       <ContentSection>
         <HomeContext name={me.nickname} message={DEMO_SETTINGS.financeIntro.replace("\n", " ")} />
       </ContentSection>
+
+      <MoneyCards />
 
       <BannerSlider banners={banners} />
 
@@ -59,8 +62,8 @@ export default function FinanceHome() {
         <GroupCard>
           <ListHeader title="나의 정보 모아보기" />
           <MenuRow icon="bookmark" title="저장한 정보 다시 읽기" sub={`${saved.size}개`} />
-          <MenuRow icon="messages-square" title="함께 나누는 이야기" sub="경험과 생활 팁" onPress={() => router.push("/finance/community")} last />
-          <CardFooterLink label="나의 활동 확인" onPress={() => router.push("/finance/my")} />
+          <MenuRow icon="messages-square" title="함께 나누는 이야기" sub="경험과 생활 팁" onPress={() => router.push("/community" as Href)} last />
+          <CardFooterLink label="나의 활동 확인" onPress={() => router.push("/my" as Href)} />
         </GroupCard>
       </GroupSection>
 

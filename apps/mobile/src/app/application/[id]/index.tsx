@@ -7,7 +7,7 @@ import { Accordion, Field } from "@/components/form";
 import { CheckResultList, MissionChecklist } from "@/components/review";
 import { AppScreen, ContentSection } from "@/components/screen";
 import { Badge, Button, GroupCard, GroupSection, TextButton } from "@/components/ui";
-import { ApplicationCard } from "@/app/campaigns/applications";
+import { ApplicationCard } from "@/app/(tabs)/campaigns/applications";
 import { useDemo } from "@/lib/demo-store";
 import { SHELL, SP, T, typo } from "@/theme";
 

@@ -32,7 +32,7 @@ export default function Applications() {
     .filter(({ a, r }) => !filter || demoAppStatus(a, r) === filter);
 
   return (
-    <AppScreen>
+    <AppScreen segments="campaigns">
       <ContentSection>
         <PageTitle title="내 응모" />
       </ContentSection>
