@@ -3,7 +3,9 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useRouter, type Href } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Icon } from "@/components/icon";
+import { KakaoButton } from "@/components/kakao-button";
 import { Button, TextButton } from "@/components/ui";
+import { useAuth } from "@/lib/auth";
 import { DEFAULT_SERVICE, SERVICES, saveLastService, saveOnboarded, type ServiceMode } from "@/lib/service";
 import { RAD, SHELL, SP, T, typo } from "@/theme";
 
@@ -21,11 +23,19 @@ export default function Onboarding() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [choice, setChoice] = useState<ServiceMode | null>(null);
+  const auth = useAuth();
 
   const start = (key: ServiceMode) => {
     saveOnboarded();
     saveLastService(key);
     router.replace(`/${key}` as Href);
+  };
+  /** 카카오로 시작 — 목적을 저장한 뒤 로그인 화면으로. 키가 없으면 로그인 화면이 데모 안내를 띄운다 */
+  const startWithKakao = () => {
+    const key = choice ?? DEFAULT_SERVICE;
+    saveOnboarded();
+    saveLastService(key);
+    router.replace(`/login?next=/${key}` as Href);
   };
 
   return (
@@ -55,9 +65,10 @@ export default function Onboarding() {
       </View>
       <View style={{ flex: 1 }} />
       <View style={{ gap: SP[8] }}>
-        <Button label={choice ? `${SERVICES.find((x) => x.key === choice)?.shortLabel} 홈으로 시작` : "시작하기"} full onPress={() => start(choice ?? DEFAULT_SERVICE)} />
+        {auth.status !== "signed-in" ? <KakaoButton label="카카오로 시작" onPress={startWithKakao} /> : null}
+        <Button label={choice ? `${SERVICES.find((x) => x.key === choice)?.shortLabel} 홈으로 시작` : "로그인 없이 시작하기"} variant={auth.status === "signed-in" ? "primary" : "neutral"} full onPress={() => start(choice ?? DEFAULT_SERVICE)} />
         <TextButton label="건너뛰기 · 체험단 홈으로" icon={null} onPress={() => start(DEFAULT_SERVICE)} style={{ alignSelf: "center" }} />
-        <Text style={[typo("caption1", "regular", T.label.assistive), { textAlign: "center" }]}>검토용 데모 · 로그인 없이 서연맘 계정으로 봅니다</Text>
+        <Text style={[typo("caption1", "regular", T.label.assistive), { textAlign: "center" }]}>{auth.status === "demo" ? "검토용 데모 · 로그인 키 등록 전에는 서연맘 계정으로 봅니다" : "로그인하면 응모·후기·지갑이 내 계정에 저장돼요"}</Text>
       </View>
     </View>
   );

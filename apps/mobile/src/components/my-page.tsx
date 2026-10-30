@@ -2,8 +2,9 @@ import { Alert, StyleSheet, Text, View } from "react-native";
 import { useRouter, type Href } from "expo-router";
 import type { ServiceMode } from "@jubutech/shared";
 import { AppScreen, ContentSection } from "@/components/screen";
-import { GroupCard, GroupSection, ListHeader, MenuRow, TextButton } from "@/components/ui";
+import { Button, GroupCard, GroupSection, ListHeader, MenuRow, TextButton } from "@/components/ui";
 import { WalletCard } from "@/components/wallet";
+import { useAuth } from "@/lib/auth";
 import { useDemo, useMyApplications } from "@/lib/demo-store";
 import { RAD, SP, T, typo } from "@/theme";
 
@@ -16,6 +17,9 @@ export function MyPage({ mode = "campaigns" }: { mode?: ServiceMode }) {
   const router = useRouter();
   const { member, saved } = useDemo();
   const mine = useMyApplications();
+  const auth = useAuth();
+  // 로그인돼 있으면 카카오 프로필 이름을, 아니면 데모 회원(서연맘)을 보여 준다. 데이터 연결(W8) 전까지 응모·지갑은 데모 회원 기준
+  const nickname = auth.user?.nickname ?? member.nickname;
   const soon = (what: string) => () => Alert.alert(what, "이 화면은 다음 작업에서 들어와요.");
   const applications = { icon: "gift", title: "내 응모 현황", sub: `${mine.length}건`, onPress: () => router.push("/campaigns/applications" as Href) };
   const journals = { icon: "notebook-pen", title: "나의 매매일지", sub: "0건", onPress: () => router.push("/journal/entries" as Href) };
@@ -25,15 +29,24 @@ export function MyPage({ mode = "campaigns" }: { mode?: ServiceMode }) {
     <AppScreen heading="마이">
       <GroupSection>
         <GroupCard style={s.profile}>
-          <View style={s.avatar} accessibilityRole="image" accessibilityLabel={`${member.nickname} 아바타`}>
-            <Text style={typo("heading1", "bold", T.primary.normal)}>{member.nickname.slice(0, 1)}</Text>
+          <View style={s.avatar} accessibilityRole="image" accessibilityLabel={`${nickname} 아바타`}>
+            <Text style={typo("heading1", "bold", T.primary.normal)}>{nickname.slice(0, 1)}</Text>
           </View>
           <View style={{ flex: 1, gap: 2 }}>
-            <Text style={typo("label2", "regular", T.label.alternative)}>오늘도 나만의 속도로</Text>
-            <Text style={typo("title2", "bold")}>{member.nickname}님</Text>
+            <Text style={typo("label2", "regular", T.label.alternative)}>{auth.status === "signed-in" ? `카카오 계정 · ${auth.user?.email ?? "연결됨"}` : "오늘도 나만의 속도로"}</Text>
+            <Text style={typo("title2", "bold")}>{nickname}님</Text>
             <TextButton label="Lv. 3 · 꾸준한 새싹" onPress={soon("배지")} style={{ alignSelf: "flex-start", paddingHorizontal: 0 }} />
           </View>
         </GroupCard>
+        {auth.status === "guest" || auth.status === "demo" ? (
+          <GroupCard style={[s.profile, { marginTop: SP[8], justifyContent: "space-between" }]}>
+            <View style={{ flex: 1, gap: 2 }}>
+              <Text style={typo("label1", "semibold")}>{auth.status === "demo" ? "데모 계정으로 보는 중" : "로그인하면 내 기록이 저장돼요"}</Text>
+              <Text style={typo("caption1", "regular", T.label.alternative)}>{auth.status === "demo" ? "카카오 로그인 키 등록 전" : "카카오로 3초 만에"}</Text>
+            </View>
+            <Button label="로그인" variant="weak" size="md" onPress={() => router.push("/login?next=/my" as Href)} />
+          </GroupCard>
+        ) : null}
       </GroupSection>
 
       <WalletCard />
@@ -54,7 +67,8 @@ export function MyPage({ mode = "campaigns" }: { mode?: ServiceMode }) {
           <MenuRow icon="megaphone" title="공지사항" onPress={soon("공지사항")} />
           <MenuRow icon="message-circle" title="문의하기" onPress={soon("문의하기")} />
           <MenuRow icon="sprout" title="서비스 소개·제휴 문의" onPress={soon("서비스 소개")} />
-          <MenuRow icon="settings" title="설정" onPress={soon("설정")} last />
+          <MenuRow icon="settings" title="설정" onPress={soon("설정")} last={auth.status !== "signed-in"} />
+          {auth.status === "signed-in" ? <MenuRow icon="x" title="로그아웃" onPress={() => auth.signOut()} last /> : null}
         </GroupCard>
       </GroupSection>
 

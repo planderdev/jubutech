@@ -47,3 +47,6 @@ export const SHELL = {
   /** `.app-main::after` — 플로팅 탭바에 가리지 않도록 본문 끝에 두는 여백 */
   contentBottomSpace: SP[80] + SP[16] + SP[24],
 } as const;
+
+/** 외부 브랜드 색 — 카카오 로그인 버튼은 카카오 디자인 가이드 색을 그대로 써야 한다 (Base UI 토큰 밖, 유일한 예외) */
+export const BRAND = { kakao: "#FEE500", kakaoLabel: "#191600" } as const;

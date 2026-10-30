@@ -1,5 +1,6 @@
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import { AuthProvider } from "@/lib/auth";
 import { DemoProvider } from "@/lib/demo-store";
 import { T } from "@/theme";
 
@@ -10,11 +11,14 @@ import { T } from "@/theme";
  */
 export default function RootLayout() {
   return (
+    <AuthProvider>
     <DemoProvider>
       <StatusBar style="dark" />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: T.background.normalAlternative } }}>
         <Stack.Screen name="index" />
         <Stack.Screen name="onboarding" />
+        <Stack.Screen name="login" options={{ presentation: "modal" }} />
+        <Stack.Screen name="auth/callback" />
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="campaign/[id]/index" />
         <Stack.Screen name="campaign/[id]/apply" />
@@ -23,5 +27,6 @@ export default function RootLayout() {
         <Stack.Screen name="wallet" />
       </Stack>
     </DemoProvider>
+    </AuthProvider>
   );
 }

@@ -14,7 +14,9 @@ PHP 데모(`app/pages/*.php`, `public/assets/css/ds.css`)를 **UI/UX 사양**으
 src/app/
   _layout.tsx              루트 Stack: index · onboarding · (tabs) · 상세 라우트(campaign/[id]*, application/[id]*, wallet)
   index.tsx                진입 → 첫 실행이면 /onboarding, 아니면 마지막 서비스 홈(기본 /campaigns)
-  onboarding.tsx           1-4 온보딩 "어떤 일상을 시작할까요?" — 목적 하나 → 기본 서비스 저장(미선택 시 체험단)
+  onboarding.tsx           1-4 온보딩 "어떤 일상을 시작할까요?" — 목적 하나 → 기본 서비스 저장(미선택 시 체험단), 카카오로 시작
+  login.tsx                로그인(모달) — 카카오 버튼 + 키 등록 전 데모 둘러보기. `next` 로 복귀
+  auth/callback.tsx        OAuth 콜백 딥링크(jubutech://auth/callback) 처리
   (tabs)/_layout.tsx       하단 5탭 (B안): campaigns(체험단) · finance(지원금) · journal(주식) · community · my
   (tabs)/campaigns/        체험단 Stack: index(홈) · explore(탐색) · applications(내 응모) ← PHP /campaigns, /campaigns/explore, /applications
   (tabs)/finance/          지원금 Stack: index(홈) · categories(정보)                       ← PHP /finance, /finance/categories
@@ -27,6 +29,7 @@ src/components/
   service-stack.tsx        서비스 탭 안의 Stack(홈·하위 화면)
   service-segments.tsx     서비스 상단 세그먼트(.chip) — PHP 서비스별 하단 탭이 옮겨 온 자리. replace 로 전환
   floating-tab-bar.tsx     .bottom-nav--floating — 떠 있는 알약형 하단 탭 (루트 5탭)
+  kakao-button.tsx         카카오 로그인 버튼(카카오 가이드 색 — theme.BRAND)
   money-cards.tsx          1-4 「돈 되는 일 카드」 3종(마감 임박 체험단·내 지역 지원금·지갑 요약) — 각 서비스 홈 상단
   screen.tsx               AppScreen(헤더+스크롤, 탭바 여백) · ContentSection(거터)
   ui.tsx                   GroupCard · ListHeader · TextButton · IconButton · Badge · MenuRow · CardFooterLink · Button · Placeholder
@@ -37,6 +40,7 @@ src/components/
   review.tsx               MissionChecklist(미션 카드 → 행, 검사 결과로 통과/미달/운영팀 확인 표시) · CheckResultList · PhotoStepper
   wallet.tsx               useWallet(집계·다음 할 일) · WalletCard(마이 탭 "오늘 번 돈" 카드) · NextActionRow · WalletEntryRow · Stat
   my-page.tsx              MyPage(mode) — PHP myPage(): 프로필 → 지갑 카드(PHP 포인트 패널 자리) → 나의 활동 → 주부테크와 함께. 세 서비스의 my.tsx 가 공용
+src/lib/auth.tsx           AuthProvider/useAuth — Supabase Auth + 카카오 OAuth(PKCE, expo-web-browser). 키 없으면 status="demo". 절차: docs/KAKAO-LOGIN-setup.md
 src/lib/demo-store.tsx     DemoProvider/useDemo — PHP DemoRepository 역할(응모·후기·저장을 AsyncStorage 에), submitReview/decideReview
 src/lib/reminders.ts       후기 기한 로컬 알림(expo-notifications, rules.mission.reminderDaysBefore) — Expo Go 에서는 건너뜀
 src/theme.ts               T(baseui.light 의미 색) · P(팔레트) · SP · RAD · CTRL · typo(name, weight, color) · ELEV · SHELL
