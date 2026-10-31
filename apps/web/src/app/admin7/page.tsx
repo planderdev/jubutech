@@ -6,9 +6,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CAMPAIGN_STATUS } from "@/lib/types";
 import { relTime, fmtNum } from "@/lib/utils";
+import { downloadMilestone } from "@jubutech/shared";
 
 export default function AdminDashboard() {
-  const { users, posts, campaigns, applications, reports, pointLogs, auditLogs } = useStore();
+  const { users, posts, campaigns, applications, reports, pointLogs, auditLogs, reviews, waitlist, inviteCodes, downloadCount } = useStore();
+  const milestone = downloadMilestone(downloadCount);
+  const pendingReviews = reviews.filter((r) => r.status === "pending").length;
   const members = users.filter((u) => u.role === "member");
   const pending = campaigns.filter((c) => c.status === "pending");
   const openReports = reports.filter((r) => r.status === "open");
@@ -29,7 +32,10 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
         <StatCard label="게시글" value={posts.length} sub={`숨김 ${posts.filter((p) => p.status === "hidden").length}`} href="/admin7/posts" />
         <StatCard label="응모" value={applications.filter((a) => a.status !== "cancelled").length} sub={`선정 ${applications.filter((a) => ["selected", "submitted", "completed"].includes(a.status)).length}`} href="/admin7/applications" />
+        <StatCard label="후기 검수 대기" value={pendingReviews} tone={pendingReviews ? "red" : undefined} sub={`보완 요청 ${reviews.filter((r) => r.status === "revision").length} · 승인 ${reviews.filter((r) => r.status === "approved").length}`} href="/admin7/reviews" />
         <StatCard label="수익 인증 (누적)" value={`${fmtNum(posts.reduce((n, p) => n + (p.income ?? 0), 0))}원`} tone="success" href="/admin7/posts" />
+        <StatCard label="앱 다운로드" value={downloadCount} tone="red" sub={milestone.label} href="/admin7/waitlist" />
+        <StatCard label="출시 알림 대기자 · 초대 가입" value={`${waitlist.length} · ${inviteCodes.reduce((n, c) => n + c.uses.length, 0)}`} sub="랜딩 신청 · 초대 코드로 가입" href="/admin7/waitlist" />
         <StatCard label="North Star · 이달 소득 회원" value={new Set(pointLogs.filter((l) => l.amount > 0 && new Date(l.createdAt).getMonth() === month).map((l) => l.userId)).size} sub="포인트·보상을 받은 회원 수" />
       </div>
 
