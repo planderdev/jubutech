@@ -54,6 +54,8 @@ assets/images/campaigns/   PHP campaign-cp1-0*.webp 를 720px 로 줄인 것 —
 
 탭 구조 메모(W6, B안): PHP 데모는 상단 드롭다운으로 서비스를 바꾸고 서비스마다 하단 4탭이지만, 앱은 하단 5탭 고정 + 서비스 상단 세그먼트다(대표님 결정, 팀장과 공유 필요). 서비스 탭을 다시 누르면 마지막 세그먼트가 유지된다(중첩 Stack).
 
+생활력 메모(W5): 점수·이벤트는 shared `trust.ts`(trustScore·makeTrustEvent·reviewOverdueTrustEvents·applyBlockedUntil). 앱은 후기 승인·초대(보너스가 생활력일 때)에 이벤트를 쌓고, 기한 초과 뒤 `penalty.lateBlockDays` 동안 응모를 막는다. 사용자에게는 `trust.visibleToUsers` 가 true 일 때만 마이 탭 프로필에 한 줄로 보인다(기본 false). 관리자 화면은 `/admin7/users`.
+
 지갑 메모(W4): 집계·"다음 할 일"·출금 상태는 shared `wallet.ts`(walletSummary·walletNextAction·walletWithdrawState). 후기 승인(`decideReview` approved)이 `reward.reviewAmount` 를 `points` 에 쌓고, 캠페인 `benefitValue` 가 있으면 "받은 제품 가치"를 따로 기록한다. 금액 시각은 데모 시계 `DEMO_NOW` 기준. 출금은 `wallet.withdrawOpenAt` 전엔 안내 버튼만.
 
 후기 제출 메모(W3): 미션 체크리스트는 입력에 따라 실시간으로 `checkReview`(shared) 결과를 보여 주고, CTA 는 링크 HEAD 확인 뒤 다시 검사해 미달이면 결과 시트(수정 / 그대로 제출)를 띄운다. 사진은 업로드 대신 장수만 센다(W8 뒤). AI 교정 버튼은 `rules.assist.aiReviewEdit` 가 켜질 때까지 자리만. 응모 내역의 "검토용 데모" 버튼(`__DEV__`)은 관리자 검수를 기기에서 흉내 내는 용도다.

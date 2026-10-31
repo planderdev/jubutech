@@ -1,6 +1,6 @@
 import { Alert, StyleSheet, Text, View } from "react-native";
 import { useRouter, type Href } from "expo-router";
-import type { ServiceMode } from "@jubutech/shared";
+import { DEFAULT_RULES, trustGrade, trustScore, TRUST_GRADE_LABEL, type ServiceMode } from "@jubutech/shared";
 import { AppScreen, ContentSection } from "@/components/screen";
 import { Button, GroupCard, GroupSection, ListHeader, MenuRow, TextButton } from "@/components/ui";
 import { WalletCard } from "@/components/wallet";
@@ -20,7 +20,10 @@ export function MyPage({ mode = "campaigns" }: { mode?: ServiceMode }) {
   const auth = useAuth();
   // 로그인돼 있으면 카카오 프로필 이름을, 아니면 데모 회원(서연맘)을 보여 준다. 데이터 연결(W8) 전까지 응모·지갑은 데모 회원 기준
   const nickname = auth.user?.nickname ?? member.nickname;
-  const invited = useDemo().inviteCodes.find((c) => c.ownerId === member.id)?.uses.length ?? 0;
+  const { inviteCodes, trustEvents } = useDemo();
+  const invited = inviteCodes.find((c) => c.ownerId === member.id)?.uses.length ?? 0;
+  // 1-2 생활력 — 출시 초기엔 관리자만 본다(`trust.visibleToUsers=false`). 켜지면 프로필 아래 한 줄
+  const trust = DEFAULT_RULES.trust.visibleToUsers ? trustScore(trustEvents, member.id) : null;
   const soon = (what: string) => () => Alert.alert(what, "이 화면은 다음 작업에서 들어와요.");
   const applications = { icon: "gift", title: "내 응모 현황", sub: `${mine.length}건`, onPress: () => router.push("/campaigns/applications" as Href) };
   const journals = { icon: "notebook-pen", title: "나의 매매일지", sub: "0건", onPress: () => router.push("/journal/entries" as Href) };
@@ -37,6 +40,7 @@ export function MyPage({ mode = "campaigns" }: { mode?: ServiceMode }) {
             <Text style={typo("label2", "regular", T.label.alternative)}>{auth.status === "signed-in" ? `카카오 계정 · ${auth.user?.email ?? "연결됨"}` : "오늘도 나만의 속도로"}</Text>
             <Text style={typo("title2", "bold")}>{nickname}님</Text>
             <TextButton label="Lv. 3 · 꾸준한 새싹" onPress={soon("배지")} style={{ alignSelf: "flex-start", paddingHorizontal: 0 }} />
+            {trust !== null ? <Text style={typo("caption1", "regular", T.label.alternative)}>{DEFAULT_RULES.trust.name} {trust}점 · {TRUST_GRADE_LABEL[trustGrade(trust)]}</Text> : null}
           </View>
         </GroupCard>
         {auth.status === "guest" || auth.status === "demo" ? (

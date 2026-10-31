@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { DEFAULT_RULES, DEMO_APPLICATIONS, DEMO_CAMPAIGNS, DEMO_INVITE_CODES, DEMO_MEMBERS, DEMO_NOW, DEMO_POINTS, DEMO_REVIEWS, DEMO_SAVED, REDEEM_MESSAGE, demoApplication, demoCampaignState, ensureInviteCode, redeemInviteCode, type DemoApplication, type DemoCampaign, type DemoMember, type DemoPoint, type InviteCode, type Review, type ReviewCheck, type ReviewStatus } from "@jubutech/shared";
+import { DEFAULT_RULES, DEMO_APPLICATIONS, DEMO_CAMPAIGNS, DEMO_INVITE_CODES, DEMO_MEMBERS, DEMO_NOW, DEMO_POINTS, DEMO_REVIEWS, DEMO_SAVED, DEMO_TRUST_EVENTS, REDEEM_MESSAGE, applyBlockedUntil, demoApplication, demoCampaignState, ensureInviteCode, hasTrustEvent, makeTrustEvent, redeemInviteCode, type DemoApplication, type DemoCampaign, type DemoMember, type DemoPoint, type InviteCode, type Review, type ReviewCheck, type ReviewStatus, type TrustEvent } from "@jubutech/shared";
 import { planReviewReminders, syncReviewReminders } from "@/lib/reminders";
 
 /**
@@ -17,6 +17,8 @@ interface Persisted {
   saved: string[];
   /** 2-3 초대 코드 (내 코드 + 데모 회원 코드). 사용 기록은 `uses` 에 */
   inviteCodes: InviteCode[];
+  /** 1-2 생활력 변동 이력 — 사용자에게는 `rules.trust.visibleToUsers` 일 때만 보인다 */
+  trustEvents: TrustEvent[];
 }
 
 export interface ReviewInput {
@@ -58,7 +60,7 @@ interface DemoStore extends Persisted {
   reset: () => void;
 }
 
-const seed = (): Persisted => ({ applications: DEMO_APPLICATIONS, reviews: DEMO_REVIEWS, points: DEMO_POINTS, saved: DEMO_SAVED[DEMO_MEMBERS[0].id] ?? [], inviteCodes: DEMO_INVITE_CODES });
+const seed = (): Persisted => ({ applications: DEMO_APPLICATIONS, reviews: DEMO_REVIEWS, points: DEMO_POINTS, saved: DEMO_SAVED[DEMO_MEMBERS[0].id] ?? [], inviteCodes: DEMO_INVITE_CODES, trustEvents: DEMO_TRUST_EVENTS });
 
 const Ctx = createContext<DemoStore | null>(null);
 
@@ -75,7 +77,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
         if (!alive) return;
         if (raw) {
           const parsed = JSON.parse(raw) as Partial<Persisted>;
-          setState({ applications: parsed.applications ?? DEMO_APPLICATIONS, reviews: parsed.reviews ?? DEMO_REVIEWS, points: parsed.points ?? DEMO_POINTS, saved: parsed.saved ?? [], inviteCodes: parsed.inviteCodes ?? DEMO_INVITE_CODES });
+          setState({ applications: parsed.applications ?? DEMO_APPLICATIONS, reviews: parsed.reviews ?? DEMO_REVIEWS, points: parsed.points ?? DEMO_POINTS, saved: parsed.saved ?? [], inviteCodes: parsed.inviteCodes ?? DEMO_INVITE_CODES, trustEvents: parsed.trustEvents ?? DEMO_TRUST_EVENTS });
         }
       })
       .catch(() => {})
@@ -97,6 +99,9 @@ export function DemoProvider({ children }: { children: ReactNode }) {
   const apply = useCallback<DemoStore["apply"]>(
     (c, input) => {
       if (demoCampaignState(c, DEMO_NOW) !== "open") return { ok: false, message: "현재 응모할 수 없는 캠페인이에요." };
+      // 1-2: 후기 기한 초과 뒤 `penalty.lateBlockDays` 동안 응모 제한
+      const blocked = applyBlockedUntil(state.trustEvents, DEFAULT_RULES, member.id, DEMO_NOW);
+      if (blocked) return { ok: false, message: `후기 기한을 넘긴 적이 있어 ${new Date(blocked).getMonth() + 1}월 ${new Date(blocked).getDate()}일까지 응모할 수 없어요.` };
       const already = demoApplication(member.id, c.id, state.applications);
       if (already) return { ok: false, message: "이미 응모한 캠페인이에요." };
       const id = `a${Date.now().toString(36)}`;
@@ -113,7 +118,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
       setState((s) => ({ ...s, applications: [next, ...s.applications] }));
       return { ok: true, id };
     },
-    [member.id, state.applications],
+    [member.id, state.applications, state.trustEvents],
   );
 
   const cancelApplication = useCallback<DemoStore["cancelApplication"]>(
@@ -151,6 +156,12 @@ export function DemoProvider({ children }: { children: ReactNode }) {
       const reviews = s.reviews.map((x) => (x.id === reviewId ? { ...x, status, feedback: feedback?.trim() || undefined, reviewedAt: new Date().toISOString(), reviewedBy: "demo" } : x));
       const r = reviews.find((x) => x.id === reviewId);
       let points = s.points;
+      let trustEvents = s.trustEvents;
+      // 1-2: 승인 = 생활력 `reviewApproved` (후기당 한 번)
+      if (r && status === "approved" && !hasTrustEvent(s.trustEvents, "review_approved", "review", r.id)) {
+        const a0 = s.applications.find((x) => x.id === r.applicationId);
+        trustEvents = [makeTrustEvent(DEFAULT_RULES, "review_approved", a0?.memberId ?? member.id, DEMO_NOW, { refType: "review", refId: r.id, note: "후기 승인" }), ...trustEvents];
+      }
       // 1-3: 후기 승인 1건 = `reward.reviewAmount` 적립 (같은 후기에 두 번 쌓지 않는다) + 받은 제품 가치를 따로 기록
       if (r && status === "approved" && !s.points.some((p) => p.refType === "review" && p.refId === r.id)) {
         const a = s.applications.find((x) => x.id === r.applicationId);
@@ -160,7 +171,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
         if (c && c.benefitValue && c.benefitValue > 0 && !s.points.some((p) => p.refType === "campaign" && p.refId === c.id && p.memberId === (a?.memberId ?? member.id)))
           points = [{ id: `pv${Date.now().toString(36)}`, memberId: a?.memberId ?? member.id, amount: c.benefitValue, kind: "product_value", reason: `받은 제품 · ${c.benefit}`, refType: "campaign", refId: c.id, createdAt }, ...points];
       }
-      return { ...s, reviews, points };
+      return { ...s, reviews, points, trustEvents };
     });
   }, [member.id]);
 
@@ -174,7 +185,16 @@ export function DemoProvider({ children }: { children: ReactNode }) {
     (input) => {
       const r = redeemInviteCode(state.inviteCodes, input, member.id, DEMO_NOW);
       if (!r.ok) return { ok: false, message: REDEEM_MESSAGE[r.reason] };
-      setState((s) => ({ ...s, inviteCodes: r.codes }));
+      setState((s) => {
+        let trustEvents = s.trustEvents;
+        if (DEFAULT_RULES.invite.bonus === "trust")
+          trustEvents = [
+            makeTrustEvent(DEFAULT_RULES, "invite_bonus", member.id, DEMO_NOW, { refType: "invite", refId: r.code.code, note: "초대받아 가입" }),
+            makeTrustEvent(DEFAULT_RULES, "invite_bonus", r.code.ownerId, DEMO_NOW, { refType: "invite", refId: r.code.code, note: `${member.nickname} 초대` }),
+            ...trustEvents,
+          ];
+        return { ...s, inviteCodes: r.codes, trustEvents };
+      });
       return { ok: true, message: `${r.code.code} 적용! 가입 보너스는 첫 체험단 응모 때 반영돼요.` };
     },
     [state.inviteCodes, member.id],

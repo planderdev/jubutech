@@ -4,7 +4,7 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import { useShallow } from "zustand/react/shallow";
 import type { Application, ApplicationStatus, AuditLog, Campaign, Comment, Notification, PointLog, Post, Report, ReportStatus, Role, Trade, User } from "./types";
 import { APPLICATIONS, CAMPAIGNS, COMMENTS, INFO, NOTIFICATIONS, POINT_LOGS, POSTS, REPORTS, TRADES, USERS } from "./mock";
-import { DEMO_INVITE_CODES, DEMO_REVIEWS, DEMO_WAITLIST, type InviteCode, type Review, type ReviewStatus, type WaitlistEntry } from "@jubutech/shared";
+import { DEFAULT_RULES, DEMO_APPLICATIONS, DEMO_CAMPAIGNS, DEMO_INVITE_CODES, DEMO_MEMBERS, DEMO_REVIEWS, DEMO_TRUST_EVENTS, DEMO_WAITLIST, hasTrustEvent, makeTrustEvent, reviewOverdueTrustEvents, type InviteCode, type Review, type ReviewStatus, type TrustEvent, type WaitlistEntry } from "@jubutech/shared";
 
 /**
  * 주부테크 데모 스토어 — localStorage에 영속(키 jubutech:demo:v2 — 시드 변경 시 버전을 올린다).
@@ -15,6 +15,10 @@ const uid = () => Math.random().toString(36).slice(2, 10);
 const now = () => new Date().toISOString();
 
 const DEMO_USER: Record<Exclude<Role, "guest">, string> = { member: "u1", advertiser: "a1", admin: "adm" };
+
+/** 체험단 픽스처 회원(m1…) → 웹 데모 회원(u1…) — 닉네임으로 잇는다. Supabase 연결(W8) 전까지의 임시 매핑 */
+export const MEMBER_TO_USER: Record<string, string> = Object.fromEntries(DEMO_MEMBERS.map((m) => [m.id, USERS.find((u) => u.nickname === m.nickname)?.id ?? m.id]));
+const memberToUser = (id: string) => MEMBER_TO_USER[id] ?? id;
 
 interface State {
   hydrated: boolean;
@@ -43,6 +47,8 @@ interface State {
   inviteCodes: InviteCode[];
   /** 앱 다운로드 수 — 스토어 콘솔 연동 전 수동 기록 */
   downloadCount: number;
+  /** 1-2 생활력 변동 이력 (관리자 전용) */
+  trustEvents: TrustEvent[];
 }
 
 interface Actions {
@@ -95,6 +101,10 @@ interface Actions {
   adminDecideReview: (id: string, status: ReviewStatus, feedback?: string, rating?: number) => { ok: boolean; message: string };
   joinWaitlist: (contact: string, channel: "email" | "phone", source?: string) => void;
   setDownloadCount: (n: number) => void;
+  /** 운영자 수동 조정 (사유 필수) */
+  adminAdjustTrust: (userId: string, delta: number, note: string) => void;
+  /** 기한 초과 일일 점검 — 새로 기록된 건수를 돌려준다 */
+  adminRunOverdueCheck: () => number;
 }
 
 const seed = (): State => ({
@@ -111,6 +121,7 @@ const seed = (): State => ({
   waitlist: DEMO_WAITLIST,
   inviteCodes: DEMO_INVITE_CODES,
   downloadCount: 23,
+  trustEvents: DEMO_TRUST_EVENTS.map((e) => ({ ...e, userId: memberToUser(e.userId) })),
   trades: TRADES,
   notifications: NOTIFICATIONS,
   pointLogs: POINT_LOGS,
@@ -258,7 +269,15 @@ const baseStore = create<State & Actions>()(
       log: (action, target, reason) => set((s) => ({ auditLogs: [{ id: "al" + uid(), actorId: s.userId ?? "adm", action, target, reason, createdAt: now() }, ...s.auditLogs] })),
       adminSetUserRole: (userId, role) => { set((s) => ({ users: s.users.map((u) => (u.id === userId ? { ...u, role } : u)) })); get().log("역할 변경", `${userId} → ${role}`); },
       adminSetUserStatus: (userId, status, reason) => { set((s) => ({ users: s.users.map((u) => (u.id === userId ? { ...u, status } : u)) })); get().log(status === "suspended" ? "회원 정지" : "정지 해제", userId, reason); },
-      adminSetPostStatus: (postId, status, reason) => { set((s) => ({ posts: s.posts.map((p) => (p.id === postId ? { ...p, status } : p)) })); get().log(status === "hidden" ? "게시글 숨김" : "게시글 복구", postId, reason); },
+      adminSetPostStatus: (postId, status, reason) => {
+        const post = get().posts.find((p) => p.id === postId);
+        set((s) => ({
+          posts: s.posts.map((p) => (p.id === postId ? { ...p, status } : p)),
+          // 1-2: 신고 누적 숨김 = 생활력 `postHidden` (글당 한 번)
+          trustEvents: status === "hidden" && post && !hasTrustEvent(s.trustEvents, "post_hidden", "post", postId) ? [makeTrustEvent(DEFAULT_RULES, "post_hidden", post.authorId, now(), { refType: "post", refId: postId, note: reason || "신고 누적 숨김" }), ...s.trustEvents] : s.trustEvents,
+        }));
+        get().log(status === "hidden" ? "게시글 숨김" : "게시글 복구", postId, reason);
+      },
       adminDeletePost: (postId, reason) => { set((s) => ({ posts: s.posts.filter((p) => p.id !== postId), comments: s.comments.filter((c) => c.postId !== postId) })); get().log("게시글 삭제", postId, reason); },
       adminDeleteComment: (commentId, reason) => {
         const c = get().comments.find((x) => x.id === commentId);
@@ -283,13 +302,29 @@ const baseStore = create<State & Actions>()(
       adminForceApplication: (id, status) => { get().decideApplication(id, status); get().log("응모 상태 강제 변경", `${id} → ${status}`); },
       joinWaitlist: (contact, channel, source) => set((s) => (s.waitlist.some((w) => w.contact === contact) ? s : { waitlist: [{ id: "wl" + uid(), contact, channel, source, createdAt: now() }, ...s.waitlist] })),
       setDownloadCount: (n) => { set({ downloadCount: n }); get().log("다운로드 수 기록", String(n)); },
+      adminAdjustTrust: (userId, delta, note) => { set((s) => ({ trustEvents: [makeTrustEvent(DEFAULT_RULES, "manual", userId, now(), { delta, note }), ...s.trustEvents] })); get().log("생활력 수동 조정", `${userId} ${delta > 0 ? "+" : ""}${delta}`, note); },
+      adminRunOverdueCheck: () => {
+        const added = reviewOverdueTrustEvents({ applications: DEMO_APPLICATIONS, campaigns: DEMO_CAMPAIGNS, reviews: get().reviews, events: get().trustEvents, rules: DEFAULT_RULES, now: now(), userIdOf: memberToUser });
+        if (added.length) { set((s) => ({ trustEvents: [...added, ...s.trustEvents] })); get().log("기한 초과 점검", `${added.length}건 기록`); }
+        return added.length;
+      },
       adminDecideReview: (id, status, feedback, rating) => {
         const r = get().reviews.find((x) => x.id === id);
         if (!r) return { ok: false, message: "후기를 찾을 수 없어요." };
         const fb = (feedback ?? "").trim();
         if ((status === "revision" || status === "rejected") && !fb) return { ok: false, message: status === "revision" ? "보완할 내용을 입력해 주세요." : "반려 사유를 입력해 주세요." };
         if (rating !== undefined && (rating < 1 || rating > 5)) return { ok: false, message: "별점은 1~5 사이로 입력해 주세요." };
-        set((s) => ({ reviews: s.reviews.map((x) => (x.id === id ? { ...x, status, feedback: fb || undefined, rating: status === "approved" ? rating ?? x.rating : x.rating, reviewedAt: now(), reviewedBy: s.userId ?? "adm" } : x)) }));
+        const app = DEMO_APPLICATIONS.find((a) => a.id === r.applicationId);
+        const uid2 = memberToUser(app?.memberId ?? "");
+        set((s) => {
+          let trustEvents = s.trustEvents;
+          // 1-2: 승인 = reviewApproved(후기당 한 번), 별점 = (별점−3)×ratingPerStar (별점이 바뀌면 다시 기록)
+          if (status === "approved" && app) {
+            if (!hasTrustEvent(trustEvents, "review_approved", "review", id)) trustEvents = [makeTrustEvent(DEFAULT_RULES, "review_approved", uid2, now(), { refType: "review", refId: id, note: "후기 승인" }), ...trustEvents];
+            if (rating && rating !== r.rating) trustEvents = [makeTrustEvent(DEFAULT_RULES, "review_rated", uid2, now(), { rating, refType: "review", refId: id, note: `별점 ${rating}` }), ...trustEvents.filter((e) => !(e.kind === "review_rated" && e.refType === "review" && e.refId === id))];
+          }
+          return { reviews: s.reviews.map((x) => (x.id === id ? { ...x, status, feedback: fb || undefined, rating: status === "approved" ? rating ?? x.rating : x.rating, reviewedAt: now(), reviewedBy: s.userId ?? "adm" } : x)), trustEvents };
+        });
         get().log(`후기 검수 ${status}`, id, fb || undefined);
         return { ok: true, message: "후기 검토 상태를 저장했어요." };
       },
