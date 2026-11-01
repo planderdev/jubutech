@@ -7,6 +7,7 @@ import { Avatar } from "@/components/feature/avatar";
 import { Reveal, CountUp, FloatIn } from "@/components/landing/motion";
 import { Phone } from "@/components/landing/phone";
 import { Faq } from "@/components/landing/faq";
+import { WaitlistForm } from "@/components/landing/waitlist-form";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -215,13 +216,15 @@ export default function LandingPage() {
           <h2 className="display text-[28px] md:text-[44px] break-keep">오늘 장본 영수증 한 장으로<br />시작해 보세요</h2>
           <p className="mt-3 text-paper/85 text-[15px]">가입 즉시 1,000P. 첫 인증까지 3분.</p>
           <div className="mt-7 flex flex-wrap justify-center gap-3"><Link href="/login"><Button size="lg" variant="ink">카카오 · 네이버로 시작</Button></Link><Link href="/"><Button size="lg" variant="soft" className="bg-paper/15 text-paper hover:bg-paper/25">먼저 둘러보기</Button></Link></div>
+          <p className="mt-10 text-paper/85 text-[14px]">앱은 준비 중이에요. 출시되면 가장 먼저 알려 드릴게요.</p>
+          <WaitlistForm dark className="mt-3" />
         </Reveal>
       </section>
 
       <footer className="border-t border-hairline bg-paper">
         <div className="mx-auto max-w-6xl px-4 py-10 grid gap-6 md:grid-cols-[1fr_auto] text-[13px]">
           <div><Logo size="md" /><p className="mt-3 text-ink-2">주부의 일상이 돈이 되는 곳 · <a href="https://instagram.com/jubutech2026" className="text-red font-semibold">@jubutech2026</a></p><p className="mt-2 text-[12px] text-ink-3 max-w-xl leading-relaxed">주부테크는 금융투자상품의 종목 추천이나 투자자문을 제공하지 않습니다. 모든 금융 정보에는 출처와 기준일을 표기하며, 광고·협찬 콘텐츠는 [광고] [체험단]으로 표시합니다.</p></div>
-          <ul className="flex flex-wrap gap-x-5 gap-y-2 font-semibold text-ink-2 md:flex-col md:items-end">{[["/", "앱 홈"], ["/campaigns", "체험단"], ["/stock", "매매일지"], ["/advertiser", "광고·제휴"], ["/design-system", "디자인 시스템"]].map(([h, l]) => <li key={h}><Link href={h} className="hover:text-red">{l}</Link></li>)}</ul>
+          <ul className="flex flex-wrap gap-x-5 gap-y-2 font-semibold text-ink-2 md:flex-col md:items-end">{[["/", "앱 홈"], ["/campaigns", "체험단"], ["/stock", "매매일지"], ["/advertiser", "광고·제휴"], ["/legal/terms", "이용약관"], ["/legal/privacy", "개인정보처리방침"], ["/legal/reward", "리워드 안내"], ["/design-system", "디자인 시스템"]].map(([h, l]) => <li key={h}><Link href={h} className="hover:text-red">{l}</Link></li>)}</ul>
         </div>
         <p className="mx-auto max-w-6xl px-4 pb-8 text-[12px] text-ink-3">© 2026 JubuTech</p>
       </footer>

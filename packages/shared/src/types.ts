@@ -140,6 +140,10 @@ export interface Campaign {
   requirements: string[];
   keywords: string[];
   region?: string;
+  /** 1-1 미션 카드 — 없으면 `rules.mission` 기본값을 쓴다 */
+  mission?: MissionCard;
+  /** 협찬 제품 가치(원) — 지갑의 "받은 제품 가치" 합산용. 포인트·현금 보상은 reward.value */
+  benefitValue?: number;
   status: CampaignStatus;
   createdAt: string;
   views: number;
@@ -267,5 +271,121 @@ export interface PointLog {
   userId: string;
   amount: number;
   reason: string;
+  /** 1-3 지갑 내역 유형. 없으면 "event" 로 본다 */
+  kind?: WalletEntryKind;
+  refType?: string;
+  refId?: string;
+  createdAt: string;
+}
+
+/* ───────── 1단계 (기획안 2026-10-30) — 미션 카드 · 후기 검수 · 생활력 · 지갑 · 초대 ───────── */
+
+/** 1-1 미션 카드: 광고주가 캠페인 등록 시 정하고, 주부는 선정 화면에서 체크리스트로 본다 */
+export interface MissionCard {
+  /** 필수 사진 장수 */
+  photoCount: number;
+  /** 최소 글자 수 */
+  minChars: number;
+  /** 본문에 꼭 들어가야 하는 키워드 */
+  requiredKeywords: string[];
+  /** 꼭 붙여야 하는 해시태그 (# 없이) */
+  hashtags: string[];
+  /** 선정 발표 후 제출 기한(일). 없으면 `rules.mission.defaultDueDays` */
+  dueDays?: number;
+}
+
+export type ReviewStatus = "pending" | "revision" | "approved" | "rejected";
+export const REVIEW_STATUS: Record<ReviewStatus, { label: string; tone: "red" | "butter" | "sage" | "mute" | "sky" | "ink" }> = {
+  pending: { label: "검토 대기", tone: "sky" },
+  revision: { label: "보완 요청", tone: "butter" },
+  approved: { label: "승인 완료", tone: "sage" },
+  rejected: { label: "반려", tone: "mute" },
+};
+
+export type ReviewCheckKey = "chars" | "photos" | "keywords" | "hashtags" | "link";
+/** 자동 검사 항목 하나의 결과 — "사진 2장 더 필요해요" 식 안내는 `message` */
+export interface ReviewCheckItem {
+  key: ReviewCheckKey;
+  ok: boolean;
+  /** 자동으로 볼 수 없어 건너뜀(링크만 제출) — 운영팀이 직접 확인. `ok` 는 true 로 둔다 */
+  skipped?: boolean;
+  required: number | string | string[];
+  actual: number | string | string[];
+  message: string;
+}
+export interface ReviewCheck {
+  passed: boolean;
+  items: ReviewCheckItem[];
+  checkedAt: string;
+}
+
+/** 1-1 후기 제출물 — 응모(Application) 1건당 최대 1건, 보완 요청 시 같은 레코드를 갱신 */
+export interface Review {
+  id: string;
+  applicationId: string;
+  /** 외부 후기 링크(블로그·인스타·네이버 리뷰). 앱 안에서 직접 쓰면 비움 */
+  url?: string;
+  /** 앱 안에서 직접 쓴 본문 */
+  content?: string;
+  photoCount: number;
+  check?: ReviewCheck;
+  status: ReviewStatus;
+  /** 보완 요청·반려 사유 */
+  feedback?: string;
+  /** 광고주(또는 대행 관리자) 별점 1~5 — 1-2 생활력 반영 */
+  rating?: number;
+  submittedAt: string;
+  reviewedAt?: string;
+  reviewedBy?: string;
+}
+
+/** 1-2 생활력 점수가 바뀌는 일 (규칙표의 행) */
+export type TrustEventKind = "review_approved" | "review_rated" | "comment_liked" | "review_overdue" | "post_hidden" | "invite_bonus" | "manual";
+export const TRUST_EVENT_LABEL: Record<TrustEventKind, string> = {
+  review_approved: "기한 안에 후기 제출·검수 통과",
+  review_rated: "광고주의 후기 평가(별점)",
+  comment_liked: "커뮤니티에서 도움된 답글",
+  review_overdue: "선정 후 미제출·기한 초과",
+  post_hidden: "신고 누적으로 글 숨김",
+  invite_bonus: "초대 보너스",
+  manual: "운영자 조정",
+};
+export interface TrustEvent {
+  id: string;
+  userId: string;
+  kind: TrustEventKind;
+  /** 점수 변화(±). 규칙은 `rules.trust.delta` */
+  delta: number;
+  refType?: string;
+  refId?: string;
+  note?: string;
+  createdAt: string;
+}
+
+/** 1-3 지갑 내역 유형 — 포인트 원장(PointLog)에 붙는다. 금액 단위는 원 */
+export type WalletEntryKind = "review" | "referral" | "event" | "product_value" | "withdraw" | "adjust";
+export const WALLET_KIND_LABEL: Record<WalletEntryKind, string> = {
+  review: "후기 리워드",
+  referral: "추천 수익",
+  event: "이벤트",
+  product_value: "받은 제품 가치",
+  withdraw: "출금",
+  adjust: "운영 조정",
+};
+
+/** 2-3 초대 코드 — 회원 1명당 1개 */
+export interface InviteCode {
+  code: string;
+  ownerId: string;
+  createdAt: string;
+  uses: { userId: string; usedAt: string }[];
+}
+
+/** 2-3 랜딩 "출시 알림 받기" 대기자 */
+export interface WaitlistEntry {
+  id: string;
+  contact: string;
+  channel: "email" | "phone";
+  source?: string;
   createdAt: string;
 }
