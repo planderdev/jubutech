@@ -12,7 +12,7 @@ PHP 데모(`app/pages/*.php`, `public/assets/css/ds.css`)를 **UI/UX 사양**으
 
 ```text
 src/app/
-  _layout.tsx              루트 Stack: index · onboarding · (tabs) · 상세 라우트(campaign/[id]*, application/[id]*, wallet)
+  _layout.tsx              루트 Stack: index · onboarding · (tabs) · 상세 라우트(campaign/[id]*, application/[id]*, wallet, invite, legal/[doc])
   index.tsx                진입 → 첫 실행이면 /onboarding, 아니면 마지막 서비스 홈(기본 /campaigns)
   onboarding.tsx           1-4 온보딩 "어떤 일상을 시작할까요?" — 목적 하나 → 기본 서비스 저장(미선택 시 체험단), 카카오로 시작, 초대 코드 입력(?code= 미리 채움)
   login.tsx                로그인(모달) — 카카오 버튼 + 키 등록 전 데모 둘러보기. `next` 로 복귀
@@ -23,6 +23,7 @@ src/app/
   (tabs)/journal/          주식 Stack: index(요약) · entries(일지) · analysis(분석)           ← PHP /journal, /journal/entries, /journal/analysis
   (tabs)/community.tsx     커뮤니티 탭(자리) ← PHP /community
   (tabs)/my.tsx            마이 탭(공용) ← PHP /mypage
+  legal/[doc].tsx          약관·개인정보처리방침·리워드 안내·응모 동의 — shared `legalDoc()` 본문(웹 `/legal/[doc]` 과 동일), 초안 띠
   invite.tsx               2-3 친구 초대 — 내 코드(회원당 하나, 결정적 생성)·복사·공유 시트, 보너스 안내(`invite.bonus`), 초대한 친구 목록
 src/lib/service.ts         SERVICES(서비스 이름·상단 세그먼트 = PHP $navs 에서 마이·커뮤니티 제외), ROOT_TABS(하단 5탭), useService(), 마지막 서비스·온보딩 저장
 src/components/
@@ -53,6 +54,8 @@ assets/images/campaigns/   PHP campaign-cp1-0*.webp 를 720px 로 줄인 것 —
 구현된 화면 (2026-10-30): 온보딩(`/onboarding`), 재테크 홈(`/finance`), 체험단 홈·탐색·내 응모(`/campaigns*`), 체험단 상세·응모·응모 내역·후기 제출(`/campaign/[id]*`, `/application/[id]`, `/application/[id]/review`), 마이(`/my`)·나의 지갑(`/wallet`). 커뮤니티·정보·매매일지 화면은 `Placeholder` 로 PHP 대응 경로만 표시한다.
 
 탭 구조 메모(W6, B안): PHP 데모는 상단 드롭다운으로 서비스를 바꾸고 서비스마다 하단 4탭이지만, 앱은 하단 5탭 고정 + 서비스 상단 세그먼트다(대표님 결정, 팀장과 공유 필요). 서비스 탭을 다시 누르면 마지막 세그먼트가 유지된다(중첩 Stack).
+
+출시 점검 메모(W9): 약관·개인정보처리방침·리워드 안내·응모 동의 본문은 shared `legal.ts`(`legalDoc()`) 하나를 앱 `/legal/[doc]` 과 웹 `/legal/[doc]` 이 같이 그린다. 마이 탭 "약관·앱 정보"에 문서 링크·계정 삭제(`auth.deleteAccount()` → 서버 RPC 는 W8)·앱 버전이 있고, 온보딩·로그인 하단에 약관 링크, 지갑 하단에 리워드 고지(`rewardDisclaimer`)가 붙는다. 스토어 콘솔용 설명·심사 메모는 `STORE_LISTING`. 남은 외부 입력은 `docs/RELEASE-checklist-stage1.md`, 테스터 기록은 `docs/TEST-results-stage1.md`.
 
 생활력 메모(W5): 점수·이벤트는 shared `trust.ts`(trustScore·makeTrustEvent·reviewOverdueTrustEvents·applyBlockedUntil). 앱은 후기 승인·초대(보너스가 생활력일 때)에 이벤트를 쌓고, 기한 초과 뒤 `penalty.lateBlockDays` 동안 응모를 막는다. 사용자에게는 `trust.visibleToUsers` 가 true 일 때만 마이 탭 프로필에 한 줄로 보인다(기본 false). 관리자 화면은 `/admin7/users`.
 

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter, type Href } from "expo-router";
-import { DEMO_CAMPAIGNS, demoApplication, demoCampaignState } from "@jubutech/shared";
+import { CONSENT_SUMMARY, DEMO_CAMPAIGNS, demoApplication, demoCampaignState } from "@jubutech/shared";
 import { EmptyState, PageTitle } from "@/components/campaign";
 import { BottomCta, Checkbox, Field, InfoBox } from "@/components/form";
 import { AppScreen, ContentSection } from "@/components/screen";
@@ -123,9 +123,9 @@ export default function CampaignApply() {
           ) : (
             <View style={s.stack}>
               <Text style={typo("headline1", "bold")}>동의 후 응모를 마무리해요</Text>
-              <Checkbox checked={required} onChange={setRequired} label="[필수] 응모 정보 수집·이용 동의" sub="검토용 문안 · 닉네임, 연락처, 채널, 신청 사유" />
-              <Checkbox checked={optional} onChange={setOptional} label="[선택] 새로운 체험 소식 수신" sub="선택하지 않아도 응모할 수 있어요." />
-              <TextButton label="동의 내용 읽기" style={{ alignSelf: "flex-start", paddingHorizontal: 0 }} />
+              <Checkbox checked={required} onChange={setRequired} label="[필수] 응모 정보 수집·이용 동의" sub={CONSENT_SUMMARY.required} />
+              <Checkbox checked={optional} onChange={setOptional} label="[선택] 새로운 체험 소식 수신" sub={CONSENT_SUMMARY.optional} />
+              <TextButton label="동의 내용 읽기" onPress={() => router.push("/legal/consent" as Href)} style={{ alignSelf: "flex-start", paddingHorizontal: 0 }} />
               {errors.requiredConsent ? <Text style={typo("label2", "regular", T.status.negative)}>{errors.requiredConsent}</Text> : null}
               <Text style={typo("label2", "regular", T.label.alternative)}>배송형 체험의 주소는 선정된 후 입력해요.</Text>
             </View>

@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Field } from "@/components/form";
 import { Icon } from "@/components/icon";
 import { KakaoButton } from "@/components/kakao-button";
+import { LegalLinks } from "@/components/legal";
 import { Button, TextButton } from "@/components/ui";
 import { useAuth } from "@/lib/auth";
 import { useDemo } from "@/lib/demo-store";
@@ -97,6 +98,7 @@ export default function Onboarding() {
         <Button label={choice ? `${SERVICES.find((x) => x.key === choice)?.shortLabel} 홈으로 시작` : "로그인 없이 시작하기"} variant={auth.status === "signed-in" ? "primary" : "neutral"} full onPress={() => start(choice ?? DEFAULT_SERVICE)} />
         <TextButton label="건너뛰기 · 체험단 홈으로" icon={null} onPress={() => start(DEFAULT_SERVICE)} style={{ alignSelf: "center" }} />
         <Text style={[typo("caption1", "regular", T.label.assistive), { textAlign: "center" }]}>{auth.status === "demo" ? "검토용 데모 · 로그인 키 등록 전에는 서연맘 계정으로 봅니다" : "로그인하면 응모·후기·지갑이 내 계정에 저장돼요"}</Text>
+        <LegalLinks />
       </View>
     </ScrollView>
   );

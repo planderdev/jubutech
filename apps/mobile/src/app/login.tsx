@@ -4,6 +4,7 @@ import { useLocalSearchParams, useRouter, type Href } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Icon } from "@/components/icon";
 import { KakaoButton } from "@/components/kakao-button";
+import { LegalLinks } from "@/components/legal";
 import { Button, IconButton, TextButton } from "@/components/ui";
 import { useAuth } from "@/lib/auth";
 import { DEFAULT_SERVICE } from "@/lib/service";
@@ -49,7 +50,7 @@ export default function Login() {
           {auth.status === "signed-in" ? <Text style={[typo("label2", "regular", T.label.alternative), { textAlign: "center" }]}>이미 {auth.user?.nickname}님으로 로그인돼 있어요.</Text> : null}
           {error ? <Text style={[typo("label2", "regular", P.red[600]), { textAlign: "center" }]} accessibilityLiveRegion="polite">{error}</Text> : null}
         </View>
-        <Text style={[typo("caption1", "regular", T.label.assistive), { textAlign: "center", marginTop: SP[16] }]}>가입 시 이용약관·개인정보처리방침에 동의하게 됩니다. 자녀 정보는 수집하지 않아요.</Text>
+        <View style={{ marginTop: SP[16] }}><LegalLinks prefix="가입하면 " suffix="에 동의하게 돼요. 자녀 정보는 수집하지 않아요." /></View>
       </View>
       {auth.status === "demo" || auth.status === "guest" ? (
         <View style={s.demo}>

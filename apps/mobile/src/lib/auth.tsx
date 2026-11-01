@@ -30,6 +30,8 @@ interface AuthState {
   /** 카카오 로그인 — 성공·취소·오류를 돌려준다. 데모 모드면 `{ ok: false, reason: "disabled" }` */
   signInWithKakao: () => Promise<{ ok: true } | { ok: false; reason: "disabled" | "cancelled" | "error"; message?: string }>;
   signOut: () => Promise<void>;
+  /** 계정 삭제(Apple 5.1.1·Google 요건). 서버 RPC `delete_my_account` 는 W8 에서 들어오고, 그 전엔 세션만 끊고 접수 안내 */
+  deleteAccount: () => Promise<{ ok: boolean; message: string }>;
   /** 딥링크로 받은 콜백 URL 을 세션으로 바꾼다 (app/auth/callback.tsx 에서 사용) */
   completeFromUrl: (url: string) => Promise<boolean>;
 }
@@ -119,11 +121,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const completeFromUrl = useCallback(async (url: string) => (supabaseEnabled ? sessionFromUrl(url) : false), []);
 
+  const deleteAccount = useCallback(async () => {
+    if (!supabaseEnabled || !session) return { ok: false, message: "로그인한 계정이 없어요." };
+    // 서버 측 삭제 함수(auth.users + 프로필·응모·지갑)는 데이터 연결(W8)에서 추가. 없으면 세션을 끊고 접수로 처리해 문의 경로로 넘긴다
+    const rpc = (supabase as unknown as { rpc: (fn: string) => Promise<{ error: { message: string } | null }> }).rpc;
+    const { error } = await rpc("delete_my_account").catch((e: unknown) => ({ error: { message: e instanceof Error ? e.message : String(e) } }));
+    await supabase.auth.signOut().catch(() => {});
+    setSession(null);
+    return error ? { ok: true, message: "계정 삭제를 접수했어요. 서버 처리는 문의로 확인할 수 있어요." } : { ok: true, message: "계정이 삭제됐어요." };
+  }, [session]);
+
   const value = useMemo<AuthState>(() => {
     const user = toUser(session);
     const status: AuthStatus = !supabaseEnabled ? "demo" : loading ? "loading" : user ? "signed-in" : "guest";
-    return { status, user, session, signInWithKakao, signOut, completeFromUrl };
-  }, [session, loading, signInWithKakao, signOut, completeFromUrl]);
+    return { status, user, session, signInWithKakao, signOut, completeFromUrl, deleteAccount };
+  }, [session, loading, signInWithKakao, signOut, completeFromUrl, deleteAccount]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

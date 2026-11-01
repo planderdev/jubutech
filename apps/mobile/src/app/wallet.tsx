@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { Alert, StyleSheet, Text, View } from "react-native";
 import { useRouter, type Href } from "expo-router";
-import { WALLET_KINDS, WALLET_KIND_LABEL, dailyGoalProgress, walletKindOf, walletWithdrawState, type WalletEntryKind } from "@jubutech/shared";
+import { WALLET_KINDS, WALLET_KIND_LABEL, dailyGoalProgress, rewardDisclaimer, walletKindOf, walletWithdrawState, type WalletEntryKind } from "@jubutech/shared";
 import { ChipRow, EmptyState, PageTitle } from "@/components/campaign";
 import { AppScreen, ContentSection } from "@/components/screen";
+import { LegalLinkButton } from "@/components/legal";
 import { Button, GroupCard, GroupSection, ListHeader } from "@/components/ui";
 import { NextActionRow, Stat, WalletEntryRow, useWallet, won } from "@/components/wallet";
 import { RAD, SP, T, typo } from "@/theme";
@@ -57,6 +58,12 @@ export default function Wallet() {
         <Text style={[typo("caption1", "regular", T.label.alternative), { textAlign: "center" }]}>{withdraw.help}</Text>
       </ContentSection>
 
+      {/* 심사용 고지(W9): 리워드는 활동 대가, 앱 내 결제와 무관 — 지갑·리워드 안내·스토어 메모가 같은 말 */}
+      <ContentSection style={{ gap: 4 }}>
+        <Text style={typo("caption1", "regular", T.label.alternative)}>{rewardDisclaimer(rules)}</Text>
+        <LegalLinkButton doc="reward" />
+      </ContentSection>
+
       <GroupSection>
         <GroupCard>
           <ListHeader title="내역" />
@@ -66,7 +73,7 @@ export default function Wallet() {
       </GroupSection>
 
       <ContentSection>
-        <Text style={[typo("caption2", "regular", T.label.alternative), { marginVertical: SP[16] }]}>후기 1건 승인 = +{won(rules.reward.reviewAmount)} · 최소 출금 {won(rules.wallet.withdrawMin)} · 숫자는 운영 설정에서 바뀔 수 있어요</Text>
+        <Text style={[typo("caption2", "regular", T.label.alternative), { marginVertical: SP[16] }]}>후기 1건 승인 = +{won(rules.reward.reviewAmount)} · 최소 출금 {won(rules.wallet.withdrawMin)} · 숫자는 운영 설정에서 바뀔 수 있어요 · 검토용 빌드의 금액은 예시예요</Text>
       </ContentSection>
     </AppScreen>
   );

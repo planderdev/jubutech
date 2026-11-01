@@ -1,6 +1,7 @@
 import { Alert, StyleSheet, Text, View } from "react-native";
 import { useRouter, type Href } from "expo-router";
-import { DEFAULT_RULES, trustGrade, trustScore, TRUST_GRADE_LABEL, type ServiceMode } from "@jubutech/shared";
+import Constants from "expo-constants";
+import { ACCOUNT_DELETION, DEFAULT_RULES, LEGAL_DOC_TITLE, trustGrade, trustScore, TRUST_GRADE_LABEL, type ServiceMode } from "@jubutech/shared";
 import { AppScreen, ContentSection } from "@/components/screen";
 import { Button, GroupCard, GroupSection, ListHeader, MenuRow, TextButton } from "@/components/ui";
 import { WalletCard } from "@/components/wallet";
@@ -20,11 +21,23 @@ export function MyPage({ mode = "campaigns" }: { mode?: ServiceMode }) {
   const auth = useAuth();
   // 로그인돼 있으면 카카오 프로필 이름을, 아니면 데모 회원(서연맘)을 보여 준다. 데이터 연결(W8) 전까지 응모·지갑은 데모 회원 기준
   const nickname = auth.user?.nickname ?? member.nickname;
-  const { inviteCodes, trustEvents } = useDemo();
+  const { inviteCodes, trustEvents, reset } = useDemo();
   const invited = inviteCodes.find((c) => c.ownerId === member.id)?.uses.length ?? 0;
   // 1-2 생활력 — 출시 초기엔 관리자만 본다(`trust.visibleToUsers=false`). 켜지면 프로필 아래 한 줄
   const trust = DEFAULT_RULES.trust.visibleToUsers ? trustScore(trustEvents, member.id) : null;
   const soon = (what: string) => () => Alert.alert(what, "이 화면은 다음 작업에서 들어와요.");
+  const version = Constants.expoConfig?.version ?? "0.1.0";
+  // 심사 요건(Apple 5.1.1(v)·Google): 앱 안에서 계정 삭제를 시작할 수 있어야 한다. 로그인 전엔 기기의 둘러보기 기록만 지운다
+  const deleteAccount = () => {
+    if (auth.status !== "signed-in") {
+      Alert.alert(ACCOUNT_DELETION.title, ACCOUNT_DELETION.demo, [{ text: ACCOUNT_DELETION.cancel, style: "cancel" }, { text: "기록 지우기", style: "destructive", onPress: () => reset() }]);
+      return;
+    }
+    Alert.alert(ACCOUNT_DELETION.title, ACCOUNT_DELETION.body, [
+      { text: ACCOUNT_DELETION.cancel, style: "cancel" },
+      { text: ACCOUNT_DELETION.confirm, style: "destructive", onPress: async () => { const r = await auth.deleteAccount(); reset(); Alert.alert(ACCOUNT_DELETION.title, r.message); } },
+    ]);
+  };
   const applications = { icon: "gift", title: "내 응모 현황", sub: `${mine.length}건`, onPress: () => router.push("/campaigns/applications" as Href) };
   const journals = { icon: "notebook-pen", title: "나의 매매일지", sub: "0건", onPress: () => router.push("/journal/entries" as Href) };
   const first = mode === "journal" ? [journals, applications] : [applications, journals];
@@ -78,8 +91,20 @@ export function MyPage({ mode = "campaigns" }: { mode?: ServiceMode }) {
         </GroupCard>
       </GroupSection>
 
+      {/* 출시 점검(W9): 약관·개인정보·리워드 고지와 계정 삭제 — 심사자가 찾는 자리(스토어 메모와 같은 경로) */}
+      <GroupSection>
+        <GroupCard>
+          <ListHeader title="약관·앱 정보" />
+          <MenuRow icon="clipboard-check" title={LEGAL_DOC_TITLE.terms} onPress={() => router.push("/legal/terms" as Href)} />
+          <MenuRow icon="clipboard-check" title={LEGAL_DOC_TITLE.privacy} onPress={() => router.push("/legal/privacy" as Href)} />
+          <MenuRow icon="coins" title={LEGAL_DOC_TITLE.reward} onPress={() => router.push("/legal/reward" as Href)} />
+          <MenuRow icon="circle-x" title={ACCOUNT_DELETION.title} onPress={deleteAccount} />
+          <MenuRow icon="sparkles" title="앱 버전" sub={version} subAccent={false} last />
+        </GroupCard>
+      </GroupSection>
+
       <ContentSection>
-        <Text style={[typo("caption2", "regular", T.label.alternative), { marginVertical: SP[16] }]}>화면 검토용 데모 · 금액은 실제 지급이 없는 예시예요</Text>
+        <Text style={[typo("caption2", "regular", T.label.alternative), { marginVertical: SP[16] }]}>검토용 빌드 · 금액은 실제 지급이 없는 예시예요 · 리워드는 체험단 활동의 대가로만 지급돼요</Text>
       </ContentSection>
     </AppScreen>
   );

@@ -8,3 +8,4 @@ export * from "./review-check";
 export * from "./wallet";
 export * from "./invite";
 export * from "./trust";
+export * from "./legal";
