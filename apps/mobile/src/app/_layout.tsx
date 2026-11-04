@@ -30,6 +30,8 @@ export default function RootLayout() {
         <Stack.Screen name="community/[id]/index" />
         <Stack.Screen name="community/new" />
         <Stack.Screen name="my-posts" />
+        <Stack.Screen name="article/[id]" />
+        <Stack.Screen name="saved" />
       </Stack>
     </DemoProvider>
     </AuthProvider>

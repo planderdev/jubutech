@@ -22,7 +22,7 @@ export function MoneyCards() {
 
   const cards = [
     { key: "campaign", icon: "gift", eyebrow: closing ? `체험단 모집 ${demoCampaignDeadline(closing, store.now)}` : "체험단", title: closing ? `${closing.brand} · ${closing.title}` : "지금 열린 체험을 둘러보세요", cta: closing ? "응모하기" : "탐색", href: closing ? `/campaign/${closing.id}` : "/campaigns/explore" },
-    { key: "subsidy", icon: "landmark", eyebrow: `${region ?? "내 지역"} 지원금`, title: article?.title ?? "우리 집이 받을 수 있는 지원금", cta: "자세히", href: "/finance/categories" },
+    { key: "subsidy", icon: "landmark", eyebrow: `${region ?? "내 지역"} 지원금`, title: article?.title ?? "우리 집이 받을 수 있는 지원금", cta: "자세히", href: article ? `/article/${article.id}` : "/finance/categories" },
     { key: "wallet", icon: "wallet", eyebrow: `오늘 번 돈 ${won(summary.today)}`, title: next.text, cta: next.cta, href: next.kind === "none" ? "/wallet" : next.href },
   ];
 

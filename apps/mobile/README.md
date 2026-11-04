@@ -26,6 +26,8 @@ src/app/
   legal/[doc].tsx          약관·개인정보처리방침·리워드 안내·응모 동의 — shared `legalDoc()` 본문(웹 `/legal/[doc]` 과 동일), 초안 띠
   community/[id]/index.tsx 글 상세 ← PHP /community/{id}: 공감·공유·댓글(도움됐어요)·신고, 내 글은 시트로 수정·삭제
   community/new.tsx        글쓰기·수정 (?id=, ?topic=) ← PHP /community/new
+  article/[id].tsx         정보 글 ← PHP /finance/articles/{id}
+  saved.tsx                저장한 정보 ← PHP /finance/saved
   my-posts.tsx             내가 쓴 글 ← PHP /mypage/posts
   invite.tsx               2-3 친구 초대 — 내 코드(회원당 하나, 결정적 생성)·복사·공유 시트, 보너스 안내(`invite.bonus`), 초대한 친구 목록
 src/lib/service.ts         SERVICES(서비스 이름·상단 세그먼트 = PHP $navs 에서 마이·커뮤니티 제외), ROOT_TABS(하단 5탭), useService(), 마지막 서비스·온보딩 저장

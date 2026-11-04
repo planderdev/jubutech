@@ -1,12 +1,12 @@
-import { useState } from "react";
 import { StyleSheet, Text } from "react-native";
 import { useRouter, type Href } from "expo-router";
-import { DEMO_MEMBERS, DEMO_SAVED, DEMO_SETTINGS, demoHomeCategories, demoVisibleArticles, demoVisibleBanners } from "@jubutech/shared";
+import { DEMO_SETTINGS, demoHomeCategories, demoVisibleArticles, demoVisibleBanners } from "@jubutech/shared";
 import { BannerSlider } from "@/components/banner-slider";
 import { MoneyCards } from "@/components/money-cards";
 import { ArticleRow, CategoryShortcuts, HomeContext } from "@/components/finance";
 import { AppScreen, ContentSection } from "@/components/screen";
 import { CardFooterLink, GroupCard, GroupSection, ListHeader, MenuRow } from "@/components/ui";
+import { useDemo } from "@/lib/demo-store";
 import { SP, T, typo } from "@/theme";
 
 /**
@@ -15,8 +15,7 @@ import { SP, T, typo } from "@/theme";
  */
 export default function FinanceHome() {
   const router = useRouter();
-  const me = DEMO_MEMBERS[0];
-  const [saved, setSaved] = useState<Set<string>>(() => new Set(DEMO_SAVED[me.id] ?? []));
+  const { member: me, saved, toggleSaved } = useDemo();
 
   const articles = demoVisibleArticles();
   const featured = articles.find((a) => a.placement === "featured") ?? articles[0];
@@ -24,13 +23,6 @@ export default function FinanceHome() {
   const banners = demoVisibleBanners("finance");
   const categories = demoHomeCategories().slice(0, 4);
 
-  const toggleSave = (id: string) =>
-    setSaved((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
   const goCategories = () => router.push("/finance/categories");
 
   return (
@@ -45,7 +37,7 @@ export default function FinanceHome() {
 
       <GroupSection>
         <GroupCard>
-          <CategoryShortcuts categories={categories} onPress={goCategories} onAll={goCategories} />
+          <CategoryShortcuts categories={categories} onPress={(c) => router.push(`/finance/categories?category=${c.id}` as Href)} onAll={goCategories} />
         </GroupCard>
       </GroupSection>
 
@@ -53,7 +45,7 @@ export default function FinanceHome() {
         <GroupCard>
           <ListHeader title="지금 읽기 좋은 정보" onAction={goCategories} />
           {reading.map((a, i) => (
-            <ArticleRow key={a.id} article={a} saved={saved.has(a.id)} onToggleSave={() => toggleSave(a.id)} last={i === reading.length - 1} />
+            <ArticleRow key={a.id} article={a} saved={saved.includes(a.id)} onPress={() => router.push(`/article/${a.id}` as Href)} onToggleSave={() => toggleSaved(a.id)} last={i === reading.length - 1} />
           ))}
         </GroupCard>
       </GroupSection>
@@ -61,7 +53,7 @@ export default function FinanceHome() {
       <GroupSection>
         <GroupCard>
           <ListHeader title="나의 정보 모아보기" />
-          <MenuRow icon="bookmark" title="저장한 정보 다시 읽기" sub={`${saved.size}개`} />
+          <MenuRow icon="bookmark" title="저장한 정보 다시 읽기" sub={`${saved.length}개`} onPress={() => router.push("/saved" as Href)} />
           <MenuRow icon="messages-square" title="함께 나누는 이야기" sub="경험과 생활 팁" onPress={() => router.push("/community" as Href)} last />
           <CardFooterLink label="나의 활동 확인" onPress={() => router.push("/my" as Href)} />
         </GroupCard>

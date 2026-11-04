@@ -73,7 +73,7 @@ export function MyPage({ mode = "campaigns" }: { mode?: ServiceMode }) {
         <GroupCard>
           <ListHeader title="나의 활동" />
           {first.map((it) => <MenuRow key={it.title} icon={it.icon} title={it.title} sub={it.sub} onPress={it.onPress} />)}
-          <MenuRow icon="bookmark" title="저장한 정보" sub={`${saved.length}개`} subAccent={false} onPress={() => router.push("/finance/categories" as Href)} />
+          <MenuRow icon="bookmark" title="저장한 정보" sub={`${saved.length}개`} subAccent={false} onPress={() => router.push("/saved" as Href)} />
           <MenuRow icon="clipboard-check" title="진행 중인 미션" sub={`${mine.filter((a) => a.selectionStatus === "selected").length}건`} onPress={() => router.push("/campaigns/applications" as Href)} />
           <MenuRow icon="messages-square" title="내가 쓴 글" sub={`${myPosts(posts, member.id).length}건`} subAccent={false} onPress={() => router.push("/my-posts" as Href)} last />
         </GroupCard>
