@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { DEMO_APPLICATIONS, DEMO_CAMPAIGNS, DEMO_COMMENTS, DEMO_INVITE_CODES, DEMO_JOURNALS, DEMO_JOURNAL_GOALS, DEMO_MEMBERS, DEMO_MODERATION_WORDS, DEMO_NOW, DEMO_POINTS, DEMO_POSTS, DEMO_REPORTS, DEMO_REVIEWS, DEMO_SAVED, DEMO_TRUST_EVENTS, REDEEM_MESSAGE, applyBlockedUntil, campaignGradeGate, demoApplication, demoCampaignState, ensureInviteCode, hasTrustEvent, makeTrustEvent, moderateText, moderationMessage, moderationNote, redeemInviteCode, resolveRules, shouldAutoHide, trustScore, TRUST_GRADE_LABEL, type CommunityTopic, type DemoApplication, type DemoJournal, type JournalInput, type DemoCampaign, type DemoComment, type DemoMember, type DemoPoint, type DemoPost, type DemoReport, type AppRules, type InviteCode, type Review, type RuleKey, type ReviewCheck, type ReviewStatus, type TrustEvent } from "@jubutech/shared";
+import { DEMO_APPLICATIONS, DEMO_BRAND_RATINGS, DEMO_CAMPAIGNS, DEMO_COMMENTS, DEMO_INVITE_CODES, DEMO_JOURNALS, DEMO_JOURNAL_GOALS, DEMO_MEMBERS, DEMO_MODERATION_WORDS, DEMO_NOW, DEMO_POINTS, DEMO_POSTS, DEMO_REPORTS, DEMO_REVIEWS, DEMO_SAVED, DEMO_TRUST_EVENTS, REDEEM_MESSAGE, applyBlockedUntil, campaignGradeGate, canRateBrand, demoApplication, demoCampaignState, ensureInviteCode, hasTrustEvent, makeTrustEvent, moderateText, moderationMessage, moderationNote, redeemInviteCode, resolveRules, shouldAutoHide, trustScore, TRUST_GRADE_LABEL, type CommunityTopic, type DemoApplication, type DemoJournal, type JournalInput, type DemoCampaign, type DemoComment, type DemoMember, type DemoPoint, type DemoPost, type DemoReport, type AppRules, type BrandRating, type InviteCode, type Review, type RuleKey, type ReviewCheck, type ReviewStatus, type TrustEvent } from "@jubutech/shared";
 import { planReviewReminders, syncReviewReminders } from "@/lib/reminders";
 
 /**
@@ -29,6 +29,8 @@ interface Persisted {
   journalGoals: Record<string, number>;
   /** 운영 규칙 덮어쓰기 — 1단계 W8(Supabase) 뒤에는 `app_settings` 를 읽는 자리. 지금은 기기 안 검토용 */
   ruleOverrides: Partial<Record<RuleKey, unknown>>;
+  /** 1-2 상호 평가 — 내가 쓴 평가 + 다른 회원 시드 */
+  brandRatings: BrandRating[];
 }
 
 export interface ReviewInput {
@@ -82,10 +84,11 @@ interface DemoStore extends Persisted {
   saveJournal: (input: { id?: string; input: JournalInput; draft: boolean }) => { id: string };
   deleteJournal: (id: string) => void;
   setJournalGoal: (month: string, days: number) => void;
+  rateBrand: (input: { applicationId: string; stars: number; shippedOnTime: BrandRating["shippedOnTime"]; matchedGuide: BrandRating["matchedGuide"]; comment: string }) => { ok: boolean; message: string };
   reset: () => void;
 }
 
-const seed = (): Persisted => ({ applications: DEMO_APPLICATIONS, reviews: DEMO_REVIEWS, points: DEMO_POINTS, saved: DEMO_SAVED[DEMO_MEMBERS[0].id] ?? [], inviteCodes: DEMO_INVITE_CODES, trustEvents: DEMO_TRUST_EVENTS, posts: DEMO_POSTS, comments: DEMO_COMMENTS, reports: DEMO_REPORTS, journals: DEMO_JOURNALS, journalGoals: DEMO_JOURNAL_GOALS[DEMO_MEMBERS[0].id] ?? {}, ruleOverrides: {} });
+const seed = (): Persisted => ({ applications: DEMO_APPLICATIONS, reviews: DEMO_REVIEWS, points: DEMO_POINTS, saved: DEMO_SAVED[DEMO_MEMBERS[0].id] ?? [], inviteCodes: DEMO_INVITE_CODES, trustEvents: DEMO_TRUST_EVENTS, posts: DEMO_POSTS, comments: DEMO_COMMENTS, reports: DEMO_REPORTS, journals: DEMO_JOURNALS, journalGoals: DEMO_JOURNAL_GOALS[DEMO_MEMBERS[0].id] ?? {}, ruleOverrides: {}, brandRatings: DEMO_BRAND_RATINGS });
 
 const Ctx = createContext<DemoStore | null>(null);
 
@@ -334,6 +337,17 @@ export function DemoProvider({ children }: { children: ReactNode }) {
     setState((s) => ({ ...s, journalGoals: { ...s.journalGoals, [month]: days } }));
   }, []);
 
+  const rateBrand = useCallback<DemoStore["rateBrand"]>((input) => {
+    const a = state.applications.find((x) => x.id === input.applicationId && x.memberId === member.id);
+    const r = state.reviews.find((x) => x.applicationId === input.applicationId);
+    const c = a ? DEMO_CAMPAIGNS.find((x) => x.id === a.campaignId) : undefined;
+    if (!a || !c || !canRateBrand(a, r, state.brandRatings)) return { ok: false, message: "평가할 수 있는 체험이 아니에요." };
+    if (input.stars < 1 || input.stars > 5) return { ok: false, message: "별점을 골라 주세요." };
+    const row: BrandRating = { id: `br${Date.now().toString(36)}`, applicationId: a.id, campaignId: c.id, brand: c.brand, memberId: member.id, stars: input.stars, shippedOnTime: input.shippedOnTime, matchedGuide: input.matchedGuide, comment: input.comment.trim() || undefined, status: "visible", createdAt: DEMO_NOW };
+    setState((s) => ({ ...s, brandRatings: [row, ...s.brandRatings] }));
+    return { ok: true, message: "평가를 남겼어요. 고마워요!" };
+  }, [state.applications, state.reviews, state.brandRatings, member.id]);
+
   const setRuleOverride = useCallback<DemoStore["setRuleOverride"]>((key, value) => {
     setState((s) => ({ ...s, ruleOverrides: { ...s.ruleOverrides, [key]: value } }));
   }, []);
@@ -344,8 +358,8 @@ export function DemoProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<DemoStore>(
-    () => ({ ...state, hydrated, rules, setRuleOverride, member, now: DEMO_NOW, apply, cancelApplication, saveShipping, submitReview, decideReview, myInviteCode, redeemInvite, usedInviteCode, toggleSaved, savePost, deletePost, togglePostLike, addComment, deleteComment, toggleCommentLike, reportPost, saveJournal, deleteJournal, setJournalGoal, reset }),
-    [state, hydrated, rules, setRuleOverride, member, apply, cancelApplication, saveShipping, submitReview, decideReview, myInviteCode, redeemInvite, usedInviteCode, toggleSaved, savePost, deletePost, togglePostLike, addComment, deleteComment, toggleCommentLike, reportPost, saveJournal, deleteJournal, setJournalGoal, reset],
+    () => ({ ...state, hydrated, rules, setRuleOverride, member, now: DEMO_NOW, apply, cancelApplication, saveShipping, submitReview, decideReview, myInviteCode, redeemInvite, usedInviteCode, toggleSaved, savePost, deletePost, togglePostLike, addComment, deleteComment, toggleCommentLike, reportPost, saveJournal, deleteJournal, setJournalGoal, rateBrand, reset }),
+    [state, hydrated, rules, setRuleOverride, member, apply, cancelApplication, saveShipping, submitReview, decideReview, myInviteCode, redeemInvite, usedInviteCode, toggleSaved, savePost, deletePost, togglePostLike, addComment, deleteComment, toggleCommentLike, reportPost, saveJournal, deleteJournal, setJournalGoal, rateBrand, reset],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

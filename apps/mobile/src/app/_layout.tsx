@@ -24,6 +24,7 @@ export default function RootLayout() {
         <Stack.Screen name="campaign/[id]/apply" />
         <Stack.Screen name="application/[id]/index" />
         <Stack.Screen name="application/[id]/review" />
+        <Stack.Screen name="application/[id]/rate" />
         <Stack.Screen name="wallet" />
         <Stack.Screen name="invite" />
         <Stack.Screen name="legal/[doc]" />

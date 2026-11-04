@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions, type NativeScrollEvent, type NativeSyntheticEvent } from "react-native";
 import { Image } from "expo-image";
 import { useLocalSearchParams, useRouter, type Href } from "expo-router";
-import { DEMO_CAMPAIGNS, DEMO_EXAMPLE_REVIEWS, TRUST_GRADE_LABEL, campaignGradeGate, demoApplication, demoCampaignDeadline, demoCampaignState, demoDateLabel, demoRecommendedCampaigns, missionWithDefaults, trustScore, type DemoCampaign } from "@jubutech/shared";
+import { DEMO_CAMPAIGNS, DEMO_EXAMPLE_REVIEWS, TRUST_GRADE_LABEL, brandCampaignCount, brandRatingSummary, campaignGradeGate, demoApplication, demoCampaignDeadline, demoCampaignState, demoDateLabel, demoRecommendedCampaigns, missionWithDefaults, trustScore, type BrandRatingSummary, type DemoCampaign } from "@jubutech/shared";
 import { CAMPAIGN_GALLERY, CampaignGrid, CampaignVisual, DateRow, EmptyState, MissionRow, Stars } from "@/components/campaign";
 import { Accordion, BottomCta } from "@/components/form";
 import { Icon } from "@/components/icon";
@@ -25,7 +25,7 @@ type SectionKey = (typeof SECTIONS)[number]["key"];
 export default function CampaignDetail() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { applications, member, now, rules, trustEvents } = useDemo();
+  const { applications, member, now, rules, trustEvents, brandRatings } = useDemo();
   const scrollRef = useRef<ScrollView>(null);
   const offsets = useRef<Partial<Record<SectionKey, number>>>({});
   const [active, setActive] = useState<SectionKey>("overview");
@@ -93,6 +93,8 @@ export default function CampaignDetail() {
           <View style={s.fact}><Text style={typo("label2", "regular", T.label.alternative)}>후기 채널</Text><Text style={typo("body1", "semibold")}>{c.channel}</Text></View>
         </View>
       </View>
+
+      <BrandBlock brand={c.brand} summary={brandRatingSummary(brandRatings, c.brand, rules)} counts={brandCampaignCount(DEMO_CAMPAIGNS, c.brand, now)} />
 
       <View style={s.anchorWrap}>
         <View style={s.anchors} accessibilityRole="tablist">
@@ -230,7 +232,25 @@ function Reviews({ campaignId }: { campaignId: string }) {
   );
 }
 
+/** 광고주 신뢰 블록 — 벤치마크 패턴 5: 평점·평가 수·체험 수를 같은 자리에. 건수가 적으면 평점은 숨긴다 */
+function BrandBlock({ brand, summary, counts }: { brand: string; summary: BrandRatingSummary; counts: { total: number; running: number } }) {
+  return (
+    <View style={s.brand}>
+      <View style={s.brandAvatar}><Text style={typo("label1", "bold", T.primary.normal)}>{brand.slice(0, 1)}</Text></View>
+      <View style={{ flex: 1, gap: 2 }}>
+        <Text style={typo("label1", "semibold")}>{brand}</Text>
+        <Text style={typo("caption1", "regular", T.label.alternative)}>
+          {summary.visible ? `★ ${summary.average} · 평가 ${summary.count}건 · 안내와 같았어요 ${summary.matchRate}%` : "평가를 모으는 중이에요"}
+        </Text>
+        <Text style={typo("caption1", "regular", T.label.alternative)}>주부테크 체험 {counts.total}건{summary.onTimeRate !== null ? ` · 제때 발송 ${summary.onTimeRate}%` : ""}</Text>
+      </View>
+    </View>
+  );
+}
+
 const s = StyleSheet.create({
+  brand: { flexDirection: "row", alignItems: "center", gap: SP[16], padding: SP[16], backgroundColor: T.background.normalNormal },
+  brandAvatar: { width: SP[40], height: SP[40], borderRadius: RAD.full, backgroundColor: T.primary.soft, alignItems: "center", justifyContent: "center" },
   summary: { gap: SP[16], paddingTop: SP[16], paddingBottom: SP[24], paddingHorizontal: SHELL.gutter, backgroundColor: T.background.normalNormal },
   row: { flexDirection: "row", gap: SP[8], flexWrap: "wrap" },
   offer: { gap: SP[8], paddingVertical: SP[16], borderTopWidth: 1, borderBottomWidth: 1, borderColor: T.line.normalNeutral },

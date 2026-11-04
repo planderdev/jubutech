@@ -320,6 +320,7 @@ const applicationRows: [string, string, string, DemoSelectionStatus][] = [
   ["a4", "cp1", "m2", "applied"],
   ["a5", "cp8", "m2", "selected"],
   ["a6", "cp8", "m1", "not_selected"],
+  ["a7", "cp6", "m1", "selected"],
 ];
 export const DEMO_APPLICATIONS: DemoApplication[] = applicationRows.map(([id, campaignId, memberId, selectionStatus]) => ({
   id,
@@ -349,6 +350,8 @@ export const DEMO_REVIEWS: Review[] = [
     status: "pending",
     submittedAt: "2026-10-20T12:00:00+09:00",
   },
+  // 검토용: 승인까지 끝난 체험 — 광고주 평가(상호 평가) 흐름을 바로 볼 수 있게
+  { id: "r2", applicationId: "a7", url: "https://example.com/demo-review-2", photoCount: 3, status: "approved", rating: 5, submittedAt: "2026-10-10T12:00:00+09:00", reviewedAt: "2026-10-12T12:00:00+09:00", reviewedBy: "demo" },
 ];
 
 export const DEMO_POINTS: DemoPoint[] = [

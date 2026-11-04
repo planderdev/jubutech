@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Alert, Linking, StyleSheet, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter, type Href } from "expo-router";
-import { DEMO_CAMPAIGNS, DEMO_CAMPAIGN_STATE_LABEL, REVIEW_STATUS, demoAppStatus, demoApplicationNext, demoCampaignState, demoDateLabel, demoReview, missionWithDefaults, reviewCheckSummary } from "@jubutech/shared";
+import { DEMO_CAMPAIGNS, DEMO_CAMPAIGN_STATE_LABEL, REVIEW_STATUS, demoAppStatus, demoApplicationNext, canRateBrand, demoCampaignState, demoDateLabel, demoReview, missionWithDefaults, reviewCheckSummary } from "@jubutech/shared";
 import { DateRow, EmptyState } from "@/components/campaign";
 import { Accordion, Field } from "@/components/form";
 import { CheckResultList, MissionChecklist } from "@/components/review";
@@ -92,6 +92,16 @@ export default function ApplicationDetail() {
           <GroupCard style={[s.content, { gap: SP[16] }]}>
             <Text style={typo("headline2", "bold")}>미션 카드</Text>
             <MissionChecklist mission={mission} dueAt={c.reviewDueAt} now={store.now} includeLink={c.channel !== "설문"} />
+          </GroupCard>
+        </GroupSection>
+      ) : null}
+
+      {canRateBrand(a, r, store.brandRatings) ? (
+        <GroupSection>
+          <GroupCard style={[s.content, { gap: SP[8] }]}>
+            <Text style={typo("headline2", "bold")}>{c.brand} 체험은 어땠나요?</Text>
+            <Text style={typo("body2", "regular", T.label.alternative)}>제품 발송과 안내가 어땠는지 알려 주세요. 다른 회원이 체험을 고를 때 도움이 돼요.</Text>
+            <Button label="광고주 평가하기" variant="weak" size="lg" onPress={() => router.push(`/application/${a.id}/rate` as Href)} />
           </GroupCard>
         </GroupSection>
       ) : null}

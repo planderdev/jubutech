@@ -71,6 +71,10 @@ export interface AppRules {
     /** 주식 글의 "매수 추천" 같은 표현을 검토 대기로 */
     stockGuard: boolean;
   };
+  rating: {
+    /** 광고주 평가를 공개하는 최소 건수 — 적으면 누가 썼는지 드러나므로 통계도 숨긴다 */
+    minVisible: number;
+  };
   advertiser: {
     /** 캠페인 1건 기본 수수료(원) — 광고 제안서 가격, 다음 회의에서 확정 */
     baseFee: number;
@@ -103,6 +107,7 @@ export const DEFAULT_RULES: AppRules = {
   invite: { bonus: "priority" },
   report: { autoHideCount: 3 },
   moderation: { blockPromoLinks: true, stockGuard: true },
+  rating: { minVisible: 3 },
   advertiser: { baseFee: 50000, agencyFee: 100000 },
   assist: { aiReviewEdit: false },
 };
@@ -135,6 +140,7 @@ export type RuleKey =
   | "report.autoHideCount"
   | "moderation.blockPromoLinks"
   | "moderation.stockGuard"
+  | "rating.minVisible"
   | "advertiser.baseFee"
   | "advertiser.agencyFee"
   | "assist.aiReviewEdit";
@@ -180,6 +186,7 @@ export const RULE_META: Record<RuleKey, RuleMeta> = {
   "report.autoHideCount": { label: "자동 숨김 신고 건수", type: "number", unit: "명", note: "2-4(2단계) · 몇 건부터 숨길지 미정", group: "초대·운영" },
   "moderation.blockPromoLinks": { label: "홍보 링크 검토 대기", type: "boolean", note: "2-4 · 다른 체험단·부업 모집 링크", group: "초대·운영" },
   "moderation.stockGuard": { label: "주식 권유 표현 검토 대기", type: "boolean", note: "2-4 · 매수 추천 같은 표현", group: "초대·운영" },
+  "rating.minVisible": { label: "평가 공개 최소 건수", type: "number", unit: "건", note: "1-2 상호 평가 · 작성자가 드러나지 않게", group: "광고주" },
   "advertiser.baseFee": { label: "캠페인 기본 수수료", type: "number", unit: "원", note: "2-2 · 광고 제안서 가격, 초안", group: "광고주" },
   "advertiser.agencyFee": { label: "선정 대행비", type: "number", unit: "원", note: "2-2 · '맡기기' 추가 금액, 초안", group: "광고주" },
   "assist.aiReviewEdit": { label: "AI 후기 교정 버튼", type: "boolean", note: "1-1 · 자리만, 모델·비용 확정 뒤 켠다", group: "미션·기한" },

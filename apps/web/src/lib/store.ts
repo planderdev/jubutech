@@ -4,7 +4,7 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import { useShallow } from "zustand/react/shallow";
 import type { Application, ApplicationStatus, AuditLog, Campaign, Comment, Notification, PointLog, Post, Report, ReportStatus, Role, Trade, User } from "./types";
 import { APPLICATIONS, CAMPAIGNS, COMMENTS, INFO, NOTIFICATIONS, POINT_LOGS, POSTS, REPORTS, TRADES, USERS } from "./mock";
-import { DEFAULT_RULES, DEMO_APPLICATIONS, DEMO_CAMPAIGNS, DEMO_INVITE_CODES, DEMO_MEMBERS, DEMO_MODERATION_WORDS, DEMO_REVIEWS, DEMO_TRUST_EVENTS, DEMO_WAITLIST, hasTrustEvent, makeTrustEvent, moderateText, moderationNote, reviewOverdueTrustEvents, shouldAutoHide, type InviteCode, type ModerationWord, type WordAction, type Review, type ReviewStatus, type TrustEvent, type WaitlistEntry } from "@jubutech/shared";
+import { DEFAULT_RULES, DEMO_APPLICATIONS, DEMO_BRAND_RATINGS, DEMO_CAMPAIGNS, DEMO_INVITE_CODES, DEMO_MEMBERS, DEMO_MODERATION_WORDS, DEMO_REVIEWS, DEMO_TRUST_EVENTS, DEMO_WAITLIST, hasTrustEvent, makeTrustEvent, moderateText, moderationNote, reviewOverdueTrustEvents, shouldAutoHide, type BrandRating, type InviteCode, type ModerationWord, type WordAction, type Review, type ReviewStatus, type TrustEvent, type WaitlistEntry } from "@jubutech/shared";
 
 /**
  * 주부테크 데모 스토어 — localStorage에 영속(키 jubutech:demo:v2 — 시드 변경 시 버전을 올린다).
@@ -51,6 +51,8 @@ interface State {
   trustEvents: TrustEvent[];
   /** 2-4 금칙어 사전 */
   moderationWords: ModerationWord[];
+  /** 1-2 상호 평가 — 주부가 광고주에게 남긴 평가 */
+  brandRatings: BrandRating[];
 }
 
 interface Actions {
@@ -114,6 +116,8 @@ interface Actions {
   reportPost: (postId: string, reason: string) => { ok: boolean; message: string };
   /** 검토 대기 글 확정: 공개 또는 숨김 */
   adminDecideModeration: (postId: string, decision: "published" | "hidden", reason?: string) => void;
+  /** 욕설·허위 평가 가리기 */
+  adminSetRatingStatus: (id: string, status: BrandRating["status"], reason?: string) => void;
 }
 
 const seed = (): State => ({
@@ -137,6 +141,7 @@ const seed = (): State => ({
   downloadCount: 23,
   trustEvents: DEMO_TRUST_EVENTS.map((e) => ({ ...e, userId: memberToUser(e.userId) })),
   moderationWords: DEMO_MODERATION_WORDS,
+  brandRatings: DEMO_BRAND_RATINGS,
   trades: TRADES,
   notifications: NOTIFICATIONS,
   pointLogs: POINT_LOGS,
@@ -356,6 +361,10 @@ const baseStore = create<State & Actions>()(
         // 공개로 확정하면 그 글에 쌓인 신고는 기각으로 닫는다 (다음 신고부터 다시 센다)
         if (decision === "published") set((s) => ({ reports: s.reports.map((r) => (r.target === "post" && r.targetId === postId && r.status === "open" ? { ...r, status: "dismissed" } : r)) }));
         else set((s) => ({ reports: s.reports.map((r) => (r.target === "post" && r.targetId === postId && r.status === "open" ? { ...r, status: "resolved" } : r)) }));
+      },
+      adminSetRatingStatus: (id, status, reason) => {
+        set((s) => ({ brandRatings: s.brandRatings.map((r) => (r.id === id ? { ...r, status } : r)) }));
+        get().log(status === "hidden" ? "광고주 평가 숨김" : "광고주 평가 복구", id, reason);
       },
       adminRunOverdueCheck: () => {
         const added = reviewOverdueTrustEvents({ applications: DEMO_APPLICATIONS, campaigns: DEMO_CAMPAIGNS, reviews: get().reviews, events: get().trustEvents, rules: DEFAULT_RULES, now: now(), userIdOf: memberToUser });
