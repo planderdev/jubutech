@@ -64,7 +64,11 @@ export const DEMO_COMMENTS: DemoComment[] = [
   { id: "cm3", postId: "p4", memberId: "m3", body: "어떤 체험이었는지 궁금해요!", status: "published", createdAt: "2026-10-17T20:00:00+09:00", likes: [] },
 ];
 
-export const DEMO_REPORTS: DemoReport[] = [];
+/** 검토용: p3 은 이미 2명이 신고한 글 — 한 명 더 신고하면 `report.autoHideCount`(초안 3명)에 닿아 자동 숨김 */
+export const DEMO_REPORTS: DemoReport[] = [
+  { id: "rp1", target: "post", targetId: "p3", reporterId: "m3", reason: "광고 같아요", status: "open", createdAt: "2026-10-20T09:00:00+09:00" },
+  { id: "rp2", target: "post", targetId: "p3", reporterId: "m4", reason: "같은 글을 반복해서 봤어요", status: "open", createdAt: "2026-10-20T18:00:00+09:00" },
+];
 
 export function demoMemberName(id: string): string {
   return DEMO_MEMBERS.find((m) => m.id === id)?.nickname ?? "탈퇴 회원";

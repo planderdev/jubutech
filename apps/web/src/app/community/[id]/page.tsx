@@ -18,13 +18,15 @@ export default function PostDetail() {
   const comments = useStore((s) => s.comments.filter((c) => c.postId === id));
   const users = useStore((s) => s.users);
   const bookmarked = useStore((s) => s.bookmarks.includes(id));
-  const { toggleLike, toggleBookmark, addComment, viewPost, userId } = useStore();
+  const { toggleLike, toggleBookmark, addComment, viewPost, reportPost, userId } = useStore();
   const me = useMe();
   const related = useStore((s) => s.posts.filter((p) => p.board === post?.board && p.id !== id).slice(0, 3));
   const [body, setBody] = useState("");
   const [reply, setReply] = useState<string | null>(null);
   useEffect(() => { viewPost(id); }, [id, viewPost]);
   if (!post) notFound();
+  // 2-4: 검토 대기·숨김 글은 작성자와 운영자만 본다
+  if (post.status && post.status !== "published" && post.authorId !== userId && me?.role !== "admin") notFound();
   const author = users.find((u) => u.id === post.authorId);
   const board = BOARDS.find((b) => b.key === post.board);
   const liked = !!userId && post.likes.includes(userId);
@@ -62,7 +64,7 @@ export default function PostDetail() {
           <Button size="sm" variant={liked ? "primary" : "secondary"} onClick={() => (me ? toggleLike(post.id) : location.assign("/login"))}><LineIcon name="heart" className="h-4 w-4" />좋아요 <span className="num">{post.likes.length}</span></Button>
           <Button size="sm" variant={bookmarked ? "ink" : "ghost"} onClick={() => toggleBookmark(post.id)}><LineIcon name="star" className="h-4 w-4" />{bookmarked ? "저장됨" : "저장"}</Button>
           <Button size="sm" variant="ghost"><LineIcon name="share" className="h-4 w-4" />공유</Button>
-          <button type="button" className="ml-auto label text-ink-3 hover:text-red">신고</button>
+          <button type="button" className="ml-auto label text-ink-3 hover:text-red" onClick={() => { if (!me) return location.assign("/login"); const reason = prompt("신고 사유를 적어 주세요."); if (reason === null) return; alert(reportPost(post.id, reason).message); }}>신고</button>
         </div>
       </article>
 

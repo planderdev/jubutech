@@ -150,6 +150,7 @@ export const DEMO_MEMBERS: DemoMember[] = [
   { id: "m1", nickname: "서연맘", maskedContact: "010-****-0101", region: "성남시", joinedAt: "2026-08-01", accountStatus: "active" },
   { id: "m2", nickname: "민정살림", maskedContact: "010-****-0202", joinedAt: "2026-08-12", accountStatus: "active" },
   { id: "m3", nickname: "지혜의숲", maskedContact: "010-****-0303", joinedAt: "2026-09-02", accountStatus: "active" },
+  { id: "m4", nickname: "하루콩", maskedContact: "010-****-0404", joinedAt: "2026-09-20", accountStatus: "active" },
 ];
 
 /** 회원별 저장한 정보 id */

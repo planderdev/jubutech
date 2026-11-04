@@ -11,3 +11,4 @@ export * from "./trust";
 export * from "./legal";
 export * from "./community";
 export * from "./journal";
+export * from "./moderation";

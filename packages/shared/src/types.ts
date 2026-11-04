@@ -46,7 +46,10 @@ export interface Post {
   sponsored?: boolean;
   income?: number;
   commentCount: number;
-  status?: "published" | "hidden";
+  /** review = 운영 도구가 올린 검토 대기(작성자에게만 보임) */
+  status?: "published" | "hidden" | "review";
+  /** 자동 판단 사유 (운영자·작성자에게만) */
+  moderationNote?: string;
 }
 
 export interface Comment {

@@ -4,7 +4,7 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import { useShallow } from "zustand/react/shallow";
 import type { Application, ApplicationStatus, AuditLog, Campaign, Comment, Notification, PointLog, Post, Report, ReportStatus, Role, Trade, User } from "./types";
 import { APPLICATIONS, CAMPAIGNS, COMMENTS, INFO, NOTIFICATIONS, POINT_LOGS, POSTS, REPORTS, TRADES, USERS } from "./mock";
-import { DEFAULT_RULES, DEMO_APPLICATIONS, DEMO_CAMPAIGNS, DEMO_INVITE_CODES, DEMO_MEMBERS, DEMO_REVIEWS, DEMO_TRUST_EVENTS, DEMO_WAITLIST, hasTrustEvent, makeTrustEvent, reviewOverdueTrustEvents, type InviteCode, type Review, type ReviewStatus, type TrustEvent, type WaitlistEntry } from "@jubutech/shared";
+import { DEFAULT_RULES, DEMO_APPLICATIONS, DEMO_CAMPAIGNS, DEMO_INVITE_CODES, DEMO_MEMBERS, DEMO_MODERATION_WORDS, DEMO_REVIEWS, DEMO_TRUST_EVENTS, DEMO_WAITLIST, hasTrustEvent, makeTrustEvent, moderateText, moderationNote, reviewOverdueTrustEvents, shouldAutoHide, type InviteCode, type ModerationWord, type WordAction, type Review, type ReviewStatus, type TrustEvent, type WaitlistEntry } from "@jubutech/shared";
 
 /**
  * 주부테크 데모 스토어 — localStorage에 영속(키 jubutech:demo:v2 — 시드 변경 시 버전을 올린다).
@@ -49,6 +49,8 @@ interface State {
   downloadCount: number;
   /** 1-2 생활력 변동 이력 (관리자 전용) */
   trustEvents: TrustEvent[];
+  /** 2-4 금칙어 사전 */
+  moderationWords: ModerationWord[];
 }
 
 interface Actions {
@@ -105,6 +107,13 @@ interface Actions {
   adminAdjustTrust: (userId: string, delta: number, note: string) => void;
   /** 기한 초과 일일 점검 — 새로 기록된 건수를 돌려준다 */
   adminRunOverdueCheck: () => number;
+  adminAddWord: (word: string, action: WordAction) => { ok: boolean; message: string };
+  adminRemoveWord: (id: string) => void;
+  adminSetWordAction: (id: string, action: WordAction) => void;
+  /** 2-4 회원 신고 — 서로 다른 신고자 `report.autoHideCount` 명이면 우선 숨김 */
+  reportPost: (postId: string, reason: string) => { ok: boolean; message: string };
+  /** 검토 대기 글 확정: 공개 또는 숨김 */
+  adminDecideModeration: (postId: string, decision: "published" | "hidden", reason?: string) => void;
 }
 
 const seed = (): State => ({
@@ -113,7 +122,11 @@ const seed = (): State => ({
   userId: "u1",
   authSource: "demo",
   users: USERS,
-  posts: POSTS,
+  posts: [
+    // 검토용: 운영 도구 검토 목록이 비어 보이지 않게 — 자동 판단으로 검토 대기가 된 글 1건
+    { id: "p-review-demo", board: "stock", title: "이번 주 이 종목 매수 추천드려요", body: "지금이 매수 타이밍이에요. 꼭 사세요.", authorId: "u2", createdAt: "2026-10-21T09:00:00+09:00", likes: [], views: 3, tags: [], commentCount: 0, status: "review", moderationNote: "특정 종목 권유 표현으로 보여요" },
+    ...POSTS,
+  ],
   comments: COMMENTS,
   campaigns: CAMPAIGNS,
   applications: APPLICATIONS,
@@ -122,6 +135,7 @@ const seed = (): State => ({
   inviteCodes: DEMO_INVITE_CODES,
   downloadCount: 23,
   trustEvents: DEMO_TRUST_EVENTS.map((e) => ({ ...e, userId: memberToUser(e.userId) })),
+  moderationWords: DEMO_MODERATION_WORDS,
   trades: TRADES,
   notifications: NOTIFICATIONS,
   pointLogs: POINT_LOGS,
@@ -175,7 +189,10 @@ const baseStore = create<State & Actions>()(
       addPost: (p) => {
         const id = "p" + uid();
         const authorId = get().userId ?? "u1";
-        set((s) => ({ posts: [{ ...p, id, authorId, createdAt: now(), likes: [], views: 0, commentCount: 0 }, ...s.posts] }));
+        // 2-4: 금칙어·홍보 링크·주식 권유 — 게시판 stock 은 주식 영역
+        const verdict = moderateText({ title: p.title, body: p.body, topic: p.board === "stock" ? "주식·재테크" : undefined }, get().moderationWords, DEFAULT_RULES);
+        const status = verdict.action === "publish" ? p.status : verdict.action === "review" ? "review" : "hidden";
+        set((s) => ({ posts: [{ ...p, status, moderationNote: moderationNote(verdict), id, authorId, createdAt: now(), likes: [], views: 0, commentCount: 0 }, ...s.posts] }));
         get().addPoints(50, "게시글 작성");
         return id;
       },
@@ -303,6 +320,42 @@ const baseStore = create<State & Actions>()(
       joinWaitlist: (contact, channel, source) => set((s) => (s.waitlist.some((w) => w.contact === contact) ? s : { waitlist: [{ id: "wl" + uid(), contact, channel, source, createdAt: now() }, ...s.waitlist] })),
       setDownloadCount: (n) => { set({ downloadCount: n }); get().log("다운로드 수 기록", String(n)); },
       adminAdjustTrust: (userId, delta, note) => { set((s) => ({ trustEvents: [makeTrustEvent(DEFAULT_RULES, "manual", userId, now(), { delta, note }), ...s.trustEvents] })); get().log("생활력 수동 조정", `${userId} ${delta > 0 ? "+" : ""}${delta}`, note); },
+      adminAddWord: (word, action) => {
+        const w = word.trim();
+        if (!w) return { ok: false, message: "단어를 입력해 주세요." };
+        if (get().moderationWords.some((x) => x.word === w)) return { ok: false, message: "이미 있는 단어예요." };
+        set((s) => ({ moderationWords: [{ id: "w" + uid(), word: w, action, createdAt: now() }, ...s.moderationWords] }));
+        get().log("금칙어 추가", w);
+        return { ok: true, message: `"${w}" 를 추가했어요.` };
+      },
+      adminRemoveWord: (id) => {
+        const w = get().moderationWords.find((x) => x.id === id);
+        set((s) => ({ moderationWords: s.moderationWords.filter((x) => x.id !== id) }));
+        get().log("금칙어 삭제", w?.word ?? id);
+      },
+      adminSetWordAction: (id, action) => {
+        set((s) => ({ moderationWords: s.moderationWords.map((x) => (x.id === id ? { ...x, action } : x)) }));
+      },
+      reportPost: (postId, reason) => {
+        const me = get().userId;
+        const text = reason.trim();
+        if (!me) return { ok: false, message: "로그인이 필요해요." };
+        if (!text) return { ok: false, message: "신고 사유를 적어 주세요." };
+        if (get().reports.some((r) => r.target === "post" && r.targetId === postId && r.reporterId === me)) return { ok: false, message: "이미 신고한 글이에요." };
+        const report: Report = { id: "rp" + uid(), target: "post", targetId: postId, reporterId: me, reason: text, status: "open", createdAt: now() };
+        set((s) => ({ reports: [report, ...s.reports] }));
+        if (shouldAutoHide(get().reports, "post", postId, DEFAULT_RULES) && get().posts.find((p) => p.id === postId)?.status !== "hidden") {
+          get().adminSetPostStatus(postId, "hidden", `신고 ${DEFAULT_RULES.report.autoHideCount}명 누적 자동 숨김`);
+          return { ok: true, message: "신고가 쌓여 글을 우선 가렸어요. 운영팀이 확인할게요." };
+        }
+        return { ok: true, message: "신고를 접수했어요. 운영팀이 확인할게요." };
+      },
+      adminDecideModeration: (postId, decision, reason) => {
+        get().adminSetPostStatus(postId, decision, reason);
+        // 공개로 확정하면 그 글에 쌓인 신고는 기각으로 닫는다 (다음 신고부터 다시 센다)
+        if (decision === "published") set((s) => ({ reports: s.reports.map((r) => (r.target === "post" && r.targetId === postId && r.status === "open" ? { ...r, status: "dismissed" } : r)) }));
+        else set((s) => ({ reports: s.reports.map((r) => (r.target === "post" && r.targetId === postId && r.status === "open" ? { ...r, status: "resolved" } : r)) }));
+      },
       adminRunOverdueCheck: () => {
         const added = reviewOverdueTrustEvents({ applications: DEMO_APPLICATIONS, campaigns: DEMO_CAMPAIGNS, reviews: get().reviews, events: get().trustEvents, rules: DEFAULT_RULES, now: now(), userIdOf: memberToUser });
         if (added.length) { set((s) => ({ trustEvents: [...added, ...s.trustEvents] })); get().log("기한 초과 점검", `${added.length}건 기록`); }

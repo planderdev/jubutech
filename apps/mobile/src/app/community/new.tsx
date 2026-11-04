@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { StyleSheet, Text } from "react-native";
 import { useLocalSearchParams, useRouter, type Href } from "expo-router";
-import { COMMUNITY_TOPICS, POST_FORM_NOTICE, type CommunityTopic } from "@jubutech/shared";
+import { COMMUNITY_TOPICS, POST_FORM_NOTICE, STOCK_POST_NOTICE, type CommunityTopic } from "@jubutech/shared";
 import { ChipRow, PageTitle } from "@/components/campaign";
 import { BottomCta, Field, InfoBox } from "@/components/form";
 import { AppScreen, ContentSection } from "@/components/screen";
@@ -35,6 +35,12 @@ export default function PostForm() {
       <ContentSection style={s.form}>
         <Field label="제목" value={title} onChangeText={(v) => setTitle(v.slice(0, 120))} autoCapitalize="sentences" />
         <Field label="내용" value={body} onChangeText={setBody} multiline autoCapitalize="sentences" />
+        {topic === "주식·재테크" ? (
+          <InfoBox>
+            <Text style={typo("label1", "semibold", T.status.negative)}>{STOCK_POST_NOTICE.title}</Text>
+            <Text style={typo("label2", "regular", T.label.neutral)}>{STOCK_POST_NOTICE.body}</Text>
+          </InfoBox>
+        ) : null}
         <InfoBox>
           <Text style={typo("label1", "semibold")}>{POST_FORM_NOTICE.title}</Text>
           <Text style={typo("label2", "regular", T.label.neutral)}>{POST_FORM_NOTICE.body}</Text>

@@ -18,12 +18,14 @@ export function WorkspacePanel({ kind }: { kind: "advertiser" | "admin" }) {
   const pathname = usePathname();
   const pendingCampaigns = useStore((s) => s.campaigns.filter((c) => c.status === "pending").length);
   const openReports = useStore((s) => s.reports.filter((r) => r.status === "open").length);
+  const moderationQueue = useStore((st) => st.posts.filter((p) => p.status === "review").length);
   const pendingReviews = useStore((s) => s.reviews.filter((r) => r.status === "pending").length);
   const ADMIN: MenuItem[] = [
     { href: "/admin7", label: "대시보드", icon: "home" },
     { href: "/admin7/users", label: "회원", icon: "community" },
     { href: "/admin7/posts", label: "게시글·댓글", icon: "comment" },
     { href: "/admin7/reports", label: "신고", icon: "bell", count: openReports },
+    { href: "/admin7/moderation", label: "운영 도구", icon: "list", count: moderationQueue },
     { href: "/admin7/campaigns", label: "캠페인 검수", icon: "campaign", count: pendingCampaigns },
     { href: "/admin7/applications", label: "응모·미션", icon: "check" },
     { href: "/admin7/reviews", label: "후기 검수", icon: "comment", count: pendingReviews },

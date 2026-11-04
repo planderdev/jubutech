@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { DEMO_APPLICATIONS, DEMO_CAMPAIGNS, DEMO_COMMENTS, DEMO_INVITE_CODES, DEMO_JOURNALS, DEMO_JOURNAL_GOALS, DEMO_MEMBERS, DEMO_NOW, DEMO_POINTS, DEMO_POSTS, DEMO_REPORTS, DEMO_REVIEWS, DEMO_SAVED, DEMO_TRUST_EVENTS, REDEEM_MESSAGE, applyBlockedUntil, campaignGradeGate, demoApplication, demoCampaignState, ensureInviteCode, hasTrustEvent, makeTrustEvent, redeemInviteCode, resolveRules, trustScore, TRUST_GRADE_LABEL, type CommunityTopic, type DemoApplication, type DemoJournal, type JournalInput, type DemoCampaign, type DemoComment, type DemoMember, type DemoPoint, type DemoPost, type DemoReport, type AppRules, type InviteCode, type Review, type RuleKey, type ReviewCheck, type ReviewStatus, type TrustEvent } from "@jubutech/shared";
+import { DEMO_APPLICATIONS, DEMO_CAMPAIGNS, DEMO_COMMENTS, DEMO_INVITE_CODES, DEMO_JOURNALS, DEMO_JOURNAL_GOALS, DEMO_MEMBERS, DEMO_MODERATION_WORDS, DEMO_NOW, DEMO_POINTS, DEMO_POSTS, DEMO_REPORTS, DEMO_REVIEWS, DEMO_SAVED, DEMO_TRUST_EVENTS, REDEEM_MESSAGE, applyBlockedUntil, campaignGradeGate, demoApplication, demoCampaignState, ensureInviteCode, hasTrustEvent, makeTrustEvent, moderateText, moderationMessage, moderationNote, redeemInviteCode, resolveRules, shouldAutoHide, trustScore, TRUST_GRADE_LABEL, type CommunityTopic, type DemoApplication, type DemoJournal, type JournalInput, type DemoCampaign, type DemoComment, type DemoMember, type DemoPoint, type DemoPost, type DemoReport, type AppRules, type InviteCode, type Review, type RuleKey, type ReviewCheck, type ReviewStatus, type TrustEvent } from "@jubutech/shared";
 import { planReviewReminders, syncReviewReminders } from "@/lib/reminders";
 
 /**
@@ -253,9 +253,13 @@ export function DemoProvider({ children }: { children: ReactNode }) {
       const old = input.id ? state.posts.find((p) => p.id === input.id && p.memberId === member.id) : undefined;
       if (input.id && !old) return { ok: false, message: "수정할 수 없는 글이에요." };
       const id = old?.id ?? `p${Date.now().toString(36)}`;
-      const next: DemoPost = old ? { ...old, topic: input.topic, title, body } : { id, memberId: member.id, topic: input.topic, title, body, status: "published", createdAt: DEMO_NOW, likes: [], sourceJournalId: input.sourceJournalId ?? null };
+      // 2-4: 금칙어·홍보 링크·주식 권유 — 1단계 W8(Supabase) 뒤에는 사전을 서버에서 읽고 판단도 서버에서 한 번 더 한다
+      const verdict = moderateText({ title, body, topic: input.topic }, DEMO_MODERATION_WORDS, rulesRef.current);
+      const status = verdict.action === "publish" ? "published" : verdict.action === "review" ? "review" : "hidden";
+      const moderation = moderationNote(verdict);
+      const next: DemoPost = old ? { ...old, topic: input.topic, title, body, status, moderationNote: moderation } : { id, memberId: member.id, topic: input.topic, title, body, status, moderationNote: moderation, createdAt: DEMO_NOW, likes: [], sourceJournalId: input.sourceJournalId ?? null };
       setState((s) => ({ ...s, posts: old ? s.posts.map((p) => (p.id === id ? next : p)) : [next, ...s.posts] }));
-      return { ok: true, id, message: "이야기를 게시했어요." };
+      return { ok: true, id, message: moderationMessage(verdict) };
     },
     [state.posts, member.id],
   );
@@ -271,6 +275,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
   const addComment = useCallback<DemoStore["addComment"]>((postId, body) => {
     const text = body.trim();
     if (!text) return { ok: false, message: "댓글 내용을 적어 주세요." };
+    if (moderateText({ body: text }, DEMO_MODERATION_WORDS, rulesRef.current).action !== "publish") return { ok: false, message: "운영 정책에 맞지 않는 표현이 있어 남길 수 없어요." };
     setState((s) => ({ ...s, comments: [...s.comments, { id: `cm${Date.now().toString(36)}`, postId, memberId: member.id, body: text, status: "published", createdAt: DEMO_NOW, likes: [] }] }));
     return { ok: true, message: "댓글을 남겼어요." };
   }, [member.id]);
@@ -296,8 +301,21 @@ export function DemoProvider({ children }: { children: ReactNode }) {
     const text = reason.trim();
     if (!text) return { ok: false, message: "신고 사유를 적어 주세요." };
     if (state.reports.some((r) => r.target === "post" && r.targetId === postId && r.reporterId === member.id)) return { ok: false, message: "이미 신고한 글이에요. 운영팀이 확인하고 있어요." };
-    setState((s) => ({ ...s, reports: [{ id: `rp${Date.now().toString(36)}`, target: "post", targetId: postId, reporterId: member.id, reason: text, status: "open", createdAt: DEMO_NOW }, ...s.reports] }));
-    return { ok: true, message: "신고를 접수했어요. 운영팀이 확인할게요." };
+    const report: DemoReport = { id: `rp${Date.now().toString(36)}`, target: "post", targetId: postId, reporterId: member.id, reason: text, status: "open", createdAt: DEMO_NOW };
+    const reports = [report, ...state.reports];
+    // 2-4: 서로 다른 신고자 `report.autoHideCount` 명 → 우선 숨기고 검토 목록으로, 작성자 생활력 `post_hidden`
+    const autoHide = shouldAutoHide(reports, "post", postId, rulesRef.current);
+    setState((s) => {
+      const post = s.posts.find((p) => p.id === postId);
+      if (!autoHide || !post || post.status !== "published") return { ...s, reports: [report, ...s.reports] };
+      return {
+        ...s,
+        reports: [{ ...report, triggeredAutoHide: true }, ...s.reports],
+        posts: s.posts.map((p) => (p.id === postId ? { ...p, status: "hidden", moderationNote: `신고 ${rulesRef.current.report.autoHideCount}명 누적` } : p)),
+        trustEvents: hasTrustEvent(s.trustEvents, "post_hidden", "post", postId) ? s.trustEvents : [makeTrustEvent(rulesRef.current, "post_hidden", post.memberId, DEMO_NOW, { refType: "post", refId: postId, note: "신고 누적 숨김" }), ...s.trustEvents],
+      };
+    });
+    return { ok: true, message: autoHide ? "신고가 쌓여 글을 우선 가렸어요. 운영팀이 확인할게요." : "신고를 접수했어요. 운영팀이 확인할게요." };
   }, [state.reports, member.id]);
 
   const saveJournal = useCallback<DemoStore["saveJournal"]>(({ id, input, draft }) => {

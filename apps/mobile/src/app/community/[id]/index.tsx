@@ -49,7 +49,15 @@ export default function PostDetail() {
     setBody("");
     setBodyError("");
   };
-  const submitReport = () => setReportMsg(((r) => { if (r.ok) setReason(""); return r.message; })(reportPost(p.id, reason)));
+  const submitReport = () => {
+    const r = reportPost(p.id, reason);
+    if (r.ok) {
+      setReason("");
+      // 신고가 쌓여 바로 가려지면 이 화면의 글도 사라지므로 결과는 대화상자로 알린다
+      noticeDialog("신고 접수", r.message);
+    }
+    setReportMsg(r.message);
+  };
 
   return (
     <AppScreen title="이야기" onBack={back} tabBar={false} grouped={false} right={mine ? <IconButton name="sliders-horizontal" label="글 더 보기" onPress={() => setSheet(true)} /> : undefined}>
