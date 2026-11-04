@@ -5,10 +5,10 @@ import { useLocalSearchParams, useRouter, type Href } from "expo-router";
 import { DEMO_CAMPAIGNS, checkReview, demoReview, isSafeUrl, missionWithDefaults, reviewCharCount, reviewCheckSummary, type LinkStatus, type ReviewCheck } from "@jubutech/shared";
 import { ChipRow, EmptyState } from "@/components/campaign";
 import { BottomCta, Field, InfoBox } from "@/components/form";
-import { Icon } from "@/components/icon";
 import { CheckResultList, MissionChecklist, PhotoStepper } from "@/components/review";
 import { AppScreen, ContentSection } from "@/components/screen";
 import { Button, GroupCard, GroupSection, IconButton } from "@/components/ui";
+import { AiAssist } from "@/components/ai-assist";
 import { useDemo } from "@/lib/demo-store";
 import { ELEV, RAD, SP, T, typo } from "@/theme";
 
@@ -143,11 +143,7 @@ export default function ReviewForm() {
         ) : (
           <>
             <Field label="후기 내용" value={content} onChangeText={onContent} multiline autoCapitalize="sentences" placeholder={mission.minChars ? `${mission.minChars}자 이상, 직접 써 본 느낌을 솔직하게` : "직접 써 본 느낌을 솔직하게"} help={mission.minChars ? `${chars} / ${mission.minChars}자` : `${chars}자`} />
-            <Pressable disabled accessibilityRole="button" accessibilityState={{ disabled: true }} style={s.aiButton}>
-              <Icon name="sparkles" size={20} color={T.label.assistive} />
-              <Text style={[typo("label1", "semibold", T.label.assistive), { flex: 1 }]}>AI 교정·이어쓰기</Text>
-              <Text style={typo("caption1", "regular", T.label.assistive)}>{rules.assist.aiReviewEdit ? "" : "준비 중"}</Text>
-            </Pressable>
+            <AiAssist text={content} brand={c.brand} title={c.title} mission={mission} onApply={onContent} />
           </>
         )}
         {mission.photoCount > 0 ? (
@@ -206,7 +202,6 @@ const s = StyleSheet.create({
   title: { marginVertical: SP[16], gap: SP[8] },
   card: { padding: SP[16], gap: SP[16] },
   form: { gap: SP[16], marginTop: SP[8] },
-  aiButton: { flexDirection: "row", alignItems: "center", gap: SP[8], minHeight: SP[48], paddingHorizontal: SP[16], borderRadius: RAD.md, borderWidth: 1, borderStyle: "dashed", borderColor: T.line.normalNormal },
   backdrop: { flex: 1, backgroundColor: T.material.dimmer },
   sheet: { backgroundColor: T.background.normalNormal, borderTopLeftRadius: RAD.xl, borderTopRightRadius: RAD.xl, paddingTop: SP[8], ...ELEV.large },
   sheetHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingLeft: SP[24], paddingRight: SP[8], minHeight: SP[56], marginBottom: SP[8] },

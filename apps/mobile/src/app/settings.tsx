@@ -1,6 +1,7 @@
 import { Text, View } from "react-native";
 import { useRouter, type Href } from "expo-router";
 import Constants from "expo-constants";
+import { NOTIFY_CATEGORY_LABEL, notifyEnabled, type NotifyCategory } from "@jubutech/shared";
 import { PageTitle } from "@/components/campaign";
 import { Checkbox } from "@/components/form";
 import { AppScreen, ContentSection } from "@/components/screen";
@@ -14,11 +15,21 @@ import { SP, T, typo } from "@/theme";
  */
 export default function Settings() {
   const router = useRouter();
-  const { rules, setRuleOverride } = useDemo();
+  const { rules, setRuleOverride, notifyPrefs, setNotifyPref } = useDemo();
+  const categories = (Object.keys(NOTIFY_CATEGORY_LABEL) as NotifyCategory[]).filter((c) => notifyEnabled(rules, c));
   const back = () => (router.canGoBack() ? router.back() : router.replace("/my" as Href));
   return (
     <AppScreen title="설정" onBack={back} tabBar={false}>
       <ContentSection><PageTitle title="설정" /></ContentSection>
+      <GroupSection>
+        <GroupCard>
+          <ListHeader title="알림" action="" />
+          <View style={{ paddingHorizontal: SP[16], paddingBottom: SP[16], gap: SP[8] }}>
+            {categories.map((c) => <Checkbox key={c} checked={notifyPrefs[c]} onChange={(v) => setNotifyPref(c, v)} label={NOTIFY_CATEGORY_LABEL[c].label} sub={NOTIFY_CATEGORY_LABEL[c].sub} />)}
+            <Text style={typo("caption1", "regular", T.label.alternative)}>기기 알림 권한은 휴대폰 설정에서 바꿀 수 있어요.</Text>
+          </View>
+        </GroupCard>
+      </GroupSection>
       <GroupSection>
         <GroupCard>
           <ListHeader title="앱 정보" action="" />
@@ -32,6 +43,7 @@ export default function Settings() {
             <ListHeader title="검토용 스위치 (개발 빌드)" action="" />
             <View style={{ paddingHorizontal: SP[16], paddingBottom: SP[16], gap: SP[8] }}>
               <Checkbox checked={rules.trust.visibleToUsers} onChange={(v) => setRuleOverride("trust.visibleToUsers", v)} label={`${rules.trust.name} 사용자에게 보이기`} sub="운영에서는 관리자 설정의 trust.visibleToUsers" />
+              <Checkbox checked={rules.assist.aiReviewEdit} onChange={(v) => setRuleOverride("assist.aiReviewEdit", v)} label="AI 교정·이어쓰기 켜기" sub="모델 호출 없는 예시(stub)" />
               <Text style={typo("caption1", "regular", T.label.alternative)}>이 기기에만 적용돼요.</Text>
             </View>
           </GroupCard>

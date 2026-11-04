@@ -82,8 +82,20 @@ export interface AppRules {
     agencyFee: number;
   };
   assist: {
-    /** 후기 작성 화면의 AI 교정·이어쓰기 버튼 — 1단계는 자리만, 모델·비용 확정 전까지 꺼 둔다 */
+    /** 후기 작성 화면의 AI 교정·이어쓰기 버튼 — 모델·비용 확정 전까지 꺼 둔다 */
     aiReviewEdit: boolean;
+    /** 어댑터: stub = 모델 호출 없는 규칙 기반 예시. 실제 모델은 서버 함수가 생기면 추가 */
+    provider: "stub" | "remote";
+  };
+  notify: {
+    /** 체험단 선정 결과 알림 */
+    selection: boolean;
+    /** 후기 기한·검토 결과 알림 */
+    review: boolean;
+    /** 맞춤 지원금 마감 알림 */
+    subsidy: boolean;
+    /** 지원금 마감 며칠 전에 알릴지 */
+    subsidyDaysBefore: number;
   };
 }
 
@@ -109,7 +121,8 @@ export const DEFAULT_RULES: AppRules = {
   moderation: { blockPromoLinks: true, stockGuard: true },
   rating: { minVisible: 3 },
   advertiser: { baseFee: 50000, agencyFee: 100000 },
-  assist: { aiReviewEdit: false },
+  assist: { aiReviewEdit: false, provider: "stub" },
+  notify: { selection: true, review: true, subsidy: true, subsidyDaysBefore: 7 },
 };
 
 export type RuleKey =
@@ -143,7 +156,12 @@ export type RuleKey =
   | "rating.minVisible"
   | "advertiser.baseFee"
   | "advertiser.agencyFee"
-  | "assist.aiReviewEdit";
+  | "assist.aiReviewEdit"
+  | "assist.provider"
+  | "notify.selection"
+  | "notify.review"
+  | "notify.subsidy"
+  | "notify.subsidyDaysBefore";
 
 export type RuleValueType = "number" | "text" | "date" | "boolean" | "numbers" | "choice";
 
@@ -189,7 +207,12 @@ export const RULE_META: Record<RuleKey, RuleMeta> = {
   "rating.minVisible": { label: "평가 공개 최소 건수", type: "number", unit: "건", note: "1-2 상호 평가 · 작성자가 드러나지 않게", group: "광고주" },
   "advertiser.baseFee": { label: "캠페인 기본 수수료", type: "number", unit: "원", note: "2-2 · 광고 제안서 가격, 초안", group: "광고주" },
   "advertiser.agencyFee": { label: "선정 대행비", type: "number", unit: "원", note: "2-2 · '맡기기' 추가 금액, 초안", group: "광고주" },
-  "assist.aiReviewEdit": { label: "AI 후기 교정 버튼", type: "boolean", note: "1-1 · 자리만, 모델·비용 확정 뒤 켠다", group: "미션·기한" },
+  "assist.aiReviewEdit": { label: "AI 후기 교정 버튼", type: "boolean", note: "1-1 · 모델·비용 확정 뒤 켠다", group: "미션·기한" },
+  "assist.provider": { label: "AI 교정 어댑터", type: "choice", choices: ["stub", "remote"], note: "1-1 · stub 은 모델 호출 없는 예시, remote 는 서버 함수 연결 뒤", group: "미션·기한" },
+  "notify.selection": { label: "선정 결과 알림", type: "boolean", note: "2단계 · 운영 전체 스위치", group: "초대·운영" },
+  "notify.review": { label: "후기 기한·검토 결과 알림", type: "boolean", note: "1-1 · 운영 전체 스위치", group: "초대·운영" },
+  "notify.subsidy": { label: "맞춤 지원금 마감 알림", type: "boolean", note: "2-5 · 운영 전체 스위치", group: "초대·운영" },
+  "notify.subsidyDaysBefore": { label: "지원금 마감 알림 시점", type: "number", unit: "일 전", note: "2-5 · 초안 7일", group: "초대·운영" },
 };
 
 export const RULE_KEYS = Object.keys(RULE_META) as RuleKey[];

@@ -34,6 +34,7 @@ export default function RootLayout() {
         <Stack.Screen name="article/[id]" />
         <Stack.Screen name="saved" />
         <Stack.Screen name="trust" />
+        <Stack.Screen name="notifications" />
         <Stack.Screen name="settings" />
         <Stack.Screen name="journal-entry/form" />
         <Stack.Screen name="journal-entry/[id]/index" />

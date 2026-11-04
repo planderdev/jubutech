@@ -1,7 +1,8 @@
 import { StyleSheet, Text, View } from "react-native";
+import { useRouter, type Href } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { DEMO_MEMBERS, DEMO_NOTIFICATIONS } from "@jubutech/shared";
 import { IconButton } from "@/components/ui";
+import { useDemo } from "@/lib/demo-store";
 import { useService } from "@/lib/service";
 import { CTRL, RAD, SHELL, SP, T, typo } from "@/theme";
 
@@ -13,8 +14,11 @@ import { CTRL, RAD, SHELL, SP, T, typo } from "@/theme";
 export function AppHeader({ title, heading, onBack, right, scrolled }: { title?: string; heading?: string; onBack?: () => void; right?: React.ReactNode; scrolled?: boolean }) {
   const insets = useSafeAreaInsets();
   const service = useService();
-  const me = DEMO_MEMBERS[0];
-  const unread = DEMO_NOTIFICATIONS.filter((n) => n.memberId === me.id && !n.read).length;
+  const router = useRouter();
+  const { notifications, member } = useDemo();
+  const unread = notifications.filter((n) => n.memberId === member.id && !n.read).length;
+  // 헤더 검색은 그 서비스의 검색 화면으로 (커뮤니티·마이 탭은 체험단 탐색)
+  const searchHref = service.key === "finance" ? "/finance/categories" : service.key === "journal" ? "/journal/entries" : "/campaigns/explore";
   const name = heading ?? service.name;
 
   return (
@@ -29,9 +33,9 @@ export function AppHeader({ title, heading, onBack, right, scrolled }: { title?:
         <View style={[s.bar, { paddingLeft: SHELL.gutter }]}>
           <Text style={[typo("heading2", "bold"), { flexShrink: 1 }]} numberOfLines={1} accessibilityRole="header">{name}</Text>
           <View style={s.actions}>
-            <IconButton name="search" label={`${name} 검색`} />
+            <IconButton name="search" label={`${name} 검색`} onPress={() => router.push(searchHref as Href)} />
             <View>
-              <IconButton name="bell" label={`알림 ${unread}건`} />
+              <IconButton name="bell" label={`알림 ${unread}건`} onPress={() => router.push("/notifications" as Href)} />
               {unread ? <View style={s.dot} accessibilityElementsHidden /> : null}
             </View>
           </View>
