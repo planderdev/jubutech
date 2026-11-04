@@ -2,6 +2,17 @@
 -- 미션 카드 · 후기 검수(reviews) · 생활력(trust) · 지갑 내역 유형 · 초대 코드 · 대기자 · 운영 규칙(app_settings).
 -- 데이터 시드(캠페인·회원 등)는 Supabase 프로젝트 연결 시 packages/shared/src/fixtures.ts 에서 생성한다 (W8).
 
+-- 운영 규칙 테이블을 맨 앞에: 아래 trust_events 정책이 이 테이블을 참조한다 (시드는 파일 끝)
+create table public.app_settings (
+  key text primary key,
+  value jsonb not null,
+  updated_at timestamptz not null default now(),
+  updated_by uuid references public.profiles(id) on delete set null
+);
+alter table public.app_settings enable row level security;
+create policy "app_settings: public read" on public.app_settings for select using (true);
+create policy "app_settings: admin write" on public.app_settings for all using (public.is_admin()) with check (public.is_admin());
+
 -- ───────── 1-1 미션 카드 · 후기 검수 ─────────
 alter table public.campaigns
   add column if not exists mission jsonb not null default '{}'::jsonb,          -- MissionCard {photoCount,minChars,requiredKeywords,hashtags,dueDays}
@@ -108,16 +119,6 @@ create policy "waitlist: anyone can join" on public.waitlist for insert with che
 create policy "waitlist: admin all" on public.waitlist for all using (public.is_admin()) with check (public.is_admin());
 
 -- ───────── 운영 규칙 (미정 숫자) — 코드 기본값(packages/shared/src/rules.ts) 을 덮어쓴다 ─────────
-create table public.app_settings (
-  key text primary key,
-  value jsonb not null,
-  updated_at timestamptz not null default now(),
-  updated_by uuid references public.profiles(id) on delete set null
-);
-alter table public.app_settings enable row level security;
-create policy "app_settings: public read" on public.app_settings for select using (true);
-create policy "app_settings: admin write" on public.app_settings for all using (public.is_admin()) with check (public.is_admin());
-
 -- 초안값 시드 = DEFAULT_RULES (rules.ts 와 같아야 한다). 확정되면 관리자 설정 화면에서만 바꾼다.
 insert into public.app_settings (key, value) values
   ('reward.reviewAmount',        '1000'),

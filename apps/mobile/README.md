@@ -32,6 +32,11 @@ src/app/
   journal-entry/[id]/      일지 상세(index)·복기 공유(share) ← PHP /journal/entries/{id}
   trust.tsx                생활력 상세: 온도·등급표·오르고 내리는 일·변동 이력 (`trust.visibleToUsers` 일 때만)
   settings.tsx             설정: 알림·앱 정보, 개발 빌드 검토 스위치
+  notifications.tsx        알림함 (헤더 종) ← PHP /notifications
+  subsidy-profile.tsx      맞춤 지원금 세 질문 (기기 안 저장)
+  application/[id]/rate.tsx 광고주 평가 (상호 평가)
+  referral.tsx             추천 링크 — referral.enabled 뒤, 결정 대기
+  notices.tsx · contact.tsx · about.tsx  공지사항 · 문의 · 서비스 소개
   my-posts.tsx             내가 쓴 글 ← PHP /mypage/posts
   invite.tsx               2-3 친구 초대 — 내 코드(회원당 하나, 결정적 생성)·복사·공유 시트, 보너스 안내(`invite.bonus`), 초대한 친구 목록
 src/lib/service.ts         SERVICES(서비스 이름·상단 세그먼트 = PHP $navs 에서 마이·커뮤니티 제외), ROOT_TABS(하단 5탭), useService(), 마지막 서비스·온보딩 저장
@@ -66,6 +71,8 @@ assets/images/campaigns/   PHP campaign-cp1-0*.webp 를 720px 로 줄인 것 —
 구현된 화면 (2026-11-05): 커뮤니티(`/community*`), 지원금 정보(`/finance/categories`, `/article/[id]`, `/saved`), 주식 일지(`/journal*`, `/journal-entry/*`), 온보딩(`/onboarding`), 재테크 홈(`/finance`), 체험단 홈·탐색·내 응모(`/campaigns*`), 체험단 상세·응모·응모 내역·후기 제출(`/campaign/[id]*`, `/application/[id]`, `/application/[id]/review`), 마이(`/my`)·나의 지갑(`/wallet`).
 
 탭 구조 메모(W6, B안): PHP 데모는 상단 드롭다운으로 서비스를 바꾸고 서비스마다 하단 4탭이지만, 앱은 하단 5탭 고정 + 서비스 상단 세그먼트다(대표님 결정, 팀장과 공유 필요). 서비스 탭을 다시 누르면 마지막 세그먼트가 유지된다(중첩 Stack).
+
+2단계 메모(2026-11-05): 계획은 `docs/PLAN-stage2-2026-11-05.md`. 규칙은 `useRules()`(코드 기본값 + 덮어쓰기)로 읽는다. 개발 빌드 설정 화면에 생활력 노출·AI 교정·추천 링크 검토 스위치가 있다. 운영 도구 판단은 shared `moderation.ts`, 알림 객체는 `notifications.ts`, AI 어댑터는 `ai-review.ts`(스텁), 푸시 자리는 `lib/push.ts`. 스키마 초안은 `supabase/migrations/0003_stage2.sql`(미적용).
 
 출시 점검 메모(W9): 약관·개인정보처리방침·리워드 안내·응모 동의 본문은 shared `legal.ts`(`legalDoc()`) 하나를 앱 `/legal/[doc]` 과 웹 `/legal/[doc]` 이 같이 그린다. 마이 탭 "약관·앱 정보"에 문서 링크·계정 삭제(`auth.deleteAccount()` → 서버 RPC 는 W8)·앱 버전이 있고, 온보딩·로그인 하단에 약관 링크, 지갑 하단에 리워드 고지(`rewardDisclaimer`)가 붙는다. 스토어 콘솔용 설명·심사 메모는 `STORE_LISTING`. 남은 외부 입력은 `docs/RELEASE-checklist-stage1.md`, 테스터 기록은 `docs/TEST-results-stage1.md`.
 
