@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useStore, useMe, useRules } from "@/lib/store";
-import { SELECTION_MODE_DESC, SELECTION_MODE_LABEL, campaignQuote, type SelectionMode } from "@jubutech/shared";
+import { CAMPAIGN_TEMPLATES, SELECTION_MODE_DESC, SELECTION_MODE_LABEL, campaignQuote, type CampaignTemplate, type SelectionMode } from "@jubutech/shared";
 import { CAMPAIGN_CATEGORIES, CHANNELS, type CampaignCategory, type ChannelType } from "@/lib/types";
 import { PageHeader } from "@/components/feature/page-header";
 import { RoleGate } from "@/components/feature/role-gate";
@@ -36,6 +36,13 @@ function Builder() {
   const up = <K extends keyof typeof f>(k: K, v: (typeof f)[K]) => setF((s) => ({ ...s, [k]: v }));
   const listUp = (k: "missions" | "requirements", i: number, v: string) => setF((s) => ({ ...s, [k]: s[k].map((x, j) => (j === i ? v : x)) }));
 
+  // 3-1 시즌 템플릿 — 고르면 미션·미션 카드·채널을 채운다. 금액·브랜드는 그대로 둔다
+  const [templateId, setTemplateId] = useState<string | null>(null);
+  const applyTemplate = (t: CampaignTemplate) => {
+    setTemplateId(t.id);
+    setF((s) => ({ ...s, category: t.category, channels: t.channels, missions: t.missions, requirements: t.requirements, keywords: t.keywords.join(", "), photoCount: t.mission.photoCount, minChars: t.mission.minChars, hashtags: t.mission.hashtags.join(", "), dueDays: t.mission.dueDays ?? s.dueDays, requiredKeywords: s.brand }));
+  };
+
   const validate = (): string | null => {
     if (step === 0) { if (!f.brand.trim()) return "브랜드명을 입력해 주세요."; if (f.title.trim().length < 6) return "캠페인 제목을 6자 이상 입력해 주세요."; }
     if (step === 1) { if (f.channels.length === 0) return "채널을 1개 이상 선택해 주세요."; if (!f.missions.some((m) => m.trim())) return "미션을 1개 이상 입력해 주세요."; if (f.photoCount < 0 || f.minChars < 0 || f.dueDays < 1) return "미션 카드 숫자를 확인해 주세요."; }
@@ -68,6 +75,18 @@ function Builder() {
       <div className="bg-paper rounded-xl shadow-card p-5 md:p-7 space-y-5">
         {step === 0 && (
           <>
+            <div>
+              <p className="label text-ink-2 mb-2">시즌 템플릿 <span className="text-ink-3 normal-case tracking-normal">(고르면 미션 카드를 채워 드려요)</span></p>
+              <div className="grid sm:grid-cols-2 gap-2">
+                {CAMPAIGN_TEMPLATES.map((t) => (
+                  <button key={t.id} type="button" aria-pressed={templateId === t.id} onClick={() => applyTemplate(t)} className={cn("text-left rounded-xl border p-3", templateId === t.id ? "border-red bg-red-100" : "border-hairline")}>
+                    <p className="text-[11px] font-bold text-red">{t.pack}</p>
+                    <p className="text-[14px] font-semibold">{t.label}</p>
+                    <p className="text-[12px] text-ink-2 mt-0.5">{t.desc}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
             <Field label="브랜드·상호" required><Input value={f.brand} onChange={(e) => up("brand", e.target.value)} placeholder="그린테이블" /></Field>
             <Field label="캠페인 제목" required hint="제품 + 채널 + 형식"><Input value={f.title} onChange={(e) => up("title", e.target.value)} placeholder="저염 밀키트 3종 인스타 릴스 체험단" maxLength={60} /></Field>
             <Field label="카테고리" required><Select value={f.category} onChange={(e) => up("category", e.target.value as CampaignCategory)}>{CAMPAIGN_CATEGORIES.map((c) => <option key={c.key} value={c.key}>{c.label}</option>)}</Select></Field>
