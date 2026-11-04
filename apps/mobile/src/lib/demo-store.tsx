@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { DEFAULT_RULES, DEMO_APPLICATIONS, DEMO_CAMPAIGNS, DEMO_COMMENTS, DEMO_INVITE_CODES, DEMO_JOURNALS, DEMO_JOURNAL_GOALS, DEMO_MEMBERS, DEMO_NOW, DEMO_POINTS, DEMO_POSTS, DEMO_REPORTS, DEMO_REVIEWS, DEMO_SAVED, DEMO_TRUST_EVENTS, REDEEM_MESSAGE, applyBlockedUntil, demoApplication, demoCampaignState, ensureInviteCode, hasTrustEvent, makeTrustEvent, redeemInviteCode, type CommunityTopic, type DemoApplication, type DemoJournal, type JournalInput, type DemoCampaign, type DemoComment, type DemoMember, type DemoPoint, type DemoPost, type DemoReport, type InviteCode, type Review, type ReviewCheck, type ReviewStatus, type TrustEvent } from "@jubutech/shared";
+import { DEMO_APPLICATIONS, DEMO_CAMPAIGNS, DEMO_COMMENTS, DEMO_INVITE_CODES, DEMO_JOURNALS, DEMO_JOURNAL_GOALS, DEMO_MEMBERS, DEMO_NOW, DEMO_POINTS, DEMO_POSTS, DEMO_REPORTS, DEMO_REVIEWS, DEMO_SAVED, DEMO_TRUST_EVENTS, REDEEM_MESSAGE, applyBlockedUntil, campaignGradeGate, demoApplication, demoCampaignState, ensureInviteCode, hasTrustEvent, makeTrustEvent, redeemInviteCode, resolveRules, trustScore, TRUST_GRADE_LABEL, type CommunityTopic, type DemoApplication, type DemoJournal, type JournalInput, type DemoCampaign, type DemoComment, type DemoMember, type DemoPoint, type DemoPost, type DemoReport, type AppRules, type InviteCode, type Review, type RuleKey, type ReviewCheck, type ReviewStatus, type TrustEvent } from "@jubutech/shared";
 import { planReviewReminders, syncReviewReminders } from "@/lib/reminders";
 
 /**
@@ -27,6 +27,8 @@ interface Persisted {
   journals: DemoJournal[];
   /** 월(YYYY-MM)별 기록 목표 일수 */
   journalGoals: Record<string, number>;
+  /** 운영 규칙 덮어쓰기 — 1단계 W8(Supabase) 뒤에는 `app_settings` 를 읽는 자리. 지금은 기기 안 검토용 */
+  ruleOverrides: Partial<Record<RuleKey, unknown>>;
 }
 
 export interface ReviewInput {
@@ -48,6 +50,8 @@ export interface ApplyInput {
 
 interface DemoStore extends Persisted {
   hydrated: boolean;
+  rules: AppRules;
+  setRuleOverride: (key: RuleKey, value: unknown) => void;
   member: DemoMember;
   now: string;
   /** PHP actions.php `apply` — 검증은 화면에서 끝내고 여기서는 중복·모집 상태만 다시 본다 */
@@ -81,7 +85,7 @@ interface DemoStore extends Persisted {
   reset: () => void;
 }
 
-const seed = (): Persisted => ({ applications: DEMO_APPLICATIONS, reviews: DEMO_REVIEWS, points: DEMO_POINTS, saved: DEMO_SAVED[DEMO_MEMBERS[0].id] ?? [], inviteCodes: DEMO_INVITE_CODES, trustEvents: DEMO_TRUST_EVENTS, posts: DEMO_POSTS, comments: DEMO_COMMENTS, reports: DEMO_REPORTS, journals: DEMO_JOURNALS, journalGoals: DEMO_JOURNAL_GOALS[DEMO_MEMBERS[0].id] ?? {} });
+const seed = (): Persisted => ({ applications: DEMO_APPLICATIONS, reviews: DEMO_REVIEWS, points: DEMO_POINTS, saved: DEMO_SAVED[DEMO_MEMBERS[0].id] ?? [], inviteCodes: DEMO_INVITE_CODES, trustEvents: DEMO_TRUST_EVENTS, posts: DEMO_POSTS, comments: DEMO_COMMENTS, reports: DEMO_REPORTS, journals: DEMO_JOURNALS, journalGoals: DEMO_JOURNAL_GOALS[DEMO_MEMBERS[0].id] ?? {}, ruleOverrides: {} });
 
 const Ctx = createContext<DemoStore | null>(null);
 
@@ -90,6 +94,9 @@ export function DemoProvider({ children }: { children: ReactNode }) {
   const [hydrated, setHydrated] = useState(false);
   const skipPersist = useRef(true);
   const member = DEMO_MEMBERS[0];
+  const rules = useMemo(() => resolveRules(state.ruleOverrides), [state.ruleOverrides]);
+  const rulesRef = useRef(rules);
+  rulesRef.current = rules;
 
   useEffect(() => {
     let alive = true;
@@ -121,8 +128,11 @@ export function DemoProvider({ children }: { children: ReactNode }) {
     (c, input) => {
       if (demoCampaignState(c, DEMO_NOW) !== "open") return { ok: false, message: "현재 응모할 수 없는 캠페인이에요." };
       // 1-2: 후기 기한 초과 뒤 `penalty.lateBlockDays` 동안 응모 제한
-      const blocked = applyBlockedUntil(state.trustEvents, DEFAULT_RULES, member.id, DEMO_NOW);
+      const blocked = applyBlockedUntil(state.trustEvents, rulesRef.current, member.id, DEMO_NOW);
       if (blocked) return { ok: false, message: `후기 기한을 넘긴 적이 있어 ${new Date(blocked).getMonth() + 1}월 ${new Date(blocked).getDate()}일까지 응모할 수 없어요.` };
+      // 1-2: 고가 체험 등급 제한 — 노출을 켠 뒤에만
+      const gate = campaignGradeGate(c, trustScore(state.trustEvents, member.id), rulesRef.current);
+      if (gate) return { ok: false, message: `이 체험은 ${rulesRef.current.trust.name} '${TRUST_GRADE_LABEL[gate]}' 등급부터 응모할 수 있어요.` };
       const already = demoApplication(member.id, c.id, state.applications);
       if (already) return { ok: false, message: "이미 응모한 캠페인이에요." };
       const id = `a${Date.now().toString(36)}`;
@@ -181,14 +191,14 @@ export function DemoProvider({ children }: { children: ReactNode }) {
       // 1-2: 승인 = 생활력 `reviewApproved` (후기당 한 번)
       if (r && status === "approved" && !hasTrustEvent(s.trustEvents, "review_approved", "review", r.id)) {
         const a0 = s.applications.find((x) => x.id === r.applicationId);
-        trustEvents = [makeTrustEvent(DEFAULT_RULES, "review_approved", a0?.memberId ?? member.id, DEMO_NOW, { refType: "review", refId: r.id, note: "후기 승인" }), ...trustEvents];
+        trustEvents = [makeTrustEvent(rulesRef.current, "review_approved", a0?.memberId ?? member.id, DEMO_NOW, { refType: "review", refId: r.id, note: "후기 승인" }), ...trustEvents];
       }
       // 1-3: 후기 승인 1건 = `reward.reviewAmount` 적립 (같은 후기에 두 번 쌓지 않는다) + 받은 제품 가치를 따로 기록
       if (r && status === "approved" && !s.points.some((p) => p.refType === "review" && p.refId === r.id)) {
         const a = s.applications.find((x) => x.id === r.applicationId);
         const c = a ? DEMO_CAMPAIGNS.find((x) => x.id === a.campaignId) : undefined;
         const createdAt = DEMO_NOW; // 데모 시계(DEMO_NOW) 기준 — 지갑의 "오늘 번 돈" 과 맞춘다 (apply 의 appliedAt 과 같은 규칙)
-        points = [{ id: `pt${Date.now().toString(36)}`, memberId: a?.memberId ?? member.id, amount: DEFAULT_RULES.reward.reviewAmount, kind: "review", reason: `후기 리워드 · ${c?.brand ?? "체험단"}`, refType: "review", refId: r.id, createdAt }, ...points];
+        points = [{ id: `pt${Date.now().toString(36)}`, memberId: a?.memberId ?? member.id, amount: rulesRef.current.reward.reviewAmount, kind: "review", reason: `후기 리워드 · ${c?.brand ?? "체험단"}`, refType: "review", refId: r.id, createdAt }, ...points];
         if (c && c.benefitValue && c.benefitValue > 0 && !s.points.some((p) => p.refType === "campaign" && p.refId === c.id && p.memberId === (a?.memberId ?? member.id)))
           points = [{ id: `pv${Date.now().toString(36)}`, memberId: a?.memberId ?? member.id, amount: c.benefitValue, kind: "product_value", reason: `받은 제품 · ${c.benefit}`, refType: "campaign", refId: c.id, createdAt }, ...points];
       }
@@ -208,10 +218,10 @@ export function DemoProvider({ children }: { children: ReactNode }) {
       if (!r.ok) return { ok: false, message: REDEEM_MESSAGE[r.reason] };
       setState((s) => {
         let trustEvents = s.trustEvents;
-        if (DEFAULT_RULES.invite.bonus === "trust")
+        if (rulesRef.current.invite.bonus === "trust")
           trustEvents = [
-            makeTrustEvent(DEFAULT_RULES, "invite_bonus", member.id, DEMO_NOW, { refType: "invite", refId: r.code.code, note: "초대받아 가입" }),
-            makeTrustEvent(DEFAULT_RULES, "invite_bonus", r.code.ownerId, DEMO_NOW, { refType: "invite", refId: r.code.code, note: `${member.nickname} 초대` }),
+            makeTrustEvent(rulesRef.current, "invite_bonus", member.id, DEMO_NOW, { refType: "invite", refId: r.code.code, note: "초대받아 가입" }),
+            makeTrustEvent(rulesRef.current, "invite_bonus", r.code.ownerId, DEMO_NOW, { refType: "invite", refId: r.code.code, note: `${member.nickname} 초대` }),
             ...trustEvents,
           ];
         return { ...s, inviteCodes: r.codes, trustEvents };
@@ -227,8 +237,8 @@ export function DemoProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!hydrated) return;
     const mine = state.applications.filter((a) => a.memberId === member.id);
-    syncReviewReminders(planReviewReminders(mine, DEMO_CAMPAIGNS, state.reviews, DEFAULT_RULES)).catch(() => {});
-  }, [hydrated, state.applications, state.reviews, member.id]);
+    syncReviewReminders(planReviewReminders(mine, DEMO_CAMPAIGNS, state.reviews, rules)).catch(() => {});
+  }, [hydrated, state.applications, state.reviews, member.id, rules]);
 
   const toggleSaved = useCallback<DemoStore["toggleSaved"]>((articleId) => {
     setState((s) => ({ ...s, saved: s.saved.includes(articleId) ? s.saved.filter((x) => x !== articleId) : [...s.saved, articleId] }));
@@ -277,7 +287,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
       const comments = s.comments.map((x) => (x.id === id ? { ...x, likes: on ? [...x.likes, member.id] : x.likes.filter((m) => m !== member.id) } : x));
       // 1-2: 답글 좋아요 = 생활력 조금 (좋아요를 누른 사람·댓글마다 한 번)
       const refId = `${id}:${member.id}`;
-      const trustEvents = on && !hasTrustEvent(s.trustEvents, "comment_liked", "comment", refId) ? [makeTrustEvent(DEFAULT_RULES, "comment_liked", c.memberId, DEMO_NOW, { refType: "comment", refId, note: "도움된 답글" }), ...s.trustEvents] : s.trustEvents;
+      const trustEvents = on && !hasTrustEvent(s.trustEvents, "comment_liked", "comment", refId) ? [makeTrustEvent(rulesRef.current, "comment_liked", c.memberId, DEMO_NOW, { refType: "comment", refId, note: "도움된 답글" }), ...s.trustEvents] : s.trustEvents;
       return { ...s, comments, trustEvents };
     });
   }, [member.id]);
@@ -306,14 +316,18 @@ export function DemoProvider({ children }: { children: ReactNode }) {
     setState((s) => ({ ...s, journalGoals: { ...s.journalGoals, [month]: days } }));
   }, []);
 
+  const setRuleOverride = useCallback<DemoStore["setRuleOverride"]>((key, value) => {
+    setState((s) => ({ ...s, ruleOverrides: { ...s.ruleOverrides, [key]: value } }));
+  }, []);
+
   const reset = useCallback(() => {
     setState(seed());
     AsyncStorage.removeItem(STORAGE_KEY).catch(() => {});
   }, []);
 
   const value = useMemo<DemoStore>(
-    () => ({ ...state, hydrated, member, now: DEMO_NOW, apply, cancelApplication, saveShipping, submitReview, decideReview, myInviteCode, redeemInvite, usedInviteCode, toggleSaved, savePost, deletePost, togglePostLike, addComment, deleteComment, toggleCommentLike, reportPost, saveJournal, deleteJournal, setJournalGoal, reset }),
-    [state, hydrated, member, apply, cancelApplication, saveShipping, submitReview, decideReview, myInviteCode, redeemInvite, usedInviteCode, toggleSaved, savePost, deletePost, togglePostLike, addComment, deleteComment, toggleCommentLike, reportPost, saveJournal, deleteJournal, setJournalGoal, reset],
+    () => ({ ...state, hydrated, rules, setRuleOverride, member, now: DEMO_NOW, apply, cancelApplication, saveShipping, submitReview, decideReview, myInviteCode, redeemInvite, usedInviteCode, toggleSaved, savePost, deletePost, togglePostLike, addComment, deleteComment, toggleCommentLike, reportPost, saveJournal, deleteJournal, setJournalGoal, reset }),
+    [state, hydrated, rules, setRuleOverride, member, apply, cancelApplication, saveShipping, submitReview, decideReview, myInviteCode, redeemInvite, usedInviteCode, toggleSaved, savePost, deletePost, togglePostLike, addComment, deleteComment, toggleCommentLike, reportPost, saveJournal, deleteJournal, setJournalGoal, reset],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
@@ -322,6 +336,11 @@ export function useDemo(): DemoStore {
   const v = useContext(Ctx);
   if (!v) throw new Error("DemoProvider 안에서만 useDemo 를 쓸 수 있어요");
   return v;
+}
+
+/** 현재 운영 규칙 (코드 기본값 + 덮어쓰기) */
+export function useRules(): AppRules {
+  return useDemo().rules;
 }
 
 /** 내 응모 (취소 포함, 최신순) */

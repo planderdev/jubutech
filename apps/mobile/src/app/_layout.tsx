@@ -32,6 +32,8 @@ export default function RootLayout() {
         <Stack.Screen name="my-posts" />
         <Stack.Screen name="article/[id]" />
         <Stack.Screen name="saved" />
+        <Stack.Screen name="trust" />
+        <Stack.Screen name="settings" />
         <Stack.Screen name="journal-entry/form" />
         <Stack.Screen name="journal-entry/[id]/index" />
         <Stack.Screen name="journal-entry/[id]/share" />

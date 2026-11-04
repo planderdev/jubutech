@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions, type NativeScrollEvent, type NativeSyntheticEvent } from "react-native";
 import { Image } from "expo-image";
 import { useLocalSearchParams, useRouter, type Href } from "expo-router";
-import { DEFAULT_RULES, DEMO_CAMPAIGNS, DEMO_EXAMPLE_REVIEWS, demoApplication, demoCampaignDeadline, demoCampaignState, demoDateLabel, demoRecommendedCampaigns, missionWithDefaults, type DemoCampaign } from "@jubutech/shared";
+import { DEMO_CAMPAIGNS, DEMO_EXAMPLE_REVIEWS, TRUST_GRADE_LABEL, campaignGradeGate, demoApplication, demoCampaignDeadline, demoCampaignState, demoDateLabel, demoRecommendedCampaigns, missionWithDefaults, trustScore, type DemoCampaign } from "@jubutech/shared";
 import { CAMPAIGN_GALLERY, CampaignGrid, CampaignVisual, DateRow, EmptyState, MissionRow, Stars } from "@/components/campaign";
 import { Accordion, BottomCta } from "@/components/form";
 import { Icon } from "@/components/icon";
@@ -25,7 +25,7 @@ type SectionKey = (typeof SECTIONS)[number]["key"];
 export default function CampaignDetail() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { applications, member, now } = useDemo();
+  const { applications, member, now, rules, trustEvents } = useDemo();
   const scrollRef = useRef<ScrollView>(null);
   const offsets = useRef<Partial<Record<SectionKey, number>>>({});
   const [active, setActive] = useState<SectionKey>("overview");
@@ -43,7 +43,7 @@ export default function CampaignDetail() {
   const state = demoCampaignState(c, now);
   const a = demoApplication(member.id, c.id, applications);
   const stateLabel = state === "open" ? `모집 중 · ${demoCampaignDeadline(c, now)}` : demoCampaignDeadline(c, now);
-  const mission = missionWithDefaults(DEFAULT_RULES, c.mission);
+  const mission = missionWithDefaults(rules, c.mission);
   const recommended = demoRecommendedCampaigns(c, DEMO_CAMPAIGNS, now);
   const shown = recommended.slice(0, moreCount);
 
@@ -59,8 +59,12 @@ export default function CampaignDetail() {
     if (cur !== active) setActive(cur);
   };
 
+  // 1-2 고가 체험 등급 제한 — 생활력 노출을 켠 뒤에만 보인다
+  const gate = campaignGradeGate(c, trustScore(trustEvents, member.id), rules);
   const cta = a ? (
     <Button label="내 응모 확인" full onPress={() => router.push(`/application/${a.id}` as Href)} style={{ flex: 1 }} />
+  ) : state === "open" && gate ? (
+    <Button label={`${rules.trust.name} '${TRUST_GRADE_LABEL[gate]}'부터 응모할 수 있어요`} full onPress={() => router.push("/trust" as Href)} variant="neutral" style={{ flex: 1 }} />
   ) : state === "open" ? (
     <Button label="응모하기" full onPress={() => router.push(`/campaign/${c.id}/apply` as Href)} style={{ flex: 1 }} />
   ) : (

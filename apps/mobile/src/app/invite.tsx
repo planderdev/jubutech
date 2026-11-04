@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Alert, Share, StyleSheet, Text, View } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import { useRouter, type Href } from "expo-router";
-import { DEFAULT_RULES, DEMO_MEMBERS, inviteBonusLabel, inviteShareMessage } from "@jubutech/shared";
+import { DEMO_MEMBERS, inviteBonusLabel, inviteShareMessage } from "@jubutech/shared";
 import { EmptyState, PageTitle } from "@/components/campaign";
 import { InfoBox } from "@/components/form";
 import { Icon } from "@/components/icon";
@@ -18,8 +18,9 @@ import { RAD, SP, T, typo } from "@/theme";
 export default function Invite() {
   const router = useRouter();
   const store = useDemo();
+  const rules = store.rules;
   const mine = store.myInviteCode();
-  const bonus = inviteBonusLabel(DEFAULT_RULES);
+  const bonus = inviteBonusLabel(rules);
   const [copied, setCopied] = useState(false);
   const webUrl = process.env.EXPO_PUBLIC_WEB_URL;
   const back = () => (router.canGoBack() ? router.back() : router.replace("/my" as Href));
@@ -31,7 +32,7 @@ export default function Invite() {
   };
   const share = async () => {
     try {
-      await Share.share({ message: inviteShareMessage(mine.code, DEFAULT_RULES, webUrl), title: "주부테크 초대" });
+      await Share.share({ message: inviteShareMessage(mine.code, rules, webUrl), title: "주부테크 초대" });
     } catch (e) {
       Alert.alert("공유하지 못했어요", e instanceof Error ? e.message : String(e));
     }

@@ -30,6 +30,8 @@ src/app/
   saved.tsx                저장한 정보 ← PHP /finance/saved
   journal-entry/form.tsx   일지 작성·수정 5단계 + 임시 저장 ← PHP /journal/entries/new
   journal-entry/[id]/      일지 상세(index)·복기 공유(share) ← PHP /journal/entries/{id}
+  trust.tsx                생활력 상세: 온도·등급표·오르고 내리는 일·변동 이력 (`trust.visibleToUsers` 일 때만)
+  settings.tsx             설정: 알림·앱 정보, 개발 빌드 검토 스위치
   my-posts.tsx             내가 쓴 글 ← PHP /mypage/posts
   invite.tsx               2-3 친구 초대 — 내 코드(회원당 하나, 결정적 생성)·복사·공유 시트, 보너스 안내(`invite.bonus`), 초대한 친구 목록
 src/lib/service.ts         SERVICES(서비스 이름·상단 세그먼트 = PHP $navs 에서 마이·커뮤니티 제외), ROOT_TABS(하단 5탭), useService(), 마지막 서비스·온보딩 저장

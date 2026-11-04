@@ -1,9 +1,10 @@
 import { Alert, StyleSheet, Text, View } from "react-native";
 import { useRouter, type Href } from "expo-router";
 import Constants from "expo-constants";
-import { ACCOUNT_DELETION, DEFAULT_RULES, LEGAL_DOC_TITLE, myPosts, trustGrade, trustScore, TRUST_GRADE_LABEL, type ServiceMode } from "@jubutech/shared";
+import { ACCOUNT_DELETION, LEGAL_DOC_TITLE, myPosts, type ServiceMode } from "@jubutech/shared";
 import { AppScreen, ContentSection } from "@/components/screen";
 import { Button, GroupCard, GroupSection, ListHeader, MenuRow, TextButton } from "@/components/ui";
+import { TrustCard } from "@/components/trust";
 import { WalletCard } from "@/components/wallet";
 import { useAuth } from "@/lib/auth";
 import { useDemo, useMyApplications } from "@/lib/demo-store";
@@ -21,10 +22,8 @@ export function MyPage({ mode = "campaigns" }: { mode?: ServiceMode }) {
   const auth = useAuth();
   // 로그인돼 있으면 카카오 프로필 이름을, 아니면 데모 회원(서연맘)을 보여 준다. 데이터 연결(W8) 전까지 응모·지갑은 데모 회원 기준
   const nickname = auth.user?.nickname ?? member.nickname;
-  const { inviteCodes, trustEvents, posts, journals: myJournals, reset } = useDemo();
+  const { inviteCodes, posts, journals: myJournals, reset } = useDemo();
   const invited = inviteCodes.find((c) => c.ownerId === member.id)?.uses.length ?? 0;
-  // 1-2 생활력 — 출시 초기엔 관리자만 본다(`trust.visibleToUsers=false`). 켜지면 프로필 아래 한 줄
-  const trust = DEFAULT_RULES.trust.visibleToUsers ? trustScore(trustEvents, member.id) : null;
   const soon = (what: string) => () => Alert.alert(what, "이 화면은 다음 작업에서 들어와요.");
   const version = Constants.expoConfig?.version ?? "0.1.0";
   // 심사 요건(Apple 5.1.1(v)·Google): 앱 안에서 계정 삭제를 시작할 수 있어야 한다. 로그인 전엔 기기의 둘러보기 기록만 지운다
@@ -53,7 +52,6 @@ export function MyPage({ mode = "campaigns" }: { mode?: ServiceMode }) {
             <Text style={typo("label2", "regular", T.label.alternative)}>{auth.status === "signed-in" ? `카카오 계정 · ${auth.user?.email ?? "연결됨"}` : "오늘도 나만의 속도로"}</Text>
             <Text style={typo("title2", "bold")}>{nickname}님</Text>
             <TextButton label="Lv. 3 · 꾸준한 새싹" onPress={soon("배지")} style={{ alignSelf: "flex-start", paddingHorizontal: 0 }} />
-            {trust !== null ? <Text style={typo("caption1", "regular", T.label.alternative)}>{DEFAULT_RULES.trust.name} {trust}점 · {TRUST_GRADE_LABEL[trustGrade(trust)]}</Text> : null}
           </View>
         </GroupCard>
         {auth.status === "guest" || auth.status === "demo" ? (
@@ -68,6 +66,8 @@ export function MyPage({ mode = "campaigns" }: { mode?: ServiceMode }) {
       </GroupSection>
 
       <WalletCard />
+
+      <TrustCard />
 
       <GroupSection>
         <GroupCard>
@@ -86,7 +86,7 @@ export function MyPage({ mode = "campaigns" }: { mode?: ServiceMode }) {
           <MenuRow icon="megaphone" title="공지사항" onPress={soon("공지사항")} />
           <MenuRow icon="message-circle" title="문의하기" onPress={soon("문의하기")} />
           <MenuRow icon="sprout" title="서비스 소개·제휴 문의" onPress={soon("서비스 소개")} />
-          <MenuRow icon="settings" title="설정" onPress={soon("설정")} last={auth.status !== "signed-in"} />
+          <MenuRow icon="settings" title="설정" onPress={() => router.push("/settings" as Href)} last={auth.status !== "signed-in"} />
           {auth.status === "signed-in" ? <MenuRow icon="x" title="로그아웃" onPress={() => auth.signOut()} last /> : null}
         </GroupCard>
       </GroupSection>

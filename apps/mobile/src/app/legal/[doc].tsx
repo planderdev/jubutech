@@ -1,9 +1,10 @@
 import { StyleSheet, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter, type Href } from "expo-router";
-import { DEFAULT_RULES, LEGAL_DOC_KEYS, LEGAL_STATUS, legalDoc, type LegalDocKey } from "@jubutech/shared";
+import { LEGAL_DOC_KEYS, LEGAL_STATUS, legalDoc, type LegalDocKey } from "@jubutech/shared";
 import { EmptyState, PageTitle } from "@/components/campaign";
 import { InfoBox } from "@/components/form";
 import { AppScreen, ContentSection } from "@/components/screen";
+import { useRules } from "@/lib/demo-store";
 import { SP, T, typo } from "@/theme";
 
 /**
@@ -12,6 +13,7 @@ import { SP, T, typo } from "@/theme";
  */
 export default function LegalScreen() {
   const router = useRouter();
+  const rules = useRules();
   const { doc } = useLocalSearchParams<{ doc: string }>();
   const key = LEGAL_DOC_KEYS.includes(doc as LegalDocKey) ? (doc as LegalDocKey) : null;
   const back = () => (router.canGoBack() ? router.back() : router.replace("/my" as Href));
@@ -22,7 +24,7 @@ export default function LegalScreen() {
       </AppScreen>
     );
   }
-  const d = legalDoc(key, DEFAULT_RULES);
+  const d = legalDoc(key, rules);
   return (
     <AppScreen title={d.shortTitle} onBack={back} tabBar={false} grouped={false}>
       <ContentSection style={{ gap: SP[16] }}>

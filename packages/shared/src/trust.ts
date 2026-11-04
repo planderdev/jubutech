@@ -3,8 +3,8 @@
  * 점수는 이벤트 delta 의 합(DB `profiles.trust_score` 와 같은 정의, 시작 0). 사용자 노출은 `rules.trust.visibleToUsers` 가 true 일 때만.
  */
 
-import { trustDelta, type AppRules } from "./rules";
-import type { TrustEvent, TrustEventKind, Review } from "./types";
+import { DEFAULT_RULES, trustDelta, type AppRules } from "./rules";
+import { TRUST_EVENT_LABEL, type TrustEvent, type TrustEventKind, type Review } from "./types";
 import type { DemoApplication, DemoCampaign } from "./fixtures";
 
 export function trustScore(events: TrustEvent[], userId: string): number {
@@ -19,12 +19,65 @@ export function trustScores(events: TrustEvent[]): Record<string, number> {
 
 export type TrustGrade = "caution" | "normal" | "good" | "excellent";
 export const TRUST_GRADE_LABEL: Record<TrustGrade, string> = { caution: "주의", normal: "보통", good: "좋음", excellent: "우수" };
-/** 등급 경계(초안): 음수 주의 · 0~19 보통 · 20~49 좋음 · 50 이상 우수 */
-export function trustGrade(score: number): TrustGrade {
+export const TRUST_GRADE_ORDER: TrustGrade[] = ["caution", "normal", "good", "excellent"];
+/** 등급 경계(초안, `trust.gradeGood`·`trust.gradeExcellent`): 음수 주의 · 0~19 보통 · 20~49 좋음 · 50 이상 우수 */
+export function trustGrade(score: number, rules: AppRules = DEFAULT_RULES): TrustGrade {
   if (score < 0) return "caution";
-  if (score < 20) return "normal";
-  if (score < 50) return "good";
+  if (score < rules.trust.gradeGood) return "normal";
+  if (score < rules.trust.gradeExcellent) return "good";
   return "excellent";
+}
+
+/** 등급별 혜택 안내 — 기획안 1-2 "등급이 높을수록 고가 제품 체험에 응모할 수 있고 우선 선정" */
+export const TRUST_GRADE_BENEFIT: Record<TrustGrade, string> = {
+  caution: "응모가 잠시 제한될 수 있어요. 후기를 기한 안에 올리면 다시 올라가요.",
+  normal: "대부분의 체험에 응모할 수 있어요.",
+  good: "고가 체험에도 응모할 수 있어요.",
+  excellent: "고가 체험 응모에 더해 선정 때 먼저 살펴봐요.",
+};
+
+/** 표시 온도 — 당근 매너온도처럼 시작값에서 오르내린다. 0~99 안에서, 소수 첫째 자리 */
+export function trustTemperature(score: number, rules: AppRules = DEFAULT_RULES): number {
+  const t = rules.trust.baseTemperature + score * rules.trust.perPoint;
+  return Math.round(Math.max(0, Math.min(99, t)) * 10) / 10;
+}
+
+/** 다음 등급까지 — 진행률 막대·"N점 더" 안내용. 최고 등급이면 next 없음 */
+export function trustProgress(score: number, rules: AppRules = DEFAULT_RULES): { grade: TrustGrade; next: TrustGrade | null; pointsToNext: number; ratio: number } {
+  const grade = trustGrade(score, rules);
+  const floors: Record<TrustGrade, number> = { caution: Math.min(score, rules.trust.delta.reviewOverdue), normal: 0, good: rules.trust.gradeGood, excellent: rules.trust.gradeExcellent };
+  const next = TRUST_GRADE_ORDER[TRUST_GRADE_ORDER.indexOf(grade) + 1] ?? null;
+  if (!next) return { grade, next: null, pointsToNext: 0, ratio: 1 };
+  const span = floors[next] - floors[grade];
+  return { grade, next, pointsToNext: floors[next] - score, ratio: span > 0 ? Math.max(0, Math.min(1, (score - floors[grade]) / span)) : 0 };
+}
+
+export function trustGradeAtLeast(grade: TrustGrade, required: TrustGrade): boolean {
+  return TRUST_GRADE_ORDER.indexOf(grade) >= TRUST_GRADE_ORDER.indexOf(required);
+}
+
+/**
+ * 1-2 고가 체험 응모 제한 — 노출(`trust.visibleToUsers`)을 켠 뒤에만 건다. 초기엔 모두 점수가 비슷해 의미가 없기 때문.
+ * 막히면 필요한 등급, 아니면 null.
+ */
+export function campaignGradeGate(c: { benefitValue?: number }, score: number, rules: AppRules = DEFAULT_RULES): TrustGrade | null {
+  if (!rules.trust.visibleToUsers) return null;
+  if (!c.benefitValue || c.benefitValue < rules.trust.highValueAmount) return null;
+  return trustGradeAtLeast(trustGrade(score, rules), rules.trust.highValueGrade) ? null : rules.trust.highValueGrade;
+}
+
+/** 규칙표를 사용자에게 보여 줄 줄 — `/trust` "이렇게 오르고 내려요" */
+export function trustRuleRows(rules: AppRules = DEFAULT_RULES): { kind: TrustEventKind; label: string; delta: string }[] {
+  const d = rules.trust.delta;
+  const sign = (n: number) => (n > 0 ? `+${n}` : String(n));
+  const rows: { kind: TrustEventKind; delta: string }[] = [
+    { kind: "review_approved", delta: sign(d.reviewApproved) },
+    { kind: "review_rated", delta: `별점에 따라 ${sign(-2 * d.ratingPerStar)} ~ ${sign(2 * d.ratingPerStar)}` },
+    { kind: "comment_liked", delta: sign(d.commentLiked) },
+    { kind: "review_overdue", delta: sign(d.reviewOverdue) },
+    { kind: "post_hidden", delta: sign(d.postHidden) },
+  ];
+  return rows.map((r) => ({ ...r, label: TRUST_EVENT_LABEL[r.kind] }));
 }
 
 /** 규칙표로 delta 를 계산해 이벤트를 만든다 */

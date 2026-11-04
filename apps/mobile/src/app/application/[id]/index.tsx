@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Alert, Linking, StyleSheet, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter, type Href } from "expo-router";
-import { DEFAULT_RULES, DEMO_CAMPAIGNS, DEMO_CAMPAIGN_STATE_LABEL, REVIEW_STATUS, demoAppStatus, demoApplicationNext, demoCampaignState, demoDateLabel, demoReview, missionWithDefaults, reviewCheckSummary } from "@jubutech/shared";
+import { DEMO_CAMPAIGNS, DEMO_CAMPAIGN_STATE_LABEL, REVIEW_STATUS, demoAppStatus, demoApplicationNext, demoCampaignState, demoDateLabel, demoReview, missionWithDefaults, reviewCheckSummary } from "@jubutech/shared";
 import { DateRow, EmptyState } from "@/components/campaign";
 import { Accordion, Field } from "@/components/form";
 import { CheckResultList, MissionChecklist } from "@/components/review";
@@ -19,6 +19,7 @@ export default function ApplicationDetail() {
   const router = useRouter();
   const { id, complete, submitted } = useLocalSearchParams<{ id: string; complete?: string; submitted?: string }>();
   const store = useDemo();
+  const rules = store.rules;
   const a = store.applications.find((x) => x.id === id && x.memberId === store.member.id);
   const c = a ? DEMO_CAMPAIGNS.find((x) => x.id === a.campaignId) : undefined;
   const r = a ? demoReview(a.id, store.reviews) : undefined;
@@ -36,7 +37,7 @@ export default function ApplicationDetail() {
     : ({ selected: "체험단에 선정됐어요", not_selected: "다음 체험에서 만나요", cancelled: "응모가 취소됐어요", applied: "선정 결과를 기다리고 있어요" } as const)[a.selectionStatus];
   const neutral = a.selectionStatus === "not_selected" || a.selectionStatus === "cancelled";
   const canReview = a.selectionStatus === "selected" && (!r || r.status === "revision");
-  const mission = missionWithDefaults(DEFAULT_RULES, c.mission);
+  const mission = missionWithDefaults(rules, c.mission);
   const showMission = a.selectionStatus === "selected" && (!r || r.status === "revision");
 
   const saveShipping = () => {

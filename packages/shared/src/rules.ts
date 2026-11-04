@@ -38,6 +38,15 @@ export interface AppRules {
     name: string;
     /** 사용자에게 점수·등급 노출 여부 — 출시 초기엔 관리자만 본다 */
     visibleToUsers: boolean;
+    /** 온도 표시(당근 매너온도 벤치마크): 시작 온도 + 점수 × perPoint */
+    baseTemperature: number;
+    perPoint: number;
+    /** 등급 경계(점수). 음수 = 주의 */
+    gradeGood: number;
+    gradeExcellent: number;
+    /** 이 금액(제품 가치) 이상 체험은 `highValueGrade` 이상만 응모 — `visibleToUsers` 일 때만 적용 */
+    highValueAmount: number;
+    highValueGrade: "normal" | "good" | "excellent";
     delta: {
       reviewApproved: number;
       /** 별점 1~5 → (별점 − 3) × ratingPerStar */
@@ -71,6 +80,12 @@ export const DEFAULT_RULES: AppRules = {
   trust: {
     name: "생활력",
     visibleToUsers: false,
+    baseTemperature: 36.5,
+    perPoint: 0.1,
+    gradeGood: 20,
+    gradeExcellent: 50,
+    highValueAmount: 100000,
+    highValueGrade: "good",
     delta: { reviewApproved: 10, ratingPerStar: 3, commentLiked: 1, reviewOverdue: -20, postHidden: -10, inviteBonus: 5 },
   },
   invite: { bonus: "priority" },
@@ -90,6 +105,12 @@ export type RuleKey =
   | "penalty.lateBlockDays"
   | "trust.name"
   | "trust.visibleToUsers"
+  | "trust.baseTemperature"
+  | "trust.perPoint"
+  | "trust.gradeGood"
+  | "trust.gradeExcellent"
+  | "trust.highValueAmount"
+  | "trust.highValueGrade"
   | "trust.delta.reviewApproved"
   | "trust.delta.ratingPerStar"
   | "trust.delta.commentLiked"
@@ -125,6 +146,12 @@ export const RULE_META: Record<RuleKey, RuleMeta> = {
   "penalty.lateBlockDays": { label: "기한 초과 응모 제한", type: "number", unit: "일", note: "1-1", group: "미션·기한" },
   "trust.name": { label: "신뢰도 지표 이름", type: "text", note: "1-2 · '생활력' 확정 여부", group: "생활력" },
   "trust.visibleToUsers": { label: "사용자에게 노출", type: "boolean", note: "1-2 · 데이터가 쌓인 뒤 켠다", group: "생활력" },
+  "trust.baseTemperature": { label: "시작 온도", type: "number", unit: "도", note: "2단계 · 당근 매너온도 36.5 벤치마크", group: "생활력" },
+  "trust.perPoint": { label: "점수 1점당 온도", type: "number", unit: "도", note: "2단계 · 표시용 환산", group: "생활력" },
+  "trust.gradeGood": { label: "'좋음' 등급 시작 점수", type: "number", unit: "점", note: "1-2 등급 · 초안", group: "생활력" },
+  "trust.gradeExcellent": { label: "'우수' 등급 시작 점수", type: "number", unit: "점", note: "1-2 등급 · 초안", group: "생활력" },
+  "trust.highValueAmount": { label: "고가 체험 기준 금액", type: "number", unit: "원", note: "1-2 등급 · 노출을 켠 뒤에만 적용", group: "생활력" },
+  "trust.highValueGrade": { label: "고가 체험 응모 등급", type: "choice", choices: ["normal", "good", "excellent"], note: "1-2 등급 · 보통/좋음/우수", group: "생활력" },
   "trust.delta.reviewApproved": { label: "후기 승인", type: "number", unit: "점", note: "1-2 표 · 오름", group: "생활력" },
   "trust.delta.ratingPerStar": { label: "별점 1점당", type: "number", unit: "점", note: "1-2 표 · (별점−3)×값", group: "생활력" },
   "trust.delta.commentLiked": { label: "답글 좋아요", type: "number", unit: "점", note: "1-2 표 · 조금 오름", group: "생활력" },

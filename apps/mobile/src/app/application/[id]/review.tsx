@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter, type Href } from "expo-router";
-import { DEFAULT_RULES, DEMO_CAMPAIGNS, checkReview, demoReview, isSafeUrl, missionWithDefaults, reviewCharCount, reviewCheckSummary, type LinkStatus, type ReviewCheck } from "@jubutech/shared";
+import { DEMO_CAMPAIGNS, checkReview, demoReview, isSafeUrl, missionWithDefaults, reviewCharCount, reviewCheckSummary, type LinkStatus, type ReviewCheck } from "@jubutech/shared";
 import { ChipRow, EmptyState } from "@/components/campaign";
 import { BottomCta, Field, InfoBox } from "@/components/form";
 import { Icon } from "@/components/icon";
@@ -27,10 +27,11 @@ export default function ReviewForm() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const store = useDemo();
+  const rules = store.rules;
   const a = store.applications.find((x) => x.id === id && x.memberId === store.member.id);
   const c = a ? DEMO_CAMPAIGNS.find((x) => x.id === a.campaignId) : undefined;
   const r = a ? demoReview(a.id, store.reviews) : undefined;
-  const mission = useMemo(() => missionWithDefaults(DEFAULT_RULES, c?.mission), [c]);
+  const mission = useMemo(() => missionWithDefaults(rules, c?.mission), [c, rules]);
   const isSurvey = c?.channel === "설문";
 
   const [mode, setMode] = useState<Mode>(() => (r?.content && !r.url) || isSurvey ? "write" : "link");
@@ -145,7 +146,7 @@ export default function ReviewForm() {
             <Pressable disabled accessibilityRole="button" accessibilityState={{ disabled: true }} style={s.aiButton}>
               <Icon name="sparkles" size={20} color={T.label.assistive} />
               <Text style={[typo("label1", "semibold", T.label.assistive), { flex: 1 }]}>AI 교정·이어쓰기</Text>
-              <Text style={typo("caption1", "regular", T.label.assistive)}>{DEFAULT_RULES.assist.aiReviewEdit ? "" : "준비 중"}</Text>
+              <Text style={typo("caption1", "regular", T.label.assistive)}>{rules.assist.aiReviewEdit ? "" : "준비 중"}</Text>
             </Pressable>
           </>
         )}

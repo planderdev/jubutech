@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useRouter, type Href } from "expo-router";
-import { DEFAULT_RULES, DEMO_CAMPAIGNS, WALLET_KIND_LABEL, dailyGoalProgress, walletKindOf, walletNextAction, walletSummary, type DemoPoint, type WalletNextAction } from "@jubutech/shared";
+import { DEMO_CAMPAIGNS, WALLET_KIND_LABEL, dailyGoalProgress, walletKindOf, walletNextAction, walletSummary, type DemoPoint, type WalletNextAction } from "@jubutech/shared";
 import { Icon } from "@/components/icon";
 import { GroupCard, GroupSection } from "@/components/ui";
 import { useDemo } from "@/lib/demo-store";
@@ -13,8 +13,8 @@ export function useWallet() {
   const store = useDemo();
   const entries = store.points.filter((p) => p.memberId === store.member.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   const summary = walletSummary(entries, store.now);
-  const next = walletNextAction({ memberId: store.member.id, applications: store.applications, campaigns: DEMO_CAMPAIGNS, reviews: store.reviews, savedCount: store.saved.length, rules: DEFAULT_RULES, now: store.now });
-  return { entries, summary, next, rules: DEFAULT_RULES, now: store.now };
+  const next = walletNextAction({ memberId: store.member.id, applications: store.applications, campaigns: DEMO_CAMPAIGNS, reviews: store.reviews, savedCount: store.saved.length, rules: store.rules, now: store.now });
+  return { entries, summary, next, rules: store.rules, now: store.now };
 }
 
 /**
