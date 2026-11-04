@@ -1,11 +1,11 @@
-import { StyleSheet, Text } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { useRouter, type Href } from "expo-router";
-import { DEMO_SETTINGS, demoHomeCategories, demoVisibleArticles, demoVisibleBanners } from "@jubutech/shared";
+import { DEMO_SETTINGS, matchArticles, demoHomeCategories, demoVisibleArticles, demoVisibleBanners } from "@jubutech/shared";
 import { BannerSlider } from "@/components/banner-slider";
 import { MoneyCards } from "@/components/money-cards";
 import { ArticleRow, CategoryShortcuts, HomeContext } from "@/components/finance";
 import { AppScreen, ContentSection } from "@/components/screen";
-import { CardFooterLink, GroupCard, GroupSection, ListHeader, MenuRow } from "@/components/ui";
+import { Button, CardFooterLink, GroupCard, GroupSection, ListHeader, MenuRow } from "@/components/ui";
 import { useDemo } from "@/lib/demo-store";
 import { SP, T, typo } from "@/theme";
 
@@ -15,7 +15,7 @@ import { SP, T, typo } from "@/theme";
  */
 export default function FinanceHome() {
   const router = useRouter();
-  const { member: me, saved, toggleSaved } = useDemo();
+  const { member: me, saved, toggleSaved, subsidyProfile, rules } = useDemo();
 
   const articles = demoVisibleArticles();
   const featured = articles.find((a) => a.placement === "featured") ?? articles[0];
@@ -34,6 +34,23 @@ export default function FinanceHome() {
       <MoneyCards />
 
       <BannerSlider banners={banners} />
+
+      <GroupSection>
+        <GroupCard>
+          <ListHeader title="내 조건에 맞는 지원금" action="조건 바꾸기" onAction={subsidyProfile.answered ? () => router.push("/subsidy-profile" as Href) : undefined} />
+          {subsidyProfile.answered ? (
+            (() => {
+              const matched = matchArticles(articles, subsidyProfile).slice(0, 3);
+              return matched.length ? matched.map((a, i) => <ArticleRow key={a.id} article={a} saved={saved.includes(a.id)} onPress={() => router.push(`/article/${a.id}` as Href)} onToggleSave={() => toggleSaved(a.id)} last={i === matched.length - 1} />) : <Text style={[typo("body2", "regular", T.label.alternative), s.empty]}>지금 맞는 정보가 없어요. 새로 올라오면 알려 드릴게요.</Text>;
+            })()
+          ) : (
+            <View style={s.prompt}>
+              <Text style={typo("body2", "regular", T.label.neutral)}>세 가지만 답하면 맞는 지원금을 골라, 마감 {rules.notify.subsidyDaysBefore}일 전에 알려 드려요.</Text>
+              <Button label="맞춤 설정하기" variant="weak" size="lg" onPress={() => router.push("/subsidy-profile" as Href)} />
+            </View>
+          )}
+        </GroupCard>
+      </GroupSection>
 
       <GroupSection>
         <GroupCard>
@@ -66,4 +83,8 @@ export default function FinanceHome() {
   );
 }
 
-const s = StyleSheet.create({ caption: { marginVertical: SP[16] } });
+const s = StyleSheet.create({
+  caption: { marginVertical: SP[16] },
+  empty: { paddingHorizontal: SP[16], paddingBottom: SP[16] },
+  prompt: { paddingHorizontal: SP[16], paddingBottom: SP[16], gap: SP[16] },
+});

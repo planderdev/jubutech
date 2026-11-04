@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Image, type ImageSource } from "expo-image";
-import { demoCategoryName, type DemoArticle, type DemoCategory } from "@jubutech/shared";
+import { deadlineLabel, demoCategoryName, type DemoArticle, type DemoCategory } from "@jubutech/shared";
 import { Icon } from "@/components/icon";
 import { Badge, IconButton } from "@/components/ui";
 import { P, RAD, SP, T, TOUCH, typo } from "@/theme";
@@ -57,7 +57,10 @@ export function ArticleRow({ article, saved, onPress, onToggleSave, last }: { ar
   return (
     <View style={[s.item, !last && s.itemDivider]}>
       <Pressable onPress={onPress} accessibilityRole="link" style={({ pressed }) => [s.itemBody, pressed && { opacity: 0.7 }]}>
-        <Badge label={demoCategoryName(article.categoryId)} />
+        <View style={s.badges}>
+          <Badge label={demoCategoryName(article.categoryId)} />
+          {deadlineLabel(article) ? <Badge label={deadlineLabel(article) as string} tone="neutral" /> : null}
+        </View>
         <Text style={typo("headline2", "medium", P.grey[800])} numberOfLines={2}>{article.title}</Text>
         <Text style={typo("body2", "regular", P.grey[600])}>{md(article.publishedAt)} · 3분 읽기</Text>
       </Pressable>
@@ -74,6 +77,7 @@ const s = StyleSheet.create({
   shortcut: { flex: 1, minWidth: 0, alignItems: "center", gap: SP[8], paddingVertical: SP[8], borderRadius: RAD.md },
   art: { width: SP[56], height: SP[56], borderRadius: RAD.lg, backgroundColor: T.background.normalAlternative, alignItems: "center", justifyContent: "center" },
   artImage: { width: "60%", height: "60%" },
+  badges: { flexDirection: "row", gap: 4 },
   item: { flexDirection: "row", gap: SP[8], paddingHorizontal: SP[16] },
   itemDivider: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: T.line.solidNeutral },
   itemBody: { flex: 1, minWidth: 0, gap: SP[8], paddingVertical: SP[16], minHeight: TOUCH },

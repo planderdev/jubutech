@@ -50,7 +50,7 @@ export const COLLECTED_DATA: { when: string; items: string; purpose: string; kee
 ];
 
 /** 수집하지 않는 것 — 심사 메모와 FAQ 에 같은 말을 쓴다 */
-export const NOT_COLLECTED = ["만 14세 미만 아동의 정보 (가입 불가)", "자녀의 이름·사진·학교 등 자녀 개인정보 (요구하는 캠페인은 등록하지 않음)", "주민등록번호 등 고유식별정보", "위치 정보 (지역은 이용자가 직접 고름)", "광고 식별자 기반 추적"];
+export const NOT_COLLECTED = ["만 14세 미만 아동의 정보 (가입 불가)", "자녀의 이름·사진·학교 등 자녀 개인정보 (요구하는 캠페인은 등록하지 않음)", "주민등록번호 등 고유식별정보", "위치 정보 (지역은 이용자가 직접 고름)", "맞춤 지원금의 자녀 연령대·관심 분야 (이 기기에만 저장, 서버로 보내지 않음)", "광고 식별자 기반 추적"];
 
 export function legalDoc(key: LegalDocKey, rules: AppRules = DEFAULT_RULES): LegalDoc {
   const P = LEGAL_PLACEHOLDER;

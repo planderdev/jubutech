@@ -1,8 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { DEFAULT_NOTIFY_PREFS, DEMO_APPLICATIONS, DEMO_BRAND_RATINGS, DEMO_CAMPAIGNS, DEMO_COMMENTS, DEMO_INVITE_CODES, DEMO_JOURNALS, DEMO_JOURNAL_GOALS, DEMO_MEMBERS, DEMO_MODERATION_WORDS, DEMO_NOTIFICATIONS, DEMO_NOW, DEMO_POINTS, DEMO_POSTS, DEMO_REPORTS, DEMO_REVIEWS, DEMO_SAVED, DEMO_TRUST_EVENTS, REDEEM_MESSAGE, applyBlockedUntil, campaignGradeGate, canRateBrand, demoApplication, demoCampaignState, ensureInviteCode, hasTrustEvent, makeNotification, makeTrustEvent, moderateText, moderationMessage, moderationNote, redeemInviteCode, resolveRules, shouldAutoHide, trustScore, TRUST_GRADE_LABEL, type CommunityTopic, type DemoApplication, type DemoJournal, type JournalInput, type DemoCampaign, type DemoComment, type DemoMember, type DemoNotification, type DemoPoint, type DemoPost, type DemoReport, type AppRules, type BrandRating, type InviteCode, type NotifyEvent, type NotifyPrefs, type Review, type RuleKey, type ReviewCheck, type ReviewStatus, type TrustEvent } from "@jubutech/shared";
+import { DEFAULT_NOTIFY_PREFS, EMPTY_SUBSIDY_PROFILE, DEMO_APPLICATIONS, DEMO_BRAND_RATINGS, DEMO_CAMPAIGNS, DEMO_COMMENTS, DEMO_INVITE_CODES, DEMO_JOURNALS, DEMO_JOURNAL_GOALS, DEMO_MEMBERS, DEMO_MODERATION_WORDS, DEMO_NOTIFICATIONS, DEMO_NOW, DEMO_POINTS, DEMO_POSTS, DEMO_REPORTS, DEMO_REVIEWS, DEMO_SAVED, DEMO_TRUST_EVENTS, REDEEM_MESSAGE, applyBlockedUntil, campaignGradeGate, canRateBrand, demoApplication, demoCampaignState, ensureInviteCode, hasTrustEvent, makeNotification, makeTrustEvent, moderateText, moderationMessage, moderationNote, redeemInviteCode, demoVisibleArticles, resolveRules, shouldAutoHide, subsidyDueAlerts, trustScore, TRUST_GRADE_LABEL, type CommunityTopic, type DemoApplication, type DemoJournal, type JournalInput, type DemoCampaign, type DemoComment, type DemoMember, type DemoNotification, type DemoPoint, type DemoPost, type DemoReport, type AppRules, type BrandRating, type InviteCode, type NotifyEvent, type NotifyPrefs, type Review, type SubsidyProfile, type RuleKey, type ReviewCheck, type ReviewStatus, type TrustEvent } from "@jubutech/shared";
 import { presentLocalNotification } from "@/lib/push";
-import { planReviewReminders, syncReviewReminders } from "@/lib/reminders";
+import { planReviewReminders, planSubsidyReminders, syncReviewReminders, syncSubsidyReminders } from "@/lib/reminders";
 
 /**
  * 모바일 데모 상태 — PHP `DemoRepository`(세션 저장)의 역할. Supabase 연결(W8) 전까지의 데이터 어댑터 자리.
@@ -35,6 +35,10 @@ interface Persisted {
   /** 알림함 (2단계 W10) — 서버 푸시 전까지 앱 안 이벤트가 여기 쌓인다 */
   notifications: DemoNotification[];
   notifyPrefs: NotifyPrefs;
+  /** 2-5 맞춤 지원금 세 질문 — 이 기기에만 저장 */
+  subsidyProfile: SubsidyProfile;
+  /** 이미 알린 지원금 글 — 같은 글을 두 번 알리지 않는다 */
+  subsidyNotified: string[];
 }
 
 export interface ReviewInput {
@@ -93,11 +97,12 @@ interface DemoStore extends Persisted {
   setNotifyPref: (category: keyof NotifyPrefs, on: boolean) => void;
   /** 이벤트 → 알림함 + 기기 알림 */
   notify: (event: NotifyEvent) => void;
+  saveSubsidyProfile: (profile: SubsidyProfile) => void;
   rateBrand: (input: { applicationId: string; stars: number; shippedOnTime: BrandRating["shippedOnTime"]; matchedGuide: BrandRating["matchedGuide"]; comment: string }) => { ok: boolean; message: string };
   reset: () => void;
 }
 
-const seed = (): Persisted => ({ applications: DEMO_APPLICATIONS, reviews: DEMO_REVIEWS, points: DEMO_POINTS, saved: DEMO_SAVED[DEMO_MEMBERS[0].id] ?? [], inviteCodes: DEMO_INVITE_CODES, trustEvents: DEMO_TRUST_EVENTS, posts: DEMO_POSTS, comments: DEMO_COMMENTS, reports: DEMO_REPORTS, journals: DEMO_JOURNALS, journalGoals: DEMO_JOURNAL_GOALS[DEMO_MEMBERS[0].id] ?? {}, ruleOverrides: {}, brandRatings: DEMO_BRAND_RATINGS, notifications: DEMO_NOTIFICATIONS, notifyPrefs: DEFAULT_NOTIFY_PREFS });
+const seed = (): Persisted => ({ applications: DEMO_APPLICATIONS, reviews: DEMO_REVIEWS, points: DEMO_POINTS, saved: DEMO_SAVED[DEMO_MEMBERS[0].id] ?? [], inviteCodes: DEMO_INVITE_CODES, trustEvents: DEMO_TRUST_EVENTS, posts: DEMO_POSTS, comments: DEMO_COMMENTS, reports: DEMO_REPORTS, journals: DEMO_JOURNALS, journalGoals: DEMO_JOURNAL_GOALS[DEMO_MEMBERS[0].id] ?? {}, ruleOverrides: {}, brandRatings: DEMO_BRAND_RATINGS, notifications: DEMO_NOTIFICATIONS, notifyPrefs: DEFAULT_NOTIFY_PREFS, subsidyProfile: EMPTY_SUBSIDY_PROFILE, subsidyNotified: [] });
 
 const Ctx = createContext<DemoStore | null>(null);
 
@@ -370,6 +375,22 @@ export function DemoProvider({ children }: { children: ReactNode }) {
     setState((s) => ({ ...s, notifyPrefs: { ...s.notifyPrefs, [category]: on } }));
   }, []);
 
+  const saveSubsidyProfile = useCallback<DemoStore["saveSubsidyProfile"]>((profile) => {
+    setState((s) => ({ ...s, subsidyProfile: profile }));
+  }, []);
+
+  // 2-5 마감 임박 알림 — 조건이 맞는 글마다 한 번. 예약 알림(마감 N일 전 09:00)은 `reminders.ts`
+  useEffect(() => {
+    if (!hydrated) return;
+    const articles = demoVisibleArticles();
+    const due = subsidyDueAlerts(articles, state.subsidyProfile, rules).filter((d) => !state.subsidyNotified.includes(d.article.id));
+    if (due.length) {
+      due.forEach((d) => notify({ kind: "subsidy_deadline", articleId: d.article.id, title: d.article.title, daysLeft: d.daysLeft }));
+      setState((s) => ({ ...s, subsidyNotified: [...s.subsidyNotified, ...due.map((d) => d.article.id)] }));
+    }
+    if (state.notifyPrefs.subsidy) syncSubsidyReminders(planSubsidyReminders(articles, state.subsidyProfile, rules)).catch(() => {});
+  }, [hydrated, state.subsidyProfile, state.subsidyNotified, state.notifyPrefs.subsidy, rules, notify]);
+
   const rateBrand = useCallback<DemoStore["rateBrand"]>((input) => {
     const a = state.applications.find((x) => x.id === input.applicationId && x.memberId === member.id);
     const r = state.reviews.find((x) => x.applicationId === input.applicationId);
@@ -391,8 +412,8 @@ export function DemoProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<DemoStore>(
-    () => ({ ...state, hydrated, rules, setRuleOverride, member, now: DEMO_NOW, apply, cancelApplication, saveShipping, submitReview, decideReview, myInviteCode, redeemInvite, usedInviteCode, toggleSaved, savePost, deletePost, togglePostLike, addComment, deleteComment, toggleCommentLike, reportPost, saveJournal, deleteJournal, setJournalGoal, readNotification, readAllNotifications, setNotifyPref, notify, rateBrand, reset }),
-    [state, hydrated, rules, setRuleOverride, member, apply, cancelApplication, saveShipping, submitReview, decideReview, myInviteCode, redeemInvite, usedInviteCode, toggleSaved, savePost, deletePost, togglePostLike, addComment, deleteComment, toggleCommentLike, reportPost, saveJournal, deleteJournal, setJournalGoal, readNotification, readAllNotifications, setNotifyPref, notify, rateBrand, reset],
+    () => ({ ...state, hydrated, rules, setRuleOverride, member, now: DEMO_NOW, apply, cancelApplication, saveShipping, submitReview, decideReview, myInviteCode, redeemInvite, usedInviteCode, toggleSaved, savePost, deletePost, togglePostLike, addComment, deleteComment, toggleCommentLike, reportPost, saveJournal, deleteJournal, setJournalGoal, readNotification, readAllNotifications, setNotifyPref, notify, saveSubsidyProfile, rateBrand, reset }),
+    [state, hydrated, rules, setRuleOverride, member, apply, cancelApplication, saveShipping, submitReview, decideReview, myInviteCode, redeemInvite, usedInviteCode, toggleSaved, savePost, deletePost, togglePostLike, addComment, deleteComment, toggleCommentLike, reportPost, saveJournal, deleteJournal, setJournalGoal, readNotification, readAllNotifications, setNotifyPref, notify, saveSubsidyProfile, rateBrand, reset],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

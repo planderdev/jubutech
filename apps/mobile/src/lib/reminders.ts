@@ -1,6 +1,6 @@
 import { Platform } from "react-native";
 import Constants, { ExecutionEnvironment } from "expo-constants";
-import { DEFAULT_RULES, reviewReminderText, reviewReminderTimes, type AppRules, type DemoApplication, type DemoCampaign, type Review } from "@jubutech/shared";
+import { DEFAULT_RULES, matchArticles, reviewReminderText, reviewReminderTimes, type AppRules, type DemoApplication, type DemoArticle, type DemoCampaign, type Review, type SubsidyProfile } from "@jubutech/shared";
 
 /**
  * 후기 기한 로컬 알림 (1-1 "기한 알림") — 설정 `mission.reminderDaysBefore` 시점(기본 3일 전·당일 09:00)에 기기 알림.
@@ -69,5 +69,40 @@ export async function syncReviewReminders(plans: ReminderPlan[]): Promise<{ sche
     return { scheduled, skipped: null };
   } catch (e) {
     return { scheduled: 0, skipped: e instanceof Error ? e.message : "error" };
+  }
+}
+
+/** 2-5 맞춤 지원금 마감 알림 — 맞는 글의 마감 `notify.subsidyDaysBefore` 일 전 09:00. 이미 지난 시각은 뺀다 */
+export function planSubsidyReminders(articles: DemoArticle[], profile: SubsidyProfile, rules: AppRules = DEFAULT_RULES, now: string | Date = new Date()): { articleId: string; title: string; at: string }[] {
+  if (!profile.answered || !rules.notify.subsidy) return [];
+  const nowMs = new Date(now).getTime();
+  return matchArticles(articles, profile).flatMap((a) => {
+    if (!a.applyEndAt) return [];
+    const at = new Date(a.applyEndAt);
+    at.setDate(at.getDate() - rules.notify.subsidyDaysBefore);
+    at.setHours(9, 0, 0, 0);
+    return at.getTime() > nowMs ? [{ articleId: a.id, title: a.title, at: at.toISOString() }] : [];
+  });
+}
+
+const SUBSIDY_PREFIX = "subsidy-due:";
+export async function syncSubsidyReminders(plans: { articleId: string; title: string; at: string }[], daysBefore = DEFAULT_RULES.notify.subsidyDaysBefore): Promise<void> {
+  const N = await load();
+  if (!N) return;
+  try {
+    const existing = await N.getAllScheduledNotificationsAsync();
+    await Promise.all(existing.filter((n) => n.identifier.startsWith(SUBSIDY_PREFIX)).map((n) => N.cancelScheduledNotificationAsync(n.identifier)));
+    if (plans.length === 0) return;
+    const { status } = await N.getPermissionsAsync();
+    if (status !== "granted") return;
+    for (const p of plans) {
+      await N.scheduleNotificationAsync({
+        identifier: `${SUBSIDY_PREFIX}${p.articleId}`,
+        content: { title: `신청 마감 ${daysBefore}일 전이에요`, body: p.title, data: { url: `/article/${p.articleId}` } },
+        trigger: { type: N.SchedulableTriggerInputTypes.DATE, date: new Date(p.at) },
+      });
+    }
+  } catch {
+    // 알림 실패는 앱 흐름을 막지 않는다
   }
 }

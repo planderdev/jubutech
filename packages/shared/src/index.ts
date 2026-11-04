@@ -16,3 +16,4 @@ export * from "./advertiser";
 export * from "./brand-rating";
 export * from "./ai-review";
 export * from "./notifications";
+export * from "./subsidy";

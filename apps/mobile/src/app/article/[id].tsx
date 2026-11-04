@@ -1,6 +1,6 @@
 import { Linking, Share, StyleSheet, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter, type Href } from "expo-router";
-import { demoCategoryName, demoDateLabel, demoVisibleArticles } from "@jubutech/shared";
+import { deadlineLabel, demoCategoryName, demoDateLabel, demoVisibleArticles } from "@jubutech/shared";
 import { EmptyState } from "@/components/campaign";
 import { ArticleRow } from "@/components/finance";
 import { AppScreen, ContentSection } from "@/components/screen";
@@ -44,6 +44,7 @@ export default function ArticleDetail() {
             <Text style={typo("caption1", "regular", T.label.alternative)}>주부테크 편집팀 · {demoDateLabel(a.publishedAt, "Y.m.d")}</Text>
           </View>
           <Text style={typo("body1", "semibold")}>{a.summary}</Text>
+          {a.applyEndAt ? <Text style={typo("label1", "semibold", T.primary.normal)}>신청 마감 {demoDateLabel(a.applyEndAt, "Y.m.d")}{deadlineLabel(a) ? ` · ${deadlineLabel(a)}` : " · 마감됨"}</Text> : null}
           {a.bodyBlocks.filter((b) => b.text.trim() !== a.summary.trim()).map((b, i) => (b.type === "heading" ? <Text key={i} style={[typo("heading2", "bold"), { marginTop: SP[8] }]}>{b.text}</Text> : <Text key={i} style={typo("body1", "regular")}>{b.text}</Text>))}
           <View style={s.source}>
             <Text style={typo("caption1", "regular", T.label.alternative)}>출처: {a.source} · {demoDateLabel(a.publishedAt, "Y.m.d")} 기준</Text>

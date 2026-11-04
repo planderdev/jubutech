@@ -39,6 +39,10 @@ export interface DemoArticle {
   placement: "featured" | "list";
   /** 지역 지원금 정보면 해당 지역명 (1-4 「내 지역 지원금」) */
   region?: string;
+  /** 2-5 신청 마감일 (10/1 결정: 이미 정리된 정보에 마감일 칸만 추가) */
+  applyEndAt?: string;
+  /** 2-5 대상 자녀 연령대 (없으면 전체) */
+  childAges?: ("infant" | "elementary" | "teen")[];
 }
 
 export interface DemoBanner {
@@ -118,9 +122,17 @@ const articleRows: [string, string, string, string][] = [
 ];
 /** 지역 지원금 정보 — 검토용으로 i1 만 성남시 */
 const ARTICLE_REGION: Record<string, string> = { i1: "성남시" };
+/** 검토용 신청 마감·대상 — 실제 정책이 아니다 */
+const ARTICLE_APPLY: Record<string, { applyEndAt: string; childAges?: DemoArticle["childAges"] }> = {
+  i1: { applyEndAt: "2026-10-27T23:59:00+09:00" },
+  i11: { applyEndAt: "2026-11-05T23:59:00+09:00", childAges: ["infant", "elementary"] },
+  i6: { applyEndAt: "2026-11-30T23:59:00+09:00" },
+  i5: { applyEndAt: "2026-10-24T23:59:00+09:00", childAges: ["elementary", "teen"] },
+};
 export const DEMO_ARTICLES: DemoArticle[] = articleRows.map(([categoryId, title, summary, icon], i) => ({
   id: `i${i + 1}`,
   region: ARTICLE_REGION[`i${i + 1}`],
+  ...ARTICLE_APPLY[`i${i + 1}`],
   categoryId,
   title,
   summary,
