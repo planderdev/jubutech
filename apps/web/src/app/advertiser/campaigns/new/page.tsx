@@ -1,8 +1,8 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useStore, useMe } from "@/lib/store";
-import { DEFAULT_RULES, SELECTION_MODE_DESC, SELECTION_MODE_LABEL, campaignQuote, type SelectionMode } from "@jubutech/shared";
+import { useStore, useMe, useRules } from "@/lib/store";
+import { SELECTION_MODE_DESC, SELECTION_MODE_LABEL, campaignQuote, type SelectionMode } from "@jubutech/shared";
 import { CAMPAIGN_CATEGORIES, CHANNELS, type CampaignCategory, type ChannelType } from "@/lib/types";
 import { PageHeader } from "@/components/feature/page-header";
 import { RoleGate } from "@/components/feature/role-gate";
@@ -20,6 +20,7 @@ const day = (o: number) => { const t = new Date(); t.setDate(t.getDate() + o); r
 function Builder() {
   const router = useRouter();
   const me = useMe();
+  const rules = useRules();
   const createCampaign = useStore((s) => s.createCampaign);
   const [step, setStep] = useState(0);
   const [notice, setNotice] = useState<NoticeState>(null);
@@ -29,7 +30,7 @@ function Builder() {
     recruitStart: day(0), recruitEnd: day(7), announceDate: day(9), missionStart: day(10), missionEnd: day(24), recruitCount: 10,
     rewardType: "product" as "product" | "point" | "cash", rewardValue: 30000, rewardDesc: "",
     // 1-1 미션 카드 — 주부 화면의 체크리스트·자동 검사 기준. 비우면 운영 규칙 기본값
-    photoCount: DEFAULT_RULES.mission.defaultPhotoCount, minChars: DEFAULT_RULES.mission.defaultMinChars, requiredKeywords: "", hashtags: "", dueDays: DEFAULT_RULES.mission.defaultDueDays,
+    photoCount: rules.mission.defaultPhotoCount, minChars: rules.mission.defaultMinChars, requiredKeywords: "", hashtags: "", dueDays: rules.mission.defaultDueDays,
     selectionMode: "self" as SelectionMode,
   });
   const up = <K extends keyof typeof f>(k: K, v: (typeof f)[K]) => setF((s) => ({ ...s, [k]: v }));
@@ -136,7 +137,7 @@ function Builder() {
               </div>
             </div>
             {(() => {
-              const q = campaignQuote(DEFAULT_RULES, f.selectionMode);
+              const q = campaignQuote(rules, f.selectionMode);
               return (
                 <dl className="rounded-xl border border-hairline p-4 text-[13px] space-y-1.5">
                   <div className="flex justify-between"><dt className="text-ink-2">기본 수수료</dt><dd className="num">{q.baseFee.toLocaleString()}원</dd></div>

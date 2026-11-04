@@ -35,6 +35,7 @@ export function WorkspacePanel({ kind }: { kind: "advertiser" | "admin" }) {
     { href: "/admin7/info", label: "돈되는정보", icon: "info" },
     { href: "/admin7/points", label: "포인트", icon: "coin" },
     { href: "/admin7/notices", label: "공지", icon: "bulb" },
+    { href: "/admin7/settings", label: "운영 설정", icon: "bulb" },
     { href: "/admin7/logs", label: "운영 로그", icon: "list" },
   ];
   const menu = kind === "admin" ? ADMIN : ADVERTISER;

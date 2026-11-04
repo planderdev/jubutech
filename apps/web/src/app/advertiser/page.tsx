@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
-import { useStore, useMe } from "@/lib/store";
-import { DEFAULT_RULES, DEMO_APPLICATIONS, brandRatingSummary, ownsDemoCampaign } from "@jubutech/shared";
+import { useStore, useMe, useRules } from "@/lib/store";
+import { DEMO_APPLICATIONS, brandRatingSummary, ownsDemoCampaign } from "@jubutech/shared";
 import { CAMPAIGN_STATUS } from "@/lib/types";
 import { PageHeader } from "@/components/feature/page-header";
 import { RoleGate } from "@/components/feature/role-gate";
@@ -13,6 +13,7 @@ import { fmtNum } from "@/lib/utils";
 
 function Dashboard() {
   const me = useMe();
+  const rules = useRules();
   const role = useStore((s) => s.role);
   const mine = useStore((s) => s.campaigns.filter((c) => role === "admin" || c.advertiserId === s.userId));
   const apps = useStore((s) => s.applications);
@@ -21,7 +22,7 @@ function Dashboard() {
   const pendingReviews = reviews.filter((r) => r.status === "pending" && (role === "admin" || ownsDemoCampaign(userId ?? "", DEMO_APPLICATIONS.find((a) => a.id === r.applicationId)?.campaignId ?? ""))).length;
   // 1-2 상호 평가 — 작성자가 드러나지 않게 통계로만, 건수가 적으면 숨긴다
   const ratings = useStore((s) => s.brandRatings);
-  const ratingSummary = me?.brand ? brandRatingSummary(ratings, me.brand, DEFAULT_RULES) : null;
+  const ratingSummary = me?.brand ? brandRatingSummary(ratings, me.brand, rules) : null;
   const stats = [
     ["진행 캠페인", mine.filter((c) => ["open", "ongoing", "selected"].includes(c.status)).length, "건"],
     ["누적 신청", mine.reduce((n, c) => n + c.applicantIds.length, 0), "명"],
@@ -42,7 +43,7 @@ function Dashboard() {
           {ratingSummary.visible ? (
             <p className="mt-1 text-[14px]"><span className="num font-semibold">★ {ratingSummary.average}</span> · 평가 {ratingSummary.count}건 · 안내와 같았어요 {ratingSummary.matchRate}%{ratingSummary.onTimeRate !== null ? ` · 제때 발송 ${ratingSummary.onTimeRate}%` : ""}</p>
           ) : (
-            <p className="mt-1 text-[13px] text-ink-2">평가가 {DEFAULT_RULES.rating.minVisible}건 이상 쌓이면 통계로 보여 드려요. (지금 {ratingSummary.count}건)</p>
+            <p className="mt-1 text-[13px] text-ink-2">평가가 {rules.rating.minVisible}건 이상 쌓이면 통계로 보여 드려요. (지금 {ratingSummary.count}건)</p>
           )}
         </section>
       )}

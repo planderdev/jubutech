@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
-import { DEFAULT_RULES, DEMO_APPLICATIONS, DEMO_CAMPAIGNS, DEMO_MEMBERS, REVIEW_CHECK_LABEL, REVIEW_STATUS, checkReview, missionWithDefaults, reviewCheckSummary, reviewDueLabel, type Review, type ReviewStatus } from "@jubutech/shared";
+import { DEMO_APPLICATIONS, DEMO_CAMPAIGNS, DEMO_MEMBERS, REVIEW_CHECK_LABEL, REVIEW_STATUS, checkReview, missionWithDefaults, reviewCheckSummary, reviewDueLabel, type Review, type ReviewStatus } from "@jubutech/shared";
+import { useRules } from "@/lib/store";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Drawer } from "@/components/ui/drawer";
@@ -14,6 +15,7 @@ const STATUS_KEYS = ["pending", "revision", "approved", "rejected"] as const;
  * 관리자(`/admin7/reviews`)와 광고주(`/advertiser/reviews`)가 같이 쓴다.
  */
 export function ReviewDrawer({ review: r, onClose, decide }: { review: Review | null; onClose: () => void; decide: (id: string, status: ReviewStatus, feedback?: string, rating?: number) => { ok: boolean; message: string } }) {
+  const rules = useRules();
   const [status, setStatus] = useState<ReviewStatus>("approved");
   const [feedback, setFeedback] = useState("");
   const [rating, setRating] = useState("5");
@@ -29,7 +31,7 @@ export function ReviewDrawer({ review: r, onClose, decide }: { review: Review | 
   const app = r ? DEMO_APPLICATIONS.find((a) => a.id === r.applicationId) : undefined;
   const c = app ? DEMO_CAMPAIGNS.find((x) => x.id === app.campaignId) : undefined;
   const m = app ? DEMO_MEMBERS.find((x) => x.id === app.memberId) : undefined;
-  const mission = c ? missionWithDefaults(DEFAULT_RULES, c.mission) : null;
+  const mission = c ? missionWithDefaults(rules, c.mission) : null;
   // 저장된 검사 결과가 없으면(기존 데모 후기) 지금 기준으로 다시 검사해 참고로 보여 준다
   const check = r?.check ?? (r && mission ? checkReview(mission, { url: r.url, content: r.content, photoCount: r.photoCount }) : undefined);
   const final = r?.status === "approved" || r?.status === "rejected";

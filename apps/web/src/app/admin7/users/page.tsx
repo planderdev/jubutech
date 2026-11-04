@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { useStore } from "@/lib/store";
+import { useRules, useStore } from "@/lib/store";
 import { AdminHeader, AdminTable, askReason } from "@/components/admin/admin-ui";
 import { Avatar } from "@/components/feature/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -11,7 +11,7 @@ import { Field, Input, Textarea } from "@/components/ui/field";
 import { Notice, type NoticeState } from "@/components/ui/notice";
 import type { User } from "@/lib/types";
 import { fmtNum, relTime } from "@/lib/utils";
-import { DEFAULT_RULES, TRUST_EVENT_LABEL, TRUST_GRADE_LABEL, trustGrade, trustScores, trustTimeline, type TrustGrade } from "@jubutech/shared";
+import { TRUST_EVENT_LABEL, TRUST_GRADE_LABEL, trustGrade, trustScores, trustTimeline, type TrustGrade } from "@jubutech/shared";
 
 const GRADE_TONE: Record<TrustGrade, "red" | "mute" | "sky" | "sage"> = { caution: "red", normal: "mute", good: "sky", excellent: "sage" };
 
@@ -23,11 +23,12 @@ export default function AdminUsers() {
   const apps = useStore((s) => s.applications);
   const trustEvents = useStore((s) => s.trustEvents);
   const { adminSetUserRole, adminSetUserStatus, adminGrantPoints, adminRunOverdueCheck } = useStore();
+  const rules = useRules();
   const [role, setRole] = useState<"all" | User["role"]>("all");
   const [trustOpen, setTrustOpen] = useState<string | null>(null);
   const [notice, setNotice] = useState<NoticeState>(null);
   const scores = trustScores(trustEvents);
-  const trustName = DEFAULT_RULES.trust.name;
+  const trustName = rules.trust.name;
   const rows = users.filter((u) => role === "all" || u.role === role).map((u) => ({ ...u, posts: posts.filter((p) => p.authorId === u.id).length, apps: apps.filter((a) => a.userId === u.id && a.status !== "cancelled").length, trust: scores[u.id] ?? 0 }));
   const grant = (id: string) => { const v = window.prompt("지급/차감할 포인트 (음수 가능)", "1000"); if (v === null) return; const n = Number(v); if (!n) return; const reason = window.prompt("사유", "운영 보상") ?? "운영"; adminGrantPoints(id, n, reason); };
 
@@ -49,7 +50,7 @@ export default function AdminUsers() {
           { key: "status", label: "상태", render: (u) => u.status === "suspended" ? <Badge tone="red">정지</Badge> : <Badge tone="sage">정상</Badge> },
           { key: "points", label: "포인트", className: "num text-right", render: (u) => fmtNum(u.points) + "P" },
           { key: "level", label: "Lv", className: "num", render: (u) => u.level },
-          { key: "trust", label: trustName, className: "num", render: (u) => u.role === "member" ? <button type="button" onClick={() => setTrustOpen(u.id)} className="inline-flex items-center gap-1.5 hover:text-red"><span className="font-bold">{u.trust > 0 ? "+" : ""}{u.trust}</span><Badge tone={GRADE_TONE[trustGrade(u.trust)]}>{TRUST_GRADE_LABEL[trustGrade(u.trust)]}</Badge></button> : <span className="text-ink-3">—</span> },
+          { key: "trust", label: trustName, className: "num", render: (u) => u.role === "member" ? <button type="button" onClick={() => setTrustOpen(u.id)} className="inline-flex items-center gap-1.5 hover:text-red"><span className="font-bold">{u.trust > 0 ? "+" : ""}{u.trust}</span><Badge tone={GRADE_TONE[trustGrade(u.trust, rules)]}>{TRUST_GRADE_LABEL[trustGrade(u.trust, rules)]}</Badge></button> : <span className="text-ink-3">—</span> },
           { key: "posts", label: "글/응모", className: "num", render: (u) => `${u.posts} / ${u.apps}` },
           { key: "joinedAt", label: "가입", className: "num text-ink-3", render: (u) => u.joinedAt?.replace(/-/g, ".") ?? "—" },
           { key: "actions", label: "", className: "text-right", render: (u) => <div className="flex gap-1 justify-end"><Button size="sm" variant="secondary" onClick={() => grant(u.id)}>포인트</Button>{u.status === "suspended" ? <Button size="sm" variant="ghost" onClick={() => adminSetUserStatus(u.id, "active")}>해제</Button> : <Button size="sm" variant="danger" onClick={() => { const r = askReason(`${u.nickname} 정지`); if (r !== null) adminSetUserStatus(u.id, "suspended", r); }}>정지</Button>}</div> },
@@ -68,23 +69,24 @@ function TrustDrawer({ userId, onClose }: { userId: string | null; onClose: () =
   const [delta, setDelta] = useState("5");
   const [note, setNote] = useState("");
   const [notice, setNotice] = useState<NoticeState>(null);
+  const rules = useRules();
   const user = users.find((u) => u.id === userId);
   const timeline = userId ? trustTimeline(trustEvents, userId) : [];
   const score = timeline.reduce((n, e) => n + e.delta, 0);
-  const d = DEFAULT_RULES.trust.delta;
+  const d = rules.trust.delta;
   return (
-    <Drawer open={!!user} onClose={onClose} title={`${DEFAULT_RULES.trust.name} 상세`} width={480}>
+    <Drawer open={!!user} onClose={onClose} title={`${rules.trust.name} 상세`} width={480}>
       {user ? (
         <>
           <div className="flex items-center justify-between px-5 py-4 border-b border-hairline">
-            <div><p className="text-[12px] text-ink-3">{DEFAULT_RULES.trust.name} · 관리자 전용</p><h2 className="text-[16px] font-bold">{user.nickname} <span className="num">{score > 0 ? "+" : ""}{score}점</span></h2></div>
-            <Badge tone={GRADE_TONE[trustGrade(score)]}>{TRUST_GRADE_LABEL[trustGrade(score)]}</Badge>
+            <div><p className="text-[12px] text-ink-3">{rules.trust.name} · 관리자 전용</p><h2 className="text-[16px] font-bold">{user.nickname} <span className="num">{score > 0 ? "+" : ""}{score}점</span></h2></div>
+            <Badge tone={GRADE_TONE[trustGrade(score, rules)]}>{TRUST_GRADE_LABEL[trustGrade(score, rules)]}</Badge>
           </div>
           <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5 text-[13px]">
             <section>
               <p className="label text-ink-3 mb-1.5">규칙표 (운영 설정)</p>
               <ul className="grid grid-cols-2 gap-x-4 gap-y-1 text-[12px] text-ink-2">
-                <li>후기 승인 +{d.reviewApproved}</li><li>별점 (별점−3)×{d.ratingPerStar}</li><li>답글 좋아요 +{d.commentLiked}</li><li>기한 초과 {d.reviewOverdue}</li><li>신고 숨김 {d.postHidden}</li><li>초대 보너스 {DEFAULT_RULES.invite.bonus === "trust" ? `+${d.inviteBonus}` : "미적용(우선 선정권)"}</li>
+                <li>후기 승인 +{d.reviewApproved}</li><li>별점 (별점−3)×{d.ratingPerStar}</li><li>답글 좋아요 +{d.commentLiked}</li><li>기한 초과 {d.reviewOverdue}</li><li>신고 숨김 {d.postHidden}</li><li>초대 보너스 {rules.invite.bonus === "trust" ? `+${d.inviteBonus}` : "미적용(우선 선정권)"}</li>
               </ul>
             </section>
             <section>

@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
-import { DEMO_MEMBERS, downloadMilestone, inviteBonusLabel, DEFAULT_RULES } from "@jubutech/shared";
-import { useStore } from "@/lib/store";
+import { DEMO_MEMBERS, downloadMilestone, inviteBonusLabel } from "@jubutech/shared";
+import { useRules, useStore } from "@/lib/store";
 import { AdminHeader, AdminTable, StatCard } from "@/components/admin/admin-ui";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import { relTime } from "@/lib/utils";
 /** 2-3 대기자·초대·다운로드 — 랜딩 「출시 알림 받기」 목록, 초대 코드 사용 현황, 다운로드 카운터(구간) */
 export default function AdminWaitlist() {
   const { waitlist, inviteCodes, downloadCount, setDownloadCount } = useStore();
+  const rules = useRules();
   const [draft, setDraft] = useState(String(downloadCount));
   const [notice, setNotice] = useState<NoticeState>(null);
   const m = downloadMilestone(downloadCount);
@@ -25,7 +26,7 @@ export default function AdminWaitlist() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
         <StatCard label="앱 다운로드" value={downloadCount} tone="red" sub={m.label} />
         <StatCard label="출시 알림 대기자" value={waitlist.length} sub={`이메일 ${waitlist.filter((w) => w.channel === "email").length} · 휴대폰 ${waitlist.filter((w) => w.channel === "phone").length}`} />
-        <StatCard label="초대로 가입" value={invited} sub={`코드 ${inviteCodes.length}개 · 보너스 ${inviteBonusLabel(DEFAULT_RULES).short}`} />
+        <StatCard label="초대로 가입" value={invited} sub={`코드 ${inviteCodes.length}개 · 보너스 ${inviteBonusLabel(rules).short}`} />
         <StatCard label="품앗이 목표" value={`${Math.round(m.progress * 100)}%`} tone="info" sub={m.next ? `${m.prev.toLocaleString()} → ${m.next.toLocaleString()} 구간` : "최고 구간"} />
       </div>
       <form className="bg-paper rounded-xl shadow-soft p-4 mb-4 flex flex-wrap items-end gap-3" onSubmit={(e) => { e.preventDefault(); const n = Number(draft); if (!Number.isFinite(n) || n < 0) return setNotice({ ok: false, text: "0 이상의 숫자를 입력해 주세요." }); setDownloadCount(Math.floor(n)); setNotice({ ok: true, text: `다운로드 수를 ${Math.floor(n).toLocaleString()} 으로 기록했어요.` }); }}>

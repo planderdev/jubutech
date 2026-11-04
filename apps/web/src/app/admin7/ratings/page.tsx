@@ -1,7 +1,7 @@
 "use client";
 import { useMemo } from "react";
-import { DEFAULT_RULES, DEMO_MEMBERS, brandRatingSummary } from "@jubutech/shared";
-import { useStore } from "@/lib/store";
+import { DEMO_MEMBERS, brandRatingSummary } from "@jubutech/shared";
+import { useRules, useStore } from "@/lib/store";
 import { AdminHeader, AdminTable, askReason } from "@/components/admin/admin-ui";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,11 +12,12 @@ const YES_NO = { yes: "예", no: "아니요", na: "해당 없음" } as const;
 /** 광고주 평가 (기획안 1-2 상호 평가) — 운영자는 작성자까지 본다. 광고주·회원에게는 통계로만 보인다. 건수 기준은 `rating.minVisible` */
 export default function AdminRatings() {
   const { brandRatings, adminSetRatingStatus } = useStore();
-  const brands = useMemo(() => [...new Set(brandRatings.map((r) => r.brand))].map((brand) => ({ id: brand, brand, ...brandRatingSummary(brandRatings, brand, DEFAULT_RULES) })), [brandRatings]);
+  const rules = useRules();
+  const brands = useMemo(() => [...new Set(brandRatings.map((r) => r.brand))].map((brand) => ({ id: brand, brand, ...brandRatingSummary(brandRatings, brand, rules) })), [brandRatings, rules]);
   const rows = brandRatings.map((r) => ({ ...r, nickname: DEMO_MEMBERS.find((m) => m.id === r.memberId)?.nickname ?? r.memberId }));
   return (
     <div>
-      <AdminHeader title="광고주 평가" count={brandRatings.length} description={`주부가 체험 뒤 남긴 평가입니다. ${DEFAULT_RULES.rating.minVisible}건이 쌓이기 전에는 앱·광고주 화면에 통계도 보이지 않습니다.`} />
+      <AdminHeader title="광고주 평가" count={brandRatings.length} description={`주부가 체험 뒤 남긴 평가입니다. ${rules.rating.minVisible}건이 쌓이기 전에는 앱·광고주 화면에 통계도 보이지 않습니다.`} />
       <p className="label text-ink-3 mb-2">광고주별</p>
       <AdminTable
         rows={brands}

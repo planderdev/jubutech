@@ -1,8 +1,8 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { DEFAULT_RULES, WORD_ACTION_LABEL, distinctReporters, type WordAction } from "@jubutech/shared";
-import { useStore } from "@/lib/store";
+import { WORD_ACTION_LABEL, distinctReporters, type WordAction } from "@jubutech/shared";
+import { useRules, useStore } from "@/lib/store";
 import { BOARDS } from "@/lib/types";
 import { AdminHeader, AdminTable, StatCard, askReason } from "@/components/admin/admin-ui";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +19,7 @@ import { relTime } from "@/lib/utils";
  */
 export default function AdminModeration() {
   const { posts, users, reports, moderationWords, adminAddWord, adminRemoveWord, adminSetWordAction, adminDecideModeration } = useStore();
+  const rules = useRules();
   const [tab, setTab] = useState<"queue" | "words">("queue");
   const [word, setWord] = useState("");
   const [action, setAction] = useState<WordAction>("review");
@@ -36,7 +37,7 @@ export default function AdminModeration() {
         <StatCard label="검토 대기" value={posts.filter((p) => p.status === "review").length} tone={posts.some((p) => p.status === "review") ? "red" : undefined} />
         <StatCard label="자동·수동 숨김" value={posts.filter((p) => p.status === "hidden").length} />
         <StatCard label="금칙어" value={moderationWords.length} />
-        <StatCard label="자동 숨김 기준" value={`${DEFAULT_RULES.report.autoHideCount}명`} sub="설정 report.autoHideCount · 초안" />
+        <StatCard label="자동 숨김 기준" value={`${rules.report.autoHideCount}명`} sub="설정 report.autoHideCount · 초안" />
       </div>
       <Tabs className="mb-3" active={tab} onChange={(k) => setTab(k as typeof tab)} items={[{ key: "queue", label: "검토 목록", count: queue.length }, { key: "words", label: "금칙어 사전", count: moderationWords.length }]} />
       {tab === "queue" ? (
