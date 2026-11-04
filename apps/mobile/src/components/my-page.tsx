@@ -3,7 +3,7 @@ import { useRouter, type Href } from "expo-router";
 import Constants from "expo-constants";
 import { ACCOUNT_DELETION, LEGAL_DOC_TITLE, myPosts, type ServiceMode } from "@jubutech/shared";
 import { AppScreen, ContentSection } from "@/components/screen";
-import { Button, GroupCard, GroupSection, ListHeader, MenuRow, TextButton } from "@/components/ui";
+import { Button, GroupCard, GroupSection, ListHeader, MenuRow } from "@/components/ui";
 import { TrustCard } from "@/components/trust";
 import { WalletCard } from "@/components/wallet";
 import { useAuth } from "@/lib/auth";
@@ -22,9 +22,8 @@ export function MyPage({ mode = "campaigns" }: { mode?: ServiceMode }) {
   const auth = useAuth();
   // 로그인돼 있으면 카카오 프로필 이름을, 아니면 데모 회원(서연맘)을 보여 준다. 데이터 연결(W8) 전까지 응모·지갑은 데모 회원 기준
   const nickname = auth.user?.nickname ?? member.nickname;
-  const { inviteCodes, posts, journals: myJournals, reset } = useDemo();
+  const { inviteCodes, posts, journals: myJournals, reset, rules } = useDemo();
   const invited = inviteCodes.find((c) => c.ownerId === member.id)?.uses.length ?? 0;
-  const soon = (what: string) => () => Alert.alert(what, "이 화면은 다음 작업에서 들어와요.");
   const version = Constants.expoConfig?.version ?? "0.1.0";
   // 심사 요건(Apple 5.1.1(v)·Google): 앱 안에서 계정 삭제를 시작할 수 있어야 한다. 로그인 전엔 기기의 둘러보기 기록만 지운다
   const deleteAccount = () => {
@@ -51,7 +50,7 @@ export function MyPage({ mode = "campaigns" }: { mode?: ServiceMode }) {
           <View style={{ flex: 1, gap: 2 }}>
             <Text style={typo("label2", "regular", T.label.alternative)}>{auth.status === "signed-in" ? `카카오 계정 · ${auth.user?.email ?? "연결됨"}` : "오늘도 나만의 속도로"}</Text>
             <Text style={typo("title2", "bold")}>{nickname}님</Text>
-            <TextButton label="Lv. 3 · 꾸준한 새싹" onPress={soon("배지")} style={{ alignSelf: "flex-start", paddingHorizontal: 0 }} />
+            <Text style={typo("label2", "semibold", T.label.neutral)}>Lv. 3 · 꾸준한 새싹</Text>
           </View>
         </GroupCard>
         {auth.status === "guest" || auth.status === "demo" ? (
@@ -83,9 +82,10 @@ export function MyPage({ mode = "campaigns" }: { mode?: ServiceMode }) {
         <GroupCard>
           <ListHeader title="주부테크와 함께" />
           <MenuRow icon="gift" title="친구 초대" sub={`${invited}명 가입`} onPress={() => router.push("/invite" as Href)} />
-          <MenuRow icon="megaphone" title="공지사항" onPress={soon("공지사항")} />
-          <MenuRow icon="message-circle" title="문의하기" onPress={soon("문의하기")} />
-          <MenuRow icon="sprout" title="서비스 소개·제휴 문의" onPress={soon("서비스 소개")} />
+          {rules.referral.enabled ? <MenuRow icon="link" title="추천 링크" onPress={() => router.push("/referral" as Href)} /> : null}
+          <MenuRow icon="megaphone" title="공지사항" onPress={() => router.push("/notices" as Href)} />
+          <MenuRow icon="message-circle" title="문의하기" onPress={() => router.push("/contact" as Href)} />
+          <MenuRow icon="sprout" title="서비스 소개·제휴 문의" onPress={() => router.push("/about" as Href)} />
           <MenuRow icon="settings" title="설정" onPress={() => router.push("/settings" as Href)} last={auth.status !== "signed-in"} />
           {auth.status === "signed-in" ? <MenuRow icon="x" title="로그아웃" onPress={() => auth.signOut()} last /> : null}
         </GroupCard>

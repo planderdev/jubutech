@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { Alert, StyleSheet, Text, View } from "react-native";
 import { useRouter, type Href } from "expo-router";
-import { WALLET_KINDS, WALLET_KIND_LABEL, dailyGoalProgress, rewardDisclaimer, walletKindOf, walletWithdrawState, type WalletEntryKind } from "@jubutech/shared";
+import { WALLET_KINDS, WALLET_KIND_LABEL, dailyGoalProgress, rewardDisclaimer, walletKindOf, walletWithdrawState, type WalletEntryKind, walletExpiryNotice } from "@jubutech/shared";
 import { ChipRow, EmptyState, PageTitle } from "@/components/campaign";
 import { AppScreen, ContentSection } from "@/components/screen";
 import { LegalLinkButton } from "@/components/legal";
+import { InfoBox } from "@/components/form";
 import { Button, GroupCard, GroupSection, ListHeader } from "@/components/ui";
 import { NextActionRow, Stat, WalletEntryRow, useWallet, won } from "@/components/wallet";
 import { RAD, SP, T, typo } from "@/theme";
@@ -24,6 +25,7 @@ export default function Wallet() {
   const withdraw = walletWithdrawState(rules, summary.balance, now);
   const progress = dailyGoalProgress(rules, summary.today);
   const back = () => (router.canGoBack() ? router.back() : router.replace("/my" as Href));
+  const expiry = walletExpiryNotice(entries, rules, now);
 
   return (
     <AppScreen title="나의 지갑" onBack={back} tabBar={false}>
@@ -57,6 +59,10 @@ export default function Wallet() {
         <Button label={withdraw.label} variant={withdraw.enabled ? "primary" : "neutral"} full disabled={!withdraw.enabled} onPress={() => Alert.alert("출금 신청", "데모에서는 출금을 진행하지 않아요. 계좌 입력과 정산은 데이터 연결 뒤에 들어와요.")} />
         <Text style={[typo("caption1", "regular", T.label.alternative), { textAlign: "center" }]}>{withdraw.help}</Text>
       </ContentSection>
+
+      {expiry ? (
+        <ContentSection><InfoBox>{`리워드가 ${expiry.daysLeft}일 뒤 소멸돼요. 그 전에 후기를 하나 더 올리면 기간이 늘어나요.`}</InfoBox></ContentSection>
+      ) : null}
 
       {/* 심사용 고지(W9): 리워드는 활동 대가, 앱 내 결제와 무관 — 지갑·리워드 안내·스토어 메모가 같은 말 */}
       <ContentSection style={{ gap: 4 }}>

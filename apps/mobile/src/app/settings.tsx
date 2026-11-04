@@ -43,6 +43,7 @@ export default function Settings() {
             <ListHeader title="검토용 스위치 (개발 빌드)" action="" />
             <View style={{ paddingHorizontal: SP[16], paddingBottom: SP[16], gap: SP[8] }}>
               <Checkbox checked={rules.trust.visibleToUsers} onChange={(v) => setRuleOverride("trust.visibleToUsers", v)} label={`${rules.trust.name} 사용자에게 보이기`} sub="운영에서는 관리자 설정의 trust.visibleToUsers" />
+              <Checkbox checked={rules.referral.enabled} onChange={(v) => setRuleOverride("referral.enabled", v)} label="추천 링크 화면 켜기" sub="결정 대기 기능 미리 보기. 수익 배분 없음" />
               <Checkbox checked={rules.assist.aiReviewEdit} onChange={(v) => setRuleOverride("assist.aiReviewEdit", v)} label="AI 교정·이어쓰기 켜기" sub="모델 호출 없는 예시(stub)" />
               <Text style={typo("caption1", "regular", T.label.alternative)}>이 기기에만 적용돼요.</Text>
             </View>

@@ -9,6 +9,19 @@ import { reviewDaysLeft } from "./review-check";
 import { demoCampaignState, type DemoApplication, type DemoCampaign } from "./fixtures";
 import type { Review } from "./types";
 
+/**
+ * 리워드 소멸 안내 — 마지막 적립일 + `wallet.expireMonths` 가 30일 안이면 그 날짜를 돌려준다. 실제 소멸 처리는 서버에서 한다.
+ * 약관: "마지막 적립일로부터 유효, 소멸 30일 전에 알려요"
+ */
+export function walletExpiryNotice(entries: WalletEntryLike[], rules: AppRules, now: string | Date): { expiresAt: string; daysLeft: number } | null {
+  const earned = entries.filter((e) => e.amount > 0 && e.kind !== "product_value").map((e) => Date.parse(e.createdAt)).filter(Number.isFinite);
+  if (earned.length === 0) return null;
+  const at = new Date(Math.max(...earned));
+  at.setMonth(at.getMonth() + rules.wallet.expireMonths);
+  const daysLeft = Math.ceil((at.getTime() - new Date(now).getTime()) / 86400000);
+  return daysLeft >= 0 && daysLeft <= 30 ? { expiresAt: at.toISOString(), daysLeft } : null;
+}
+
 export interface WalletEntryLike {
   amount: number;
   kind?: WalletEntryKind;

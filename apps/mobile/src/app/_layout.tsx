@@ -36,6 +36,10 @@ export default function RootLayout() {
         <Stack.Screen name="trust" />
         <Stack.Screen name="notifications" />
         <Stack.Screen name="subsidy-profile" />
+        <Stack.Screen name="referral" />
+        <Stack.Screen name="notices" />
+        <Stack.Screen name="contact" />
+        <Stack.Screen name="about" />
         <Stack.Screen name="settings" />
         <Stack.Screen name="journal-entry/form" />
         <Stack.Screen name="journal-entry/[id]/index" />

@@ -18,6 +18,8 @@ export interface AppRules {
     withdrawMin: number;
     /** 출금 오픈일(ISO 날짜). null 이면 오픈 전 — "출금은 12월 오픈" 안내만 */
     withdrawOpenAt: string | null;
+    /** 리워드 유효 기간(개월) — 마지막 적립일 기준. 소멸 처리는 서버 연결 뒤 */
+    expireMonths: number;
   };
   mission: {
     /** 미션 카드가 없는 캠페인의 기본 사진 장수 */
@@ -87,6 +89,10 @@ export interface AppRules {
     /** 어댑터: stub = 모델 호출 없는 규칙 기반 예시. 실제 모델은 서버 함수가 생기면 추가 */
     provider: "stub" | "remote";
   };
+  referral: {
+    /** 2-1 추천 링크 — 약관 확인·리서치 결과 전까지 꺼 둔다. 켜도 수익 배분은 없다 */
+    enabled: boolean;
+  };
   notify: {
     /** 체험단 선정 결과 알림 */
     selection: boolean;
@@ -102,7 +108,7 @@ export interface AppRules {
 /** 코드 기본값 = 기획안 초안. 확정되면 `app_settings` 로 덮어쓴다 */
 export const DEFAULT_RULES: AppRules = {
   reward: { reviewAmount: 1000, dailyGoal: 5000 },
-  wallet: { withdrawMin: 10000, withdrawOpenAt: "2026-12-01" },
+  wallet: { withdrawMin: 10000, withdrawOpenAt: "2026-12-01", expireMonths: 12 },
   mission: { defaultPhotoCount: 3, defaultMinChars: 800, defaultDueDays: 14, reminderDaysBefore: [3, 0] },
   penalty: { lateBlockDays: 30 },
   trust: {
@@ -122,6 +128,7 @@ export const DEFAULT_RULES: AppRules = {
   rating: { minVisible: 3 },
   advertiser: { baseFee: 50000, agencyFee: 100000 },
   assist: { aiReviewEdit: false, provider: "stub" },
+  referral: { enabled: false },
   notify: { selection: true, review: true, subsidy: true, subsidyDaysBefore: 7 },
 };
 
@@ -130,6 +137,7 @@ export type RuleKey =
   | "reward.dailyGoal"
   | "wallet.withdrawMin"
   | "wallet.withdrawOpenAt"
+  | "wallet.expireMonths"
   | "mission.defaultPhotoCount"
   | "mission.defaultMinChars"
   | "mission.defaultDueDays"
@@ -158,6 +166,7 @@ export type RuleKey =
   | "advertiser.agencyFee"
   | "assist.aiReviewEdit"
   | "assist.provider"
+  | "referral.enabled"
   | "notify.selection"
   | "notify.review"
   | "notify.subsidy"
@@ -181,6 +190,7 @@ export const RULE_META: Record<RuleKey, RuleMeta> = {
   "reward.dailyGoal": { label: "하루 수익 목표", type: "number", unit: "원", note: "1-3 · 5천·1만·2만 중 미정", group: "리워드·지갑" },
   "wallet.withdrawMin": { label: "최소 출금액", type: "number", unit: "원", note: "1-3 · 세금 처리와 함께 확정", group: "리워드·지갑" },
   "wallet.withdrawOpenAt": { label: "출금 오픈일", type: "date", note: "1-3 · 비우면 '출금은 12월 오픈' 안내만", group: "리워드·지갑" },
+  "wallet.expireMonths": { label: "리워드 유효 기간", type: "number", unit: "개월", note: "W9 · 약관 초안 1년, 세금·회계와 함께 확정", group: "리워드·지갑" },
   "mission.defaultPhotoCount": { label: "기본 사진 장수", type: "number", unit: "장", note: "1-1 · 캠페인에 미션 카드가 없을 때", group: "미션·기한" },
   "mission.defaultMinChars": { label: "기본 글자 수", type: "number", unit: "자", note: "1-1 · 800자/80자 회의록에서 불분명", group: "미션·기한" },
   "mission.defaultDueDays": { label: "제출 기한", type: "number", unit: "일", note: "1-1 · 선정 발표 후", group: "미션·기한" },
@@ -209,6 +219,7 @@ export const RULE_META: Record<RuleKey, RuleMeta> = {
   "advertiser.agencyFee": { label: "선정 대행비", type: "number", unit: "원", note: "2-2 · '맡기기' 추가 금액, 초안", group: "광고주" },
   "assist.aiReviewEdit": { label: "AI 후기 교정 버튼", type: "boolean", note: "1-1 · 모델·비용 확정 뒤 켠다", group: "미션·기한" },
   "assist.provider": { label: "AI 교정 어댑터", type: "choice", choices: ["stub", "remote"], note: "1-1 · stub 은 모델 호출 없는 예시, remote 는 서버 함수 연결 뒤", group: "미션·기한" },
+  "referral.enabled": { label: "추천 링크 화면", type: "boolean", note: "2-1 · 결정 대기(쿠팡 파트너스 약관). 켜도 수익 배분 없음", group: "광고주" },
   "notify.selection": { label: "선정 결과 알림", type: "boolean", note: "2단계 · 운영 전체 스위치", group: "초대·운영" },
   "notify.review": { label: "후기 기한·검토 결과 알림", type: "boolean", note: "1-1 · 운영 전체 스위치", group: "초대·운영" },
   "notify.subsidy": { label: "맞춤 지원금 마감 알림", type: "boolean", note: "2-5 · 운영 전체 스위치", group: "초대·운영" },
