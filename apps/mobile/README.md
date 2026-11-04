@@ -20,7 +20,7 @@ src/app/
   (tabs)/_layout.tsx       하단 5탭 (B안): campaigns(체험단) · finance(지원금) · journal(주식) · community · my
   (tabs)/campaigns/        체험단 Stack: index(홈) · explore(탐색) · applications(내 응모) ← PHP /campaigns, /campaigns/explore, /applications
   (tabs)/finance/          지원금 Stack: index(홈) · categories(정보)                       ← PHP /finance, /finance/categories
-  (tabs)/journal/          주식 Stack: index(요약) · entries(일지) · analysis(분석)           ← PHP /journal, /journal/entries, /journal/analysis
+  (tabs)/journal/          주식 Stack: index(월 지표·목표·주간 달력) · entries(검색·필터) · analysis(월간 분석)         ← PHP /journal, /journal/entries, /journal/analysis
   (tabs)/community.tsx     커뮤니티 탭 ← PHP /community: 주제 칩·글 목록·떠 있는 글쓰기
   (tabs)/my.tsx            마이 탭(공용) ← PHP /mypage
   legal/[doc].tsx          약관·개인정보처리방침·리워드 안내·응모 동의 — shared `legalDoc()` 본문(웹 `/legal/[doc]` 과 동일), 초안 띠
@@ -28,6 +28,8 @@ src/app/
   community/new.tsx        글쓰기·수정 (?id=, ?topic=) ← PHP /community/new
   article/[id].tsx         정보 글 ← PHP /finance/articles/{id}
   saved.tsx                저장한 정보 ← PHP /finance/saved
+  journal-entry/form.tsx   일지 작성·수정 5단계 + 임시 저장 ← PHP /journal/entries/new
+  journal-entry/[id]/      일지 상세(index)·복기 공유(share) ← PHP /journal/entries/{id}
   my-posts.tsx             내가 쓴 글 ← PHP /mypage/posts
   invite.tsx               2-3 친구 초대 — 내 코드(회원당 하나, 결정적 생성)·복사·공유 시트, 보너스 안내(`invite.bonus`), 초대한 친구 목록
 src/lib/service.ts         SERVICES(서비스 이름·상단 세그먼트 = PHP $navs 에서 마이·커뮤니티 제외), ROOT_TABS(하단 5탭), useService(), 마지막 서비스·온보딩 저장
@@ -59,7 +61,7 @@ assets/images/banners/     PHP 배너 이미지를 640px 로 줄인 webp (+ disc
 assets/images/campaigns/   PHP campaign-cp1-0*.webp 를 720px 로 줄인 것 — 사진이 있는 캠페인은 cp1 뿐, 나머지는 분류 일러스트(PHP objectArt 대신)
 ```
 
-구현된 화면 (2026-10-30): 온보딩(`/onboarding`), 재테크 홈(`/finance`), 체험단 홈·탐색·내 응모(`/campaigns*`), 체험단 상세·응모·응모 내역·후기 제출(`/campaign/[id]*`, `/application/[id]`, `/application/[id]/review`), 마이(`/my`)·나의 지갑(`/wallet`). 커뮤니티·정보·매매일지 화면은 `Placeholder` 로 PHP 대응 경로만 표시한다.
+구현된 화면 (2026-11-05): 커뮤니티(`/community*`), 지원금 정보(`/finance/categories`, `/article/[id]`, `/saved`), 주식 일지(`/journal*`, `/journal-entry/*`), 온보딩(`/onboarding`), 재테크 홈(`/finance`), 체험단 홈·탐색·내 응모(`/campaigns*`), 체험단 상세·응모·응모 내역·후기 제출(`/campaign/[id]*`, `/application/[id]`, `/application/[id]/review`), 마이(`/my`)·나의 지갑(`/wallet`).
 
 탭 구조 메모(W6, B안): PHP 데모는 상단 드롭다운으로 서비스를 바꾸고 서비스마다 하단 4탭이지만, 앱은 하단 5탭 고정 + 서비스 상단 세그먼트다(대표님 결정, 팀장과 공유 필요). 서비스 탭을 다시 누르면 마지막 세그먼트가 유지된다(중첩 Stack).
 

@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { DEFAULT_RULES, DEMO_APPLICATIONS, DEMO_CAMPAIGNS, DEMO_COMMENTS, DEMO_INVITE_CODES, DEMO_MEMBERS, DEMO_NOW, DEMO_POINTS, DEMO_POSTS, DEMO_REPORTS, DEMO_REVIEWS, DEMO_SAVED, DEMO_TRUST_EVENTS, REDEEM_MESSAGE, applyBlockedUntil, demoApplication, demoCampaignState, ensureInviteCode, hasTrustEvent, makeTrustEvent, redeemInviteCode, type CommunityTopic, type DemoApplication, type DemoCampaign, type DemoComment, type DemoMember, type DemoPoint, type DemoPost, type DemoReport, type InviteCode, type Review, type ReviewCheck, type ReviewStatus, type TrustEvent } from "@jubutech/shared";
+import { DEFAULT_RULES, DEMO_APPLICATIONS, DEMO_CAMPAIGNS, DEMO_COMMENTS, DEMO_INVITE_CODES, DEMO_JOURNALS, DEMO_JOURNAL_GOALS, DEMO_MEMBERS, DEMO_NOW, DEMO_POINTS, DEMO_POSTS, DEMO_REPORTS, DEMO_REVIEWS, DEMO_SAVED, DEMO_TRUST_EVENTS, REDEEM_MESSAGE, applyBlockedUntil, demoApplication, demoCampaignState, ensureInviteCode, hasTrustEvent, makeTrustEvent, redeemInviteCode, type CommunityTopic, type DemoApplication, type DemoJournal, type JournalInput, type DemoCampaign, type DemoComment, type DemoMember, type DemoPoint, type DemoPost, type DemoReport, type InviteCode, type Review, type ReviewCheck, type ReviewStatus, type TrustEvent } from "@jubutech/shared";
 import { planReviewReminders, syncReviewReminders } from "@/lib/reminders";
 
 /**
@@ -23,6 +23,10 @@ interface Persisted {
   posts: DemoPost[];
   comments: DemoComment[];
   reports: DemoReport[];
+  /** 매매일지 (2단계 W3) — 나만 본다 */
+  journals: DemoJournal[];
+  /** 월(YYYY-MM)별 기록 목표 일수 */
+  journalGoals: Record<string, number>;
 }
 
 export interface ReviewInput {
@@ -70,10 +74,14 @@ interface DemoStore extends Persisted {
   /** "도움됐어요" — 처음 받을 때 작성자에게 생활력 `comment_liked` */
   toggleCommentLike: (id: string) => void;
   reportPost: (postId: string, reason: string) => { ok: boolean; message: string };
+  /** PHP actions.php `save_journal` — 검증은 화면에서 `validateJournal` 로 끝낸다 */
+  saveJournal: (input: { id?: string; input: JournalInput; draft: boolean }) => { id: string };
+  deleteJournal: (id: string) => void;
+  setJournalGoal: (month: string, days: number) => void;
   reset: () => void;
 }
 
-const seed = (): Persisted => ({ applications: DEMO_APPLICATIONS, reviews: DEMO_REVIEWS, points: DEMO_POINTS, saved: DEMO_SAVED[DEMO_MEMBERS[0].id] ?? [], inviteCodes: DEMO_INVITE_CODES, trustEvents: DEMO_TRUST_EVENTS, posts: DEMO_POSTS, comments: DEMO_COMMENTS, reports: DEMO_REPORTS });
+const seed = (): Persisted => ({ applications: DEMO_APPLICATIONS, reviews: DEMO_REVIEWS, points: DEMO_POINTS, saved: DEMO_SAVED[DEMO_MEMBERS[0].id] ?? [], inviteCodes: DEMO_INVITE_CODES, trustEvents: DEMO_TRUST_EVENTS, posts: DEMO_POSTS, comments: DEMO_COMMENTS, reports: DEMO_REPORTS, journals: DEMO_JOURNALS, journalGoals: DEMO_JOURNAL_GOALS[DEMO_MEMBERS[0].id] ?? {} });
 
 const Ctx = createContext<DemoStore | null>(null);
 
@@ -282,14 +290,30 @@ export function DemoProvider({ children }: { children: ReactNode }) {
     return { ok: true, message: "신고를 접수했어요. 운영팀이 확인할게요." };
   }, [state.reports, member.id]);
 
+  const saveJournal = useCallback<DemoStore["saveJournal"]>(({ id, input, draft }) => {
+    const num = (v: string) => Number(v || 0);
+    const newId = id ?? `j${Date.now().toString(36)}`;
+    const next: DemoJournal = { ...input, id: newId, memberId: member.id, market: "KR", tradeDate: input.tradeDate || DEMO_NOW.slice(0, 10), stockName: input.stockName.trim(), symbol: input.symbol.trim(), unitPrice: num(input.unitPrice), quantity: num(input.quantity), fee: num(input.fee), tax: num(input.tax), targetPrice: num(input.targetPrice), stopLossPrice: num(input.stopLossPrice), checklistTemplateVersion: 1, draftStatus: draft ? "draft" : "complete" };
+    setState((s) => ({ ...s, journals: s.journals.some((j) => j.id === newId) ? s.journals.map((j) => (j.id === newId ? next : j)) : [next, ...s.journals] }));
+    return { id: newId };
+  }, [member.id]);
+
+  const deleteJournal = useCallback<DemoStore["deleteJournal"]>((id) => {
+    setState((s) => ({ ...s, journals: s.journals.filter((j) => !(j.id === id && j.memberId === member.id)) }));
+  }, [member.id]);
+
+  const setJournalGoal = useCallback<DemoStore["setJournalGoal"]>((month, days) => {
+    setState((s) => ({ ...s, journalGoals: { ...s.journalGoals, [month]: days } }));
+  }, []);
+
   const reset = useCallback(() => {
     setState(seed());
     AsyncStorage.removeItem(STORAGE_KEY).catch(() => {});
   }, []);
 
   const value = useMemo<DemoStore>(
-    () => ({ ...state, hydrated, member, now: DEMO_NOW, apply, cancelApplication, saveShipping, submitReview, decideReview, myInviteCode, redeemInvite, usedInviteCode, toggleSaved, savePost, deletePost, togglePostLike, addComment, deleteComment, toggleCommentLike, reportPost, reset }),
-    [state, hydrated, member, apply, cancelApplication, saveShipping, submitReview, decideReview, myInviteCode, redeemInvite, usedInviteCode, toggleSaved, savePost, deletePost, togglePostLike, addComment, deleteComment, toggleCommentLike, reportPost, reset],
+    () => ({ ...state, hydrated, member, now: DEMO_NOW, apply, cancelApplication, saveShipping, submitReview, decideReview, myInviteCode, redeemInvite, usedInviteCode, toggleSaved, savePost, deletePost, togglePostLike, addComment, deleteComment, toggleCommentLike, reportPost, saveJournal, deleteJournal, setJournalGoal, reset }),
+    [state, hydrated, member, apply, cancelApplication, saveShipping, submitReview, decideReview, myInviteCode, redeemInvite, usedInviteCode, toggleSaved, savePost, deletePost, togglePostLike, addComment, deleteComment, toggleCommentLike, reportPost, saveJournal, deleteJournal, setJournalGoal, reset],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

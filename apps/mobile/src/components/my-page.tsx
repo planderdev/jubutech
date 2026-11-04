@@ -21,7 +21,7 @@ export function MyPage({ mode = "campaigns" }: { mode?: ServiceMode }) {
   const auth = useAuth();
   // 로그인돼 있으면 카카오 프로필 이름을, 아니면 데모 회원(서연맘)을 보여 준다. 데이터 연결(W8) 전까지 응모·지갑은 데모 회원 기준
   const nickname = auth.user?.nickname ?? member.nickname;
-  const { inviteCodes, trustEvents, posts, reset } = useDemo();
+  const { inviteCodes, trustEvents, posts, journals: myJournals, reset } = useDemo();
   const invited = inviteCodes.find((c) => c.ownerId === member.id)?.uses.length ?? 0;
   // 1-2 생활력 — 출시 초기엔 관리자만 본다(`trust.visibleToUsers=false`). 켜지면 프로필 아래 한 줄
   const trust = DEFAULT_RULES.trust.visibleToUsers ? trustScore(trustEvents, member.id) : null;
@@ -39,7 +39,7 @@ export function MyPage({ mode = "campaigns" }: { mode?: ServiceMode }) {
     ]);
   };
   const applications = { icon: "gift", title: "내 응모 현황", sub: `${mine.length}건`, onPress: () => router.push("/campaigns/applications" as Href) };
-  const journals = { icon: "notebook-pen", title: "나의 매매일지", sub: "0건", onPress: () => router.push("/journal/entries" as Href) };
+  const journals = { icon: "notebook-pen", title: "나의 매매일지", sub: `${myJournals.filter((j) => j.memberId === member.id).length}건`, onPress: () => router.push("/journal/entries" as Href) };
   const first = mode === "journal" ? [journals, applications] : [applications, journals];
 
   return (

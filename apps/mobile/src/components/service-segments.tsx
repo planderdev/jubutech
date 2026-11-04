@@ -28,7 +28,7 @@ export function ServiceSegments({ service }: { service: ServiceMode }) {
 }
 
 const s = StyleSheet.create({
-  wrap: { flexGrow: 0, backgroundColor: T.background.normalNormal, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: T.line.solidNormal },
+  wrap: { flexGrow: 0, flexShrink: 0, backgroundColor: T.background.normalNormal, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: T.line.solidNormal },
   row: { flexDirection: "row", gap: SP[8], paddingHorizontal: SHELL.gutter, paddingBottom: SP[8] + 4, paddingTop: 2 },
   item: { minHeight: 36, paddingHorizontal: SP[16], borderRadius: RAD.full, borderWidth: 1, borderColor: T.line.normalNormal, alignItems: "center", justifyContent: "center" },
   itemActive: { borderColor: T.primary.normal, backgroundColor: T.primary.soft },

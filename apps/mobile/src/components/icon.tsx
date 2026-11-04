@@ -1,5 +1,6 @@
 import {
   ArrowRight,
+  LockKeyhole,
   Baby,
   Bell,
   BookOpen,
@@ -60,6 +61,7 @@ import {
  */
 const ICONS: Record<string, LucideIcon> = {
   "arrow-right": ArrowRight,
+  "lock-keyhole": LockKeyhole,
   baby: Baby,
   check: Check,
   "chevron-up": ChevronUp,

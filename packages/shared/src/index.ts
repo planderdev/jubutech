@@ -10,3 +10,4 @@ export * from "./invite";
 export * from "./trust";
 export * from "./legal";
 export * from "./community";
+export * from "./journal";
