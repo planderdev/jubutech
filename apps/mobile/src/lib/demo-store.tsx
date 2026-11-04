@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { DEFAULT_RULES, DEMO_APPLICATIONS, DEMO_CAMPAIGNS, DEMO_INVITE_CODES, DEMO_MEMBERS, DEMO_NOW, DEMO_POINTS, DEMO_REVIEWS, DEMO_SAVED, DEMO_TRUST_EVENTS, REDEEM_MESSAGE, applyBlockedUntil, demoApplication, demoCampaignState, ensureInviteCode, hasTrustEvent, makeTrustEvent, redeemInviteCode, type DemoApplication, type DemoCampaign, type DemoMember, type DemoPoint, type InviteCode, type Review, type ReviewCheck, type ReviewStatus, type TrustEvent } from "@jubutech/shared";
+import { DEFAULT_RULES, DEMO_APPLICATIONS, DEMO_CAMPAIGNS, DEMO_COMMENTS, DEMO_INVITE_CODES, DEMO_MEMBERS, DEMO_NOW, DEMO_POINTS, DEMO_POSTS, DEMO_REPORTS, DEMO_REVIEWS, DEMO_SAVED, DEMO_TRUST_EVENTS, REDEEM_MESSAGE, applyBlockedUntil, demoApplication, demoCampaignState, ensureInviteCode, hasTrustEvent, makeTrustEvent, redeemInviteCode, type CommunityTopic, type DemoApplication, type DemoCampaign, type DemoComment, type DemoMember, type DemoPoint, type DemoPost, type DemoReport, type InviteCode, type Review, type ReviewCheck, type ReviewStatus, type TrustEvent } from "@jubutech/shared";
 import { planReviewReminders, syncReviewReminders } from "@/lib/reminders";
 
 /**
@@ -19,6 +19,10 @@ interface Persisted {
   inviteCodes: InviteCode[];
   /** 1-2 생활력 변동 이력 — 사용자에게는 `rules.trust.visibleToUsers` 일 때만 보인다 */
   trustEvents: TrustEvent[];
+  /** 커뮤니티 (2단계 W1) */
+  posts: DemoPost[];
+  comments: DemoComment[];
+  reports: DemoReport[];
 }
 
 export interface ReviewInput {
@@ -57,10 +61,19 @@ interface DemoStore extends Persisted {
   /** 내가 쓴 초대 코드 */
   usedInviteCode: () => InviteCode | undefined;
   toggleSaved: (articleId: string) => void;
+  /** PHP actions.php `save_post` — id 가 있으면 수정 */
+  savePost: (input: { id?: string; topic: CommunityTopic; title: string; body: string; sourceJournalId?: string | null }) => { ok: true; id: string; message: string } | { ok: false; message: string };
+  deletePost: (id: string) => void;
+  togglePostLike: (id: string) => void;
+  addComment: (postId: string, body: string) => { ok: boolean; message: string };
+  deleteComment: (id: string) => void;
+  /** "도움됐어요" — 처음 받을 때 작성자에게 생활력 `comment_liked` */
+  toggleCommentLike: (id: string) => void;
+  reportPost: (postId: string, reason: string) => { ok: boolean; message: string };
   reset: () => void;
 }
 
-const seed = (): Persisted => ({ applications: DEMO_APPLICATIONS, reviews: DEMO_REVIEWS, points: DEMO_POINTS, saved: DEMO_SAVED[DEMO_MEMBERS[0].id] ?? [], inviteCodes: DEMO_INVITE_CODES, trustEvents: DEMO_TRUST_EVENTS });
+const seed = (): Persisted => ({ applications: DEMO_APPLICATIONS, reviews: DEMO_REVIEWS, points: DEMO_POINTS, saved: DEMO_SAVED[DEMO_MEMBERS[0].id] ?? [], inviteCodes: DEMO_INVITE_CODES, trustEvents: DEMO_TRUST_EVENTS, posts: DEMO_POSTS, comments: DEMO_COMMENTS, reports: DEMO_REPORTS });
 
 const Ctx = createContext<DemoStore | null>(null);
 
@@ -77,7 +90,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
         if (!alive) return;
         if (raw) {
           const parsed = JSON.parse(raw) as Partial<Persisted>;
-          setState({ applications: parsed.applications ?? DEMO_APPLICATIONS, reviews: parsed.reviews ?? DEMO_REVIEWS, points: parsed.points ?? DEMO_POINTS, saved: parsed.saved ?? [], inviteCodes: parsed.inviteCodes ?? DEMO_INVITE_CODES, trustEvents: parsed.trustEvents ?? DEMO_TRUST_EVENTS });
+          setState({ ...seed(), ...parsed }); // 저장본에 없는 새 키는 시드값
         }
       })
       .catch(() => {})
@@ -213,14 +226,70 @@ export function DemoProvider({ children }: { children: ReactNode }) {
     setState((s) => ({ ...s, saved: s.saved.includes(articleId) ? s.saved.filter((x) => x !== articleId) : [...s.saved, articleId] }));
   }, []);
 
+  const savePost = useCallback<DemoStore["savePost"]>(
+    (input) => {
+      const title = input.title.trim();
+      const body = input.body.trim();
+      if (!title) return { ok: false, message: "제목을 적어 주세요." };
+      if (!body) return { ok: false, message: "내용을 적어 주세요." };
+      const old = input.id ? state.posts.find((p) => p.id === input.id && p.memberId === member.id) : undefined;
+      if (input.id && !old) return { ok: false, message: "수정할 수 없는 글이에요." };
+      const id = old?.id ?? `p${Date.now().toString(36)}`;
+      const next: DemoPost = old ? { ...old, topic: input.topic, title, body } : { id, memberId: member.id, topic: input.topic, title, body, status: "published", createdAt: DEMO_NOW, likes: [], sourceJournalId: input.sourceJournalId ?? null };
+      setState((s) => ({ ...s, posts: old ? s.posts.map((p) => (p.id === id ? next : p)) : [next, ...s.posts] }));
+      return { ok: true, id, message: "이야기를 게시했어요." };
+    },
+    [state.posts, member.id],
+  );
+
+  const deletePost = useCallback<DemoStore["deletePost"]>((id) => {
+    setState((s) => ({ ...s, posts: s.posts.map((p) => (p.id === id && p.memberId === member.id ? { ...p, status: "deleted" } : p)) }));
+  }, [member.id]);
+
+  const togglePostLike = useCallback<DemoStore["togglePostLike"]>((id) => {
+    setState((s) => ({ ...s, posts: s.posts.map((p) => (p.id === id ? { ...p, likes: p.likes.includes(member.id) ? p.likes.filter((x) => x !== member.id) : [...p.likes, member.id] } : p)) }));
+  }, [member.id]);
+
+  const addComment = useCallback<DemoStore["addComment"]>((postId, body) => {
+    const text = body.trim();
+    if (!text) return { ok: false, message: "댓글 내용을 적어 주세요." };
+    setState((s) => ({ ...s, comments: [...s.comments, { id: `cm${Date.now().toString(36)}`, postId, memberId: member.id, body: text, status: "published", createdAt: DEMO_NOW, likes: [] }] }));
+    return { ok: true, message: "댓글을 남겼어요." };
+  }, [member.id]);
+
+  const deleteComment = useCallback<DemoStore["deleteComment"]>((id) => {
+    setState((s) => ({ ...s, comments: s.comments.map((c) => (c.id === id && c.memberId === member.id ? { ...c, status: "deleted" } : c)) }));
+  }, [member.id]);
+
+  const toggleCommentLike = useCallback<DemoStore["toggleCommentLike"]>((id) => {
+    setState((s) => {
+      const c = s.comments.find((x) => x.id === id);
+      if (!c || c.memberId === member.id) return s;
+      const on = !c.likes.includes(member.id);
+      const comments = s.comments.map((x) => (x.id === id ? { ...x, likes: on ? [...x.likes, member.id] : x.likes.filter((m) => m !== member.id) } : x));
+      // 1-2: 답글 좋아요 = 생활력 조금 (좋아요를 누른 사람·댓글마다 한 번)
+      const refId = `${id}:${member.id}`;
+      const trustEvents = on && !hasTrustEvent(s.trustEvents, "comment_liked", "comment", refId) ? [makeTrustEvent(DEFAULT_RULES, "comment_liked", c.memberId, DEMO_NOW, { refType: "comment", refId, note: "도움된 답글" }), ...s.trustEvents] : s.trustEvents;
+      return { ...s, comments, trustEvents };
+    });
+  }, [member.id]);
+
+  const reportPost = useCallback<DemoStore["reportPost"]>((postId, reason) => {
+    const text = reason.trim();
+    if (!text) return { ok: false, message: "신고 사유를 적어 주세요." };
+    if (state.reports.some((r) => r.target === "post" && r.targetId === postId && r.reporterId === member.id)) return { ok: false, message: "이미 신고한 글이에요. 운영팀이 확인하고 있어요." };
+    setState((s) => ({ ...s, reports: [{ id: `rp${Date.now().toString(36)}`, target: "post", targetId: postId, reporterId: member.id, reason: text, status: "open", createdAt: DEMO_NOW }, ...s.reports] }));
+    return { ok: true, message: "신고를 접수했어요. 운영팀이 확인할게요." };
+  }, [state.reports, member.id]);
+
   const reset = useCallback(() => {
     setState(seed());
     AsyncStorage.removeItem(STORAGE_KEY).catch(() => {});
   }, []);
 
   const value = useMemo<DemoStore>(
-    () => ({ ...state, hydrated, member, now: DEMO_NOW, apply, cancelApplication, saveShipping, submitReview, decideReview, myInviteCode, redeemInvite, usedInviteCode, toggleSaved, reset }),
-    [state, hydrated, member, apply, cancelApplication, saveShipping, submitReview, decideReview, myInviteCode, redeemInvite, usedInviteCode, toggleSaved, reset],
+    () => ({ ...state, hydrated, member, now: DEMO_NOW, apply, cancelApplication, saveShipping, submitReview, decideReview, myInviteCode, redeemInvite, usedInviteCode, toggleSaved, savePost, deletePost, togglePostLike, addComment, deleteComment, toggleCommentLike, reportPost, reset }),
+    [state, hydrated, member, apply, cancelApplication, saveShipping, submitReview, decideReview, myInviteCode, redeemInvite, usedInviteCode, toggleSaved, savePost, deletePost, togglePostLike, addComment, deleteComment, toggleCommentLike, reportPost, reset],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

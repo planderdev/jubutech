@@ -1,7 +1,7 @@
 import { Alert, StyleSheet, Text, View } from "react-native";
 import { useRouter, type Href } from "expo-router";
 import Constants from "expo-constants";
-import { ACCOUNT_DELETION, DEFAULT_RULES, LEGAL_DOC_TITLE, trustGrade, trustScore, TRUST_GRADE_LABEL, type ServiceMode } from "@jubutech/shared";
+import { ACCOUNT_DELETION, DEFAULT_RULES, LEGAL_DOC_TITLE, myPosts, trustGrade, trustScore, TRUST_GRADE_LABEL, type ServiceMode } from "@jubutech/shared";
 import { AppScreen, ContentSection } from "@/components/screen";
 import { Button, GroupCard, GroupSection, ListHeader, MenuRow, TextButton } from "@/components/ui";
 import { WalletCard } from "@/components/wallet";
@@ -21,7 +21,7 @@ export function MyPage({ mode = "campaigns" }: { mode?: ServiceMode }) {
   const auth = useAuth();
   // 로그인돼 있으면 카카오 프로필 이름을, 아니면 데모 회원(서연맘)을 보여 준다. 데이터 연결(W8) 전까지 응모·지갑은 데모 회원 기준
   const nickname = auth.user?.nickname ?? member.nickname;
-  const { inviteCodes, trustEvents, reset } = useDemo();
+  const { inviteCodes, trustEvents, posts, reset } = useDemo();
   const invited = inviteCodes.find((c) => c.ownerId === member.id)?.uses.length ?? 0;
   // 1-2 생활력 — 출시 초기엔 관리자만 본다(`trust.visibleToUsers=false`). 켜지면 프로필 아래 한 줄
   const trust = DEFAULT_RULES.trust.visibleToUsers ? trustScore(trustEvents, member.id) : null;
@@ -75,7 +75,7 @@ export function MyPage({ mode = "campaigns" }: { mode?: ServiceMode }) {
           {first.map((it) => <MenuRow key={it.title} icon={it.icon} title={it.title} sub={it.sub} onPress={it.onPress} />)}
           <MenuRow icon="bookmark" title="저장한 정보" sub={`${saved.length}개`} subAccent={false} onPress={() => router.push("/finance/categories" as Href)} />
           <MenuRow icon="clipboard-check" title="진행 중인 미션" sub={`${mine.filter((a) => a.selectionStatus === "selected").length}건`} onPress={() => router.push("/campaigns/applications" as Href)} />
-          <MenuRow icon="messages-square" title="내가 쓴 글" onPress={() => router.push("/community" as Href)} last />
+          <MenuRow icon="messages-square" title="내가 쓴 글" sub={`${myPosts(posts, member.id).length}건`} subAccent={false} onPress={() => router.push("/my-posts" as Href)} last />
         </GroupCard>
       </GroupSection>
 

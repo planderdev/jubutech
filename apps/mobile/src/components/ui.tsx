@@ -36,7 +36,7 @@ export function TextButton({ label, onPress, icon = "chevron-right", color = T.l
 export function IconButton({ name, label, onPress, color = P.grey[700], size = 24, fill, style, ...rest }: { name: string; label: string; color?: string; size?: number; fill?: string } & PressableProps) {
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label} hitSlop={4} style={({ pressed }) => [s.iconButton, pressed && s.pressed, style as StyleProp<ViewStyle>]} {...rest}>
-      <Icon name={name} size={size} color={color} fill={fill} />
+      <Icon name={name} size={size} color={color} fill={fill ?? "none"} />
     </Pressable>
   );
 }

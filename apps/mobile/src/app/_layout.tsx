@@ -27,6 +27,9 @@ export default function RootLayout() {
         <Stack.Screen name="wallet" />
         <Stack.Screen name="invite" />
         <Stack.Screen name="legal/[doc]" />
+        <Stack.Screen name="community/[id]/index" />
+        <Stack.Screen name="community/new" />
+        <Stack.Screen name="my-posts" />
       </Stack>
     </DemoProvider>
     </AuthProvider>

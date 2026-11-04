@@ -21,9 +21,12 @@ src/app/
   (tabs)/campaigns/        체험단 Stack: index(홈) · explore(탐색) · applications(내 응모) ← PHP /campaigns, /campaigns/explore, /applications
   (tabs)/finance/          지원금 Stack: index(홈) · categories(정보)                       ← PHP /finance, /finance/categories
   (tabs)/journal/          주식 Stack: index(요약) · entries(일지) · analysis(분석)           ← PHP /journal, /journal/entries, /journal/analysis
-  (tabs)/community.tsx     커뮤니티 탭(자리) ← PHP /community
+  (tabs)/community.tsx     커뮤니티 탭 ← PHP /community: 주제 칩·글 목록·떠 있는 글쓰기
   (tabs)/my.tsx            마이 탭(공용) ← PHP /mypage
   legal/[doc].tsx          약관·개인정보처리방침·리워드 안내·응모 동의 — shared `legalDoc()` 본문(웹 `/legal/[doc]` 과 동일), 초안 띠
+  community/[id]/index.tsx 글 상세 ← PHP /community/{id}: 공감·공유·댓글(도움됐어요)·신고, 내 글은 시트로 수정·삭제
+  community/new.tsx        글쓰기·수정 (?id=, ?topic=) ← PHP /community/new
+  my-posts.tsx             내가 쓴 글 ← PHP /mypage/posts
   invite.tsx               2-3 친구 초대 — 내 코드(회원당 하나, 결정적 생성)·복사·공유 시트, 보너스 안내(`invite.bonus`), 초대한 친구 목록
 src/lib/service.ts         SERVICES(서비스 이름·상단 세그먼트 = PHP $navs 에서 마이·커뮤니티 제외), ROOT_TABS(하단 5탭), useService(), 마지막 서비스·온보딩 저장
 src/components/
@@ -31,6 +34,8 @@ src/components/
   service-stack.tsx        서비스 탭 안의 Stack(홈·하위 화면)
   service-segments.tsx     서비스 상단 세그먼트(.chip) — PHP 서비스별 하단 탭이 옮겨 온 자리. replace 로 전환
   floating-tab-bar.tsx     .bottom-nav--floating — 떠 있는 알약형 하단 탭 (루트 5탭)
+  community.tsx            PostRow(.community-feed)
+  sheet.tsx                BottomSheet · ActionSheet (PHP sheetStart·contentActionsSheet)
   kakao-button.tsx         카카오 로그인 버튼(카카오 가이드 색 — theme.BRAND)
   money-cards.tsx          1-4 「돈 되는 일 카드」 3종(마감 임박 체험단·내 지역 지원금·지갑 요약) — 각 서비스 홈 상단
   screen.tsx               AppScreen(헤더+스크롤, 탭바 여백) · ContentSection(거터)
@@ -44,6 +49,7 @@ src/components/
   my-page.tsx              MyPage(mode) — PHP myPage(): 프로필 → 지갑 카드(PHP 포인트 패널 자리) → 나의 활동 → 주부테크와 함께. 세 서비스의 my.tsx 가 공용
 src/lib/auth.tsx           AuthProvider/useAuth — Supabase Auth + 카카오 OAuth(PKCE, expo-web-browser). 키 없으면 status="demo". 절차: docs/KAKAO-LOGIN-setup.md
 src/lib/demo-store.tsx     DemoProvider/useDemo — PHP DemoRepository 역할(응모·후기·저장을 AsyncStorage 에), submitReview/decideReview
+src/lib/dialog.ts          confirmDialog·noticeDialog — RN Alert 가 웹에서 안 뜨는 것을 대신
 src/lib/reminders.ts       후기 기한 로컬 알림(expo-notifications, rules.mission.reminderDaysBefore) — Expo Go 에서는 건너뜀
 src/theme.ts               T(baseui.light 의미 색) · P(팔레트) · SP · RAD · CTRL · typo(name, weight, color) · ELEV · SHELL
 assets/images/category/    PHP /assets/images/category/*.svg 복사본 (지원금·정책·절약·카드혜택·육아·반려)
