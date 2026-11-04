@@ -12,3 +12,4 @@ export * from "./legal";
 export * from "./community";
 export * from "./journal";
 export * from "./moderation";
+export * from "./advertiser";

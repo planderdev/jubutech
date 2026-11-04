@@ -100,6 +100,8 @@ export const CHANNELS: { key: ChannelType; label: string }[] = [
   { key: "survey", label: "설문·테스트" },
 ];
 
+export type SelectionMode = "self" | "agency";
+
 export type CampaignStatus = "draft" | "pending" | "open" | "closed" | "selected" | "ongoing" | "done";
 export const CAMPAIGN_STATUS: Record<CampaignStatus, { label: string; tone: "red" | "butter" | "sage" | "mute" | "sky" | "ink" }> = {
   draft: { label: "작성중", tone: "mute" },
@@ -147,6 +149,8 @@ export interface Campaign {
   mission?: MissionCard;
   /** 협찬 제품 가치(원) — 지갑의 "받은 제품 가치" 합산용. 포인트·현금 보상은 reward.value */
   benefitValue?: number;
+  /** 2-2 선정 방식: 직접 선정 / 맡기기(선정 대행) */
+  selectionMode?: SelectionMode;
   status: CampaignStatus;
   createdAt: string;
   views: number;

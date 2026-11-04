@@ -128,7 +128,8 @@ const seed = (): State => ({
     ...POSTS,
   ],
   comments: COMMENTS,
-  campaigns: CAMPAIGNS,
+  // 검토용: 검수 대기 캠페인(cp8)은 "맡기기"로 — 관리자 선정 대행 할 일에 보인다
+  campaigns: CAMPAIGNS.map((c) => (c.id === "cp1" ? { ...c, selectionMode: "agency" as const } : c)),
   applications: APPLICATIONS,
   reviews: DEMO_REVIEWS,
   waitlist: DEMO_WAITLIST,

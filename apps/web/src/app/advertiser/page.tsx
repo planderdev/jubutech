@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useStore, useMe } from "@/lib/store";
+import { DEMO_APPLICATIONS, ownsDemoCampaign } from "@jubutech/shared";
 import { CAMPAIGN_STATUS } from "@/lib/types";
 import { PageHeader } from "@/components/feature/page-header";
 import { RoleGate } from "@/components/feature/role-gate";
@@ -15,6 +16,9 @@ function Dashboard() {
   const role = useStore((s) => s.role);
   const mine = useStore((s) => s.campaigns.filter((c) => role === "admin" || c.advertiserId === s.userId));
   const apps = useStore((s) => s.applications);
+  const userId = useStore((s) => s.userId);
+  const reviews = useStore((s) => s.reviews);
+  const pendingReviews = reviews.filter((r) => r.status === "pending" && (role === "admin" || ownsDemoCampaign(userId ?? "", DEMO_APPLICATIONS.find((a) => a.id === r.applicationId)?.campaignId ?? ""))).length;
   const stats = [
     ["진행 캠페인", mine.filter((c) => ["open", "ongoing", "selected"].includes(c.status)).length, "건"],
     ["누적 신청", mine.reduce((n, c) => n + c.applicantIds.length, 0), "명"],
@@ -23,7 +27,7 @@ function Dashboard() {
   ];
   return (
     <div className="px-4 md:px-5">
-      <PageHeader eyebrow="Advertiser Center" title={`${me?.brand ?? me?.nickname} 광고주 센터`} description="캠페인을 열고, 신청자를 선정하고, 미션 결과를 검수하세요." action={<Link href="/advertiser/campaigns/new"><Button><LineIcon name="plus" className="h-4 w-4" />새 캠페인</Button></Link>} />
+      <PageHeader eyebrow="Advertiser Center" title={`${me?.brand ?? me?.nickname} 광고주 센터`} description="캠페인을 열고, 신청자를 선정하고, 미션 결과를 검수하세요." action={<div className="flex gap-2"><Link href="/advertiser/reviews"><Button variant="secondary">후기 검수{pendingReviews > 0 ? ` ${pendingReviews}` : ""}</Button></Link><Link href="/advertiser/campaigns/new"><Button><LineIcon name="plus" className="h-4 w-4" />새 캠페인</Button></Link></div>} />
       <div className="grid grid-cols-2 gap-3">
         {stats.map(([k, v, u]) => (
           <div key={k} className="bg-paper rounded-xl shadow-soft p-4"><p className="label text-ink-3">{k}</p><p className="num text-[26px] font-semibold mt-1">{fmtNum(Number(v))}<span className="text-[13px] text-ink-3 ml-1">{u}</span></p></div>

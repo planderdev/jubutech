@@ -71,6 +71,12 @@ export interface AppRules {
     /** 주식 글의 "매수 추천" 같은 표현을 검토 대기로 */
     stockGuard: boolean;
   };
+  advertiser: {
+    /** 캠페인 1건 기본 수수료(원) — 광고 제안서 가격, 다음 회의에서 확정 */
+    baseFee: number;
+    /** 선정 대행비(원) — "맡기기"를 고르면 더해진다 */
+    agencyFee: number;
+  };
   assist: {
     /** 후기 작성 화면의 AI 교정·이어쓰기 버튼 — 1단계는 자리만, 모델·비용 확정 전까지 꺼 둔다 */
     aiReviewEdit: boolean;
@@ -97,6 +103,7 @@ export const DEFAULT_RULES: AppRules = {
   invite: { bonus: "priority" },
   report: { autoHideCount: 3 },
   moderation: { blockPromoLinks: true, stockGuard: true },
+  advertiser: { baseFee: 50000, agencyFee: 100000 },
   assist: { aiReviewEdit: false },
 };
 
@@ -128,6 +135,8 @@ export type RuleKey =
   | "report.autoHideCount"
   | "moderation.blockPromoLinks"
   | "moderation.stockGuard"
+  | "advertiser.baseFee"
+  | "advertiser.agencyFee"
   | "assist.aiReviewEdit";
 
 export type RuleValueType = "number" | "text" | "date" | "boolean" | "numbers" | "choice";
@@ -139,7 +148,7 @@ export interface RuleMeta {
   /** 어느 기획 항목의 숫자인지 · 미확정 메모 */
   note: string;
   /** 그룹(관리자 설정 화면 섹션) */
-  group: "리워드·지갑" | "미션·기한" | "생활력" | "초대·운영";
+  group: "리워드·지갑" | "미션·기한" | "생활력" | "초대·운영" | "광고주";
   choices?: string[];
 }
 
@@ -171,6 +180,8 @@ export const RULE_META: Record<RuleKey, RuleMeta> = {
   "report.autoHideCount": { label: "자동 숨김 신고 건수", type: "number", unit: "명", note: "2-4(2단계) · 몇 건부터 숨길지 미정", group: "초대·운영" },
   "moderation.blockPromoLinks": { label: "홍보 링크 검토 대기", type: "boolean", note: "2-4 · 다른 체험단·부업 모집 링크", group: "초대·운영" },
   "moderation.stockGuard": { label: "주식 권유 표현 검토 대기", type: "boolean", note: "2-4 · 매수 추천 같은 표현", group: "초대·운영" },
+  "advertiser.baseFee": { label: "캠페인 기본 수수료", type: "number", unit: "원", note: "2-2 · 광고 제안서 가격, 초안", group: "광고주" },
+  "advertiser.agencyFee": { label: "선정 대행비", type: "number", unit: "원", note: "2-2 · '맡기기' 추가 금액, 초안", group: "광고주" },
   "assist.aiReviewEdit": { label: "AI 후기 교정 버튼", type: "boolean", note: "1-1 · 자리만, 모델·비용 확정 뒤 켠다", group: "미션·기한" },
 };
 

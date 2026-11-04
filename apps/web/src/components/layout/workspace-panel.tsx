@@ -10,6 +10,7 @@ type MenuItem = { href: string; label: string; icon: LineIconName; count?: numbe
 const ADVERTISER: MenuItem[] = [
   { href: "/advertiser", label: "대시보드", icon: "home" },
   { href: "/advertiser/campaigns/new", label: "캠페인 만들기", icon: "plus" },
+  { href: "/advertiser/reviews", label: "후기 검수", icon: "comment" },
   { href: "/campaigns", label: "회원 화면 보기", icon: "campaign" },
 ];
 
