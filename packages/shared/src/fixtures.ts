@@ -363,7 +363,7 @@ export const DEMO_REVIEWS: Review[] = [
     submittedAt: "2026-10-20T12:00:00+09:00",
   },
   // 검토용: 승인까지 끝난 체험 — 광고주 평가(상호 평가) 흐름을 바로 볼 수 있게
-  { id: "r2", applicationId: "a7", url: "https://example.com/demo-review-2", photoCount: 3, status: "approved", rating: 5, submittedAt: "2026-10-10T12:00:00+09:00", reviewedAt: "2026-10-12T12:00:00+09:00", reviewedBy: "demo" },
+  { id: "r2", applicationId: "a7", url: "https://example.com/demo-review-2", photoCount: 3, status: "approved", rating: 5, submittedAt: "2026-10-10T12:00:00+09:00", reviewedAt: "2026-10-12T12:00:00+09:00", reviewedBy: "ops" },
 ];
 
 export const DEMO_POINTS: DemoPoint[] = [

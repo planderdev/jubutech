@@ -21,3 +21,4 @@ export * from "./season-templates";
 export * from "./campaign-report";
 export * from "./referral";
 export * from "./notices";
+export * from "./db-map";
