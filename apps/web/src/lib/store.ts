@@ -8,7 +8,7 @@ import { APPLICATIONS, CAMPAIGNS, COMMENTS, INFO, NOTIFICATIONS, POINT_LOGS, POS
 import { DEMO_APPLICATIONS, DEMO_BRAND_RATINGS, DEMO_CAMPAIGNS, DEMO_INVITE_CODES, DEMO_MEMBERS, DEMO_MODERATION_WORDS, DEMO_REVIEWS, DEMO_TRUST_EVENTS, DEMO_WAITLIST, hasTrustEvent, makeTrustEvent, moderateText, moderationNote, resolveRules, reviewOverdueTrustEvents, shouldAutoHide, isValidRuleValue, type AppRules, type RuleKey, type BrandRating, type InviteCode, type ModerationWord, type WordAction, type Review, type ReviewStatus, type TrustEvent, type WaitlistEntry } from "@jubutech/shared";
 
 /**
- * 주부테크 데모 스토어 — localStorage에 영속(키 jubutech:demo:v2 — 시드 변경 시 버전을 올린다).
+ * 주부테크 데모 스토어 — localStorage에 영속(키 jubutech:demo:v3 — 시드 변경 시 버전을 올린다. v3: 2단계 시드(운영 도구·평가·맡기기). jubutech.vercel.app 기존 방문자의 v2 기록은 새 시드로 다시 시작한다).
  * Supabase 연결 전까지 이 파일이 API 어댑터 seam이다. (유니웨이 services/api.js 패턴)
  * 서버 렌더는 시드 상태로, 클라이언트는 mount 후 rehydrate → hydration mismatch 없음.
  */
@@ -410,7 +410,7 @@ const baseStore = create<State & Actions>()(
       },
     }),
     {
-      name: "jubutech:demo:v2",
+      name: "jubutech:demo:v3",
       storage: createJSONStorage(() => localStorage),
       skipHydration: true,
       partialize: (s) => {
