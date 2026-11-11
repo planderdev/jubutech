@@ -46,3 +46,11 @@
 - **가입 축하 1,000P:** `0001` 가입 트리거가 가입 즉시 1,000포인트와 원장 행을 만든다. 운영 규칙 키에는 없고, 점검표 1-6 "가입 즉시 1,000P 문구"와 같은 문제다. 지급하려면 `reward.signupAmount` 키로 옮기고, 아니면 트리거에서 뺀다. (시드는 이 행을 지운다)
 - **계정 삭제 RPC:** `0003` 의 `delete_my_account` 는 세무 보존 기록(5년)과 충돌하는지 확인 후 적용.
 - **광고주 평가 시드:** `DEMO_BRAND_RATINGS` 는 실제 응모 없는 예시라 시드에 넣지 않았다.
+
+## 6. 웹 배포 (Vercel `jubutech`, 2026-11-12 확인)
+
+- 기존 Vercel 프로젝트 `jubutech`(https://jubutech.vercel.app, Root Directory `apps/web`)를 이어 쓴다.
+- 저장소 루트의 `vercel.json`·`.vercelignore` 는 팀장 PHP 데모(`jubutech-php-demo`)용이라 `apps` 를 업로드에서 뺀다. 루트에서 `vercel deploy` 하면 "Root Directory apps/web does not exist" 로 실패한다.
+- 그래서 `scripts/deploy-web.sh` 가 웹에 필요한 파일만 임시 폴더에 모아 올린다. 미리보기는 그대로, 운영은 `--prod`.
+- 환경 변수 `ADMIN_ACCESS_KEY`·`AUTH_SECRET` 은 Production 에만 있다. 미리보기에서는 `/admin7` 이 404, `/api/auth/session` 이 500 이다(설계대로). 미리보기에서도 관리자를 보려면 두 값을 Preview 대상에도 추가한다.
+- `/Users/plander/jubutech`(이전 모노레포 폴더)도 같은 프로젝트에 연결돼 있다. 거기서 배포하면 이 코드를 덮어쓴다.
