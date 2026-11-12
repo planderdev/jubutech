@@ -1,16 +1,17 @@
 import { useRouter, type Href } from "expo-router";
-import { demoVisibleArticles } from "@jubutech/shared";
 import { EmptyState, PageTitle } from "@/components/campaign";
 import { ArticleRow } from "@/components/finance";
 import { AppScreen, ContentSection } from "@/components/screen";
 import { GroupCard, GroupSection } from "@/components/ui";
+import { useContent } from "@/lib/content";
 import { useDemo } from "@/lib/demo-store";
 
 /** 저장한 정보 — PHP `savedArticles()` (`/finance/saved`) */
 export default function SavedArticles() {
   const router = useRouter();
   const { saved, toggleSaved } = useDemo();
-  const rows = demoVisibleArticles().filter((a) => saved.includes(a.id));
+  const { articles } = useContent();
+  const rows = articles.filter((a) => saved.includes(a.id));
   const back = () => (router.canGoBack() ? router.back() : router.replace("/my" as Href));
   return (
     <AppScreen title="저장한 정보" onBack={back} tabBar={false}>

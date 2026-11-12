@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { DEFAULT_NOTIFY_PREFS, EMPTY_SUBSIDY_PROFILE, DEMO_APPLICATIONS, DEMO_BRAND_RATINGS, DEMO_CAMPAIGNS, DEMO_COMMENTS, DEMO_INVITE_CODES, DEMO_JOURNALS, DEMO_JOURNAL_GOALS, DEMO_MEMBERS, DEMO_MODERATION_WORDS, DEMO_NOTIFICATIONS, DEMO_NOW, DEMO_POINTS, DEMO_POSTS, DEMO_REPORTS, DEMO_REVIEWS, DEMO_SAVED, DEMO_TRUST_EVENTS, REDEEM_MESSAGE, applyBlockedUntil, campaignGradeGate, canRateBrand, demoApplication, demoCampaignState, ensureInviteCode, hasTrustEvent, makeNotification, makeTrustEvent, moderateText, moderationMessage, moderationNote, redeemInviteCode, demoVisibleArticles, resolveRules, shouldAutoHide, subsidyDueAlerts, trustScore, TRUST_GRADE_LABEL, type CommunityTopic, type DemoApplication, type DemoJournal, type JournalInput, type DemoCampaign, type DemoComment, type DemoMember, type DemoNotification, type DemoPoint, type DemoPost, type DemoReport, type Inquiry, type InquiryCategory, type AppRules, type BrandRating, type InviteCode, type NotifyEvent, type NotifyPrefs, type Review, type SubsidyProfile, type RuleKey, type ReviewCheck, type ReviewStatus, type TrustEvent } from "@jubutech/shared";
+import { DEFAULT_NOTIFY_PREFS, EMPTY_SUBSIDY_PROFILE, DEMO_APPLICATIONS, DEMO_BRAND_RATINGS, DEMO_CAMPAIGNS, DEMO_COMMENTS, DEMO_INVITE_CODES, DEMO_JOURNALS, DEMO_JOURNAL_GOALS, DEMO_MEMBERS, DEMO_MODERATION_WORDS, DEMO_NOTIFICATIONS, DEMO_NOW, DEMO_POINTS, DEMO_POSTS, DEMO_REPORTS, DEMO_REVIEWS, DEMO_SAVED, DEMO_TRUST_EVENTS, REDEEM_MESSAGE, applyBlockedUntil, campaignGradeGate, canRateBrand, demoApplication, demoCampaignState, ensureInviteCode, hasTrustEvent, makeNotification, makeTrustEvent, moderateText, moderationMessage, moderationNote, redeemInviteCode, resolveRules, shouldAutoHide, subsidyDueAlerts, trustScore, TRUST_GRADE_LABEL, type CommunityTopic, type DemoApplication, type DemoJournal, type JournalInput, type DemoCampaign, type DemoComment, type DemoMember, type DemoNotification, type DemoPoint, type DemoPost, type DemoReport, type Inquiry, type InquiryCategory, type AppRules, type BrandRating, type InviteCode, type NotifyEvent, type NotifyPrefs, type Review, type SubsidyProfile, type RuleKey, type ReviewCheck, type ReviewStatus, type TrustEvent } from "@jubutech/shared";
+import { useContent } from "@/lib/content";
 import { presentLocalNotification } from "@/lib/push";
 import { planReviewReminders, planSubsidyReminders, syncReviewReminders, syncSubsidyReminders } from "@/lib/reminders";
 
@@ -115,6 +116,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
   const skipPersist = useRef(true);
   const member = DEMO_MEMBERS[0];
   const rules = useMemo(() => resolveRules(state.ruleOverrides), [state.ruleOverrides]);
+  const content = useContent();
   const rulesRef = useRef(rules);
   rulesRef.current = rules;
 
@@ -385,14 +387,14 @@ export function DemoProvider({ children }: { children: ReactNode }) {
   // 2-5 마감 임박 알림 — 조건이 맞는 글마다 한 번. 예약 알림(마감 N일 전 09:00)은 `reminders.ts`
   useEffect(() => {
     if (!hydrated) return;
-    const articles = demoVisibleArticles();
+    const articles = content.articles;
     const due = subsidyDueAlerts(articles, state.subsidyProfile, rules).filter((d) => !state.subsidyNotified.includes(d.article.id));
     if (due.length) {
       due.forEach((d) => notify({ kind: "subsidy_deadline", articleId: d.article.id, title: d.article.title, daysLeft: d.daysLeft }));
       setState((s) => ({ ...s, subsidyNotified: [...s.subsidyNotified, ...due.map((d) => d.article.id)] }));
     }
     if (state.notifyPrefs.subsidy) syncSubsidyReminders(planSubsidyReminders(articles, state.subsidyProfile, rules)).catch(() => {});
-  }, [hydrated, state.subsidyProfile, state.subsidyNotified, state.notifyPrefs.subsidy, rules, notify]);
+  }, [hydrated, content.articles, state.subsidyProfile, state.subsidyNotified, state.notifyPrefs.subsidy, rules, notify]);
 
   const addInquiry = useCallback<DemoStore["addInquiry"]>((category, body) => {
     const text = body.trim();

@@ -1,6 +1,7 @@
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { AuthProvider } from "@/lib/auth";
+import { ContentProvider } from "@/lib/content";
 import { DemoProvider } from "@/lib/demo-store";
 import { T } from "@/theme";
 
@@ -12,6 +13,7 @@ import { T } from "@/theme";
 export default function RootLayout() {
   return (
     <AuthProvider>
+    <ContentProvider>
     <DemoProvider>
       <StatusBar style="dark" />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: T.background.normalAlternative } }}>
@@ -46,6 +48,7 @@ export default function RootLayout() {
         <Stack.Screen name="journal-entry/[id]/share" />
       </Stack>
     </DemoProvider>
+    </ContentProvider>
     </AuthProvider>
   );
 }

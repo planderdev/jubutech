@@ -2,6 +2,20 @@
 
 프로젝트 ref 가 생기면 이 순서대로 한다. 2026-11-10 기준 준비는 끝났고, **프로젝트 생성만 남았다.**
 
+## 현재 상태 (2026-11-12 연결)
+
+| 항목 | 상태 |
+|---|---|
+| 프로젝트 | `jubutech` (ref `khepqjkblymwzuufzull`, `ap-northeast-2`, planderdev's Org, 월 $10) — 대표님 승인 후 생성 |
+| 스키마 | `0001`~`0005` 적용 (`0005_security.sql`: 트리거 함수 rpc 차단, 광고주 평가 통계 뷰 → 함수) |
+| 데이터 | 데모 회원 7명(`*@jubutech.invalid`, 로그인 불가)·정보 카테고리 8개·정보 글 12개만 넣었다. 체험단·응모·커뮤니티 등 나머지 시드는 아직 |
+| 앱 연결 | 재테크 정보(글·카테고리)만 DB 에서 읽는다 — `apps/mobile/src/lib/content.tsx`. 나머지 화면은 아직 데모 저장소 |
+| 로그인 | `EXPO_PUBLIC_AUTH_ENABLED=1` 일 때만 켜진다. 카카오 제공자를 켜기 전에는 비워 둔다(데모 계정으로 둘러봄) |
+| 앱 웹 배포 | Vercel `jubutech-app` (https://jubutech-app.vercel.app) — `scripts/deploy-app-web.sh` |
+| 남은 보안 경고 | `is_admin()`·`delete_my_account()`·`brand_rating_stats()` 실행 권한(의도), 유출 비밀번호 검사 꺼짐(이메일 로그인 안 씀) |
+
+데모 회원 정리(운영 데이터가 쌓이기 전에): `delete from auth.users where email like '%@jubutech.invalid';` — 프로필과 그 회원의 글·캠페인이 함께 지워진다.
+
 ## 0. 지금 준비된 것
 
 | 항목 | 위치 | 확인 방법 |

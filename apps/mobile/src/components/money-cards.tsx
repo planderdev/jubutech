@@ -1,8 +1,9 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter, type Href } from "expo-router";
-import { DEMO_CAMPAIGNS, demoCampaignDeadline, demoCampaignState, demoRegionalArticles, demoVisibleArticles, demoVisibleCampaigns } from "@jubutech/shared";
+import { DEMO_CAMPAIGNS, demoCampaignDeadline, demoCampaignState, demoVisibleCampaigns } from "@jubutech/shared";
 import { Icon } from "@/components/icon";
 import { useWallet, won } from "@/components/wallet";
+import { useContent } from "@/lib/content";
 import { useDemo } from "@/lib/demo-store";
 import { ELEV, RAD, SHELL, SP, T, typo } from "@/theme";
 
@@ -12,13 +13,14 @@ import { ELEV, RAD, SHELL, SP, T, typo } from "@/theme";
 export function MoneyCards() {
   const router = useRouter();
   const store = useDemo();
+  const content = useContent();
   const { summary, next } = useWallet();
   const mine = store.applications.filter((a) => a.memberId === store.member.id && a.selectionStatus !== "cancelled");
   const closing = demoVisibleCampaigns(DEMO_CAMPAIGNS, store.now)
     .filter((c) => demoCampaignState(c, store.now) === "open" && !mine.some((a) => a.campaignId === c.id))
     .sort((a, b) => Date.parse(a.recruitmentEndAt) - Date.parse(b.recruitmentEndAt))[0];
   const region = store.member.region;
-  const article = (region ? demoRegionalArticles(region)[0] : undefined) ?? demoVisibleArticles().find((a) => a.categoryId === "subsidy");
+  const article = (region ? content.regionalArticles(region)[0] : undefined) ?? content.articles.find((a) => a.categoryId === "subsidy");
 
   const cards = [
     { key: "campaign", icon: "gift", eyebrow: closing ? `체험단 모집 ${demoCampaignDeadline(closing, store.now)}` : "체험단", title: closing ? `${closing.brand} · ${closing.title}` : "지금 열린 체험을 둘러보세요", cta: closing ? "응모하기" : "탐색", href: closing ? `/campaign/${closing.id}` : "/campaigns/explore" },

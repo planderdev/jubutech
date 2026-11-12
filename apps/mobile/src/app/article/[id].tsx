@@ -1,11 +1,12 @@
 import { Linking, Share, StyleSheet, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter, type Href } from "expo-router";
-import { deadlineLabel, demoCategoryName, demoDateLabel, demoVisibleArticles } from "@jubutech/shared";
+import { deadlineLabel, demoCategoryName, demoDateLabel } from "@jubutech/shared";
 import { EmptyState } from "@/components/campaign";
 import { ArticleRow } from "@/components/finance";
 import { AppScreen, ContentSection } from "@/components/screen";
 import { Button, GroupCard, GroupSection, ListHeader, TextButton } from "@/components/ui";
 import { noticeDialog } from "@/lib/dialog";
+import { useContent } from "@/lib/content";
 import { useDemo } from "@/lib/demo-store";
 import { SP, T, typo } from "@/theme";
 
@@ -15,7 +16,7 @@ export default function ArticleDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { saved, toggleSaved } = useDemo();
   const back = () => (router.canGoBack() ? router.back() : router.replace("/finance/categories" as Href));
-  const articles = demoVisibleArticles();
+  const { articles } = useContent();
   const a = articles.find((x) => x.id === id);
   if (!a) {
     return (

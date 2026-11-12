@@ -3,13 +3,13 @@ import { Platform } from "react-native";
 import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
 import type { Session } from "@supabase/supabase-js";
-import { supabase, supabaseEnabled } from "@/lib/supabase";
+import { supabase, authEnabled } from "@/lib/supabase";
 
 /**
  * 모바일 로그인 — Supabase Auth + 카카오(OAuth). 네이티브 카카오 SDK 없이 브라우저 창으로 로그인하므로 Expo Go 에서도 된다.
  * 흐름: signInWithOAuth(kakao, redirectTo=앱 딥링크, PKCE) → 시스템 브라우저 → 카카오 동의 → Supabase 콜백 → 앱 딥링크(?code=) → exchangeCodeForSession.
  * 가입과 동시에 `profiles` 행은 DB 트리거(handle_new_user)가 만든다. 웹(Auth.js)과 계정 통합은 W8 에서.
- * 키가 없으면(`supabaseEnabled=false`) 데모 모드: 로그인 없이 서연맘으로 둘러본다.
+ * 키가 없으면(`authEnabled=false`) 데모 모드: 로그인 없이 서연맘으로 둘러본다.
  */
 WebBrowser.maybeCompleteAuthSession();
 
@@ -77,10 +77,10 @@ async function sessionFromUrl(url: string): Promise<boolean> {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(supabaseEnabled);
+  const [loading, setLoading] = useState(authEnabled);
 
   useEffect(() => {
-    if (!supabaseEnabled) return;
+    if (!authEnabled) return;
     let alive = true;
     supabase.auth
       .getSession()
@@ -95,7 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signInWithKakao = useCallback<AuthState["signInWithKakao"]>(async () => {
-    if (!supabaseEnabled) return { ok: false, reason: "disabled" };
+    if (!authEnabled) return { ok: false, reason: "disabled" };
     try {
       const redirectTo = authRedirectUri();
       const { data, error } = await supabase.auth.signInWithOAuth({ provider: "kakao", options: { redirectTo, skipBrowserRedirect: true } });
@@ -114,15 +114,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = useCallback(async () => {
-    if (!supabaseEnabled) return;
+    if (!authEnabled) return;
     await supabase.auth.signOut().catch(() => {});
     setSession(null);
   }, []);
 
-  const completeFromUrl = useCallback(async (url: string) => (supabaseEnabled ? sessionFromUrl(url) : false), []);
+  const completeFromUrl = useCallback(async (url: string) => (authEnabled ? sessionFromUrl(url) : false), []);
 
   const deleteAccount = useCallback(async () => {
-    if (!supabaseEnabled || !session) return { ok: false, message: "로그인한 계정이 없어요." };
+    if (!authEnabled || !session) return { ok: false, message: "로그인한 계정이 없어요." };
     // 서버 측 삭제 함수(auth.users + 프로필·응모·지갑)는 데이터 연결(W8)에서 추가. 없으면 세션을 끊고 접수로 처리해 문의 경로로 넘긴다
     const rpc = (supabase as unknown as { rpc: (fn: string) => Promise<{ error: { message: string } | null }> }).rpc;
     const { error } = await rpc("delete_my_account").catch((e: unknown) => ({ error: { message: e instanceof Error ? e.message : String(e) } }));
@@ -133,7 +133,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<AuthState>(() => {
     const user = toUser(session);
-    const status: AuthStatus = !supabaseEnabled ? "demo" : loading ? "loading" : user ? "signed-in" : "guest";
+    const status: AuthStatus = !authEnabled ? "demo" : loading ? "loading" : user ? "signed-in" : "guest";
     return { status, user, session, signInWithKakao, signOut, completeFromUrl, deleteAccount };
   }, [session, loading, signInWithKakao, signOut, completeFromUrl, deleteAccount]);
 

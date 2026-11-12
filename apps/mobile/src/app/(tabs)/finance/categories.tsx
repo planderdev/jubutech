@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter, type Href } from "expo-router";
-import { DEMO_CATEGORIES, demoVisibleArticles } from "@jubutech/shared";
 import { ChipRow, EmptyState, Pagination } from "@/components/campaign";
 import { ArticleRow } from "@/components/finance";
 import { SearchInput } from "@/components/form";
@@ -9,11 +8,11 @@ import { Icon } from "@/components/icon";
 import { AppScreen, ContentSection } from "@/components/screen";
 import { BottomSheet } from "@/components/sheet";
 import { GroupCard, GroupSection, TextButton } from "@/components/ui";
+import { useContent } from "@/lib/content";
 import { useDemo } from "@/lib/demo-store";
 import { RAD, SP, T, TOUCH, typo } from "@/theme";
 
 const PER_PAGE = 6;
-const CHIPS = [{ key: "", label: "전체" }, ...DEMO_CATEGORIES.filter((c) => c.enabled).map((c) => ({ key: c.id, label: c.name }))];
 const SORTS = [{ key: "newest", label: "최신순" }, { key: "oldest", label: "오래된순" }] as const;
 type Sort = (typeof SORTS)[number]["key"];
 
@@ -22,6 +21,8 @@ export default function FinanceList() {
   const router = useRouter();
   const params = useLocalSearchParams<{ category?: string; q?: string }>();
   const { saved, toggleSaved } = useDemo();
+  const content = useContent();
+  const CHIPS = useMemo(() => [{ key: "", label: "전체" }, ...content.categories.map((c) => ({ key: c.id, label: c.name }))], [content.categories]);
   const [q, setQ] = useState(params.q ?? "");
   const [query, setQuery] = useState(params.q ?? "");
   const [category, setCategory] = useState(params.category ?? "");
@@ -42,9 +43,9 @@ export default function FinanceList() {
 
   const rows = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    const list = demoVisibleArticles().filter((a) => (!category || a.categoryId === category) && (!needle || `${a.title} ${a.summary}`.toLowerCase().includes(needle)));
+    const list = content.articles.filter((a) => (!category || a.categoryId === category) && (!needle || `${a.title} ${a.summary}`.toLowerCase().includes(needle)));
     return list.sort((a, b) => (sort === "newest" ? b.publishedAt.localeCompare(a.publishedAt) : a.publishedAt.localeCompare(b.publishedAt)));
-  }, [query, category, sort]);
+  }, [query, category, sort, content.articles]);
   const pages = Math.max(1, Math.ceil(rows.length / PER_PAGE));
   const current = Math.min(page, pages);
   const items = rows.slice((current - 1) * PER_PAGE, current * PER_PAGE);

@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useRouter, type Href } from "expo-router";
-import { CHILD_AGE_OPTIONS, DEMO_CATEGORIES, SUBSIDY_REGIONS, type ChildAge } from "@jubutech/shared";
+import { CHILD_AGE_OPTIONS, SUBSIDY_REGIONS, type ChildAge } from "@jubutech/shared";
 import { PageTitle } from "@/components/campaign";
 import { BottomCta, InfoBox } from "@/components/form";
 import { AppScreen, ContentSection } from "@/components/screen";
 import { Button } from "@/components/ui";
+import { useContent } from "@/lib/content";
 import { useDemo } from "@/lib/demo-store";
 import { RAD, SP, T, typo } from "@/theme";
 
@@ -21,6 +22,7 @@ function Chip({ label, on, onPress, radio }: { label: string; on: boolean; onPre
 export default function SubsidyProfileScreen() {
   const router = useRouter();
   const { subsidyProfile, member, saveSubsidyProfile } = useDemo();
+  const { categories } = useContent();
   const [region, setRegion] = useState(subsidyProfile.region || member.region || "");
   const [childAge, setChildAge] = useState<ChildAge>(subsidyProfile.childAge);
   const [interests, setInterests] = useState<string[]>(subsidyProfile.interests);
@@ -45,7 +47,7 @@ export default function SubsidyProfileScreen() {
         <View style={s.block}>
           <Text style={typo("headline2", "semibold")}>어떤 분야가 궁금하세요?</Text>
           <Text style={typo("caption1", "regular", T.label.alternative)}>여러 개 골라도 돼요. 안 고르면 전부 보여 드려요.</Text>
-          <View style={s.chips}>{DEMO_CATEGORIES.filter((c) => c.enabled).map((c) => <Chip key={c.id} label={c.name} on={interests.includes(c.id)} onPress={() => toggle(c.id)} />)}</View>
+          <View style={s.chips}>{categories.map((c) => <Chip key={c.id} label={c.name} on={interests.includes(c.id)} onPress={() => toggle(c.id)} />)}</View>
         </View>
         <InfoBox>{"답은 이 기기에만 저장돼요. 소득이나 자녀 이름 같은 정보는 묻지 않아요. 마이 > 설정에서 알림을 끌 수 있어요."}</InfoBox>
       </ContentSection>
