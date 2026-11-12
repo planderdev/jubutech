@@ -11,7 +11,8 @@
       "bundleIdentifier": "com.jubutech.app",
       "supportsTablet": false,
       "infoPlist": {
-        "CFBundleDisplayName": "주부테크"
+        "CFBundleDisplayName": "주부테크",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {

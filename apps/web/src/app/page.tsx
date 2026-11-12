@@ -32,7 +32,7 @@ export default function HomePage() {
   const [board, setBoard] = useState("all");
   const [q, setQ] = useState("");
   const incomes = posts.filter((p) => p.income);
-  const feed = useMemo(() => (board === "all" ? posts : posts.filter((p) => p.board === board)).filter((p) => p.status !== "hidden").slice(0, 8), [posts, board]);
+  const feed = useMemo(() => (board === "all" ? posts : posts.filter((p) => p.board === board)).filter((p) => !p.status || p.status === "published").slice(0, 8), [posts, board]);
   const earners = users.filter((u) => u.role === "member").length;
 
   return (

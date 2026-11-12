@@ -1,12 +1,14 @@
 "use client";
+import { useMemo } from "react";
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { useShallow } from "zustand/react/shallow";
 import type { Application, ApplicationStatus, AuditLog, Campaign, Comment, Notification, PointLog, Post, Report, ReportStatus, Role, Trade, User } from "./types";
 import { APPLICATIONS, CAMPAIGNS, COMMENTS, INFO, NOTIFICATIONS, POINT_LOGS, POSTS, REPORTS, TRADES, USERS } from "./mock";
+import { DEMO_APPLICATIONS, DEMO_BRAND_RATINGS, DEMO_CAMPAIGNS, DEMO_INVITE_CODES, DEMO_MEMBERS, DEMO_MODERATION_WORDS, DEMO_REVIEWS, DEMO_TRUST_EVENTS, DEMO_WAITLIST, hasTrustEvent, makeTrustEvent, moderateText, moderationNote, resolveRules, reviewOverdueTrustEvents, shouldAutoHide, isValidRuleValue, type AppRules, type RuleKey, type BrandRating, type InviteCode, type ModerationWord, type WordAction, type Review, type ReviewStatus, type TrustEvent, type WaitlistEntry } from "@jubutech/shared";
 
 /**
- * 주부테크 데모 스토어 — localStorage에 영속(키 jubutech:demo:v2 — 시드 변경 시 버전을 올린다).
+ * 주부테크 데모 스토어 — localStorage에 영속(키 jubutech:demo:v3 — 시드 변경 시 버전을 올린다. v3: 2단계 시드(운영 도구·평가·맡기기). jubutech.vercel.app 기존 방문자의 v2 기록은 새 시드로 다시 시작한다).
  * Supabase 연결 전까지 이 파일이 API 어댑터 seam이다. (유니웨이 services/api.js 패턴)
  * 서버 렌더는 시드 상태로, 클라이언트는 mount 후 rehydrate → hydration mismatch 없음.
  */
@@ -14,6 +16,10 @@ const uid = () => Math.random().toString(36).slice(2, 10);
 const now = () => new Date().toISOString();
 
 const DEMO_USER: Record<Exclude<Role, "guest">, string> = { member: "u1", advertiser: "a1", admin: "adm" };
+
+/** 체험단 픽스처 회원(m1…) → 웹 데모 회원(u1…) — 닉네임으로 잇는다. Supabase 연결(W8) 전까지의 임시 매핑 */
+export const MEMBER_TO_USER: Record<string, string> = Object.fromEntries(DEMO_MEMBERS.map((m) => [m.id, USERS.find((u) => u.nickname === m.nickname)?.id ?? m.id]));
+const memberToUser = (id: string) => MEMBER_TO_USER[id] ?? id;
 
 interface State {
   hydrated: boolean;
@@ -35,6 +41,21 @@ interface State {
   hiddenInfo: string[];
   monthlyGoal: number;
   notices: { id: string; title: string; body: string; pinned: boolean; createdAt: string }[];
+  /** 1-1 후기 검수 대기열 — 체험단 데모 픽스처(`DEMO_REVIEWS`)에서 시작. 모바일 앱의 제출분은 Supabase 연결(W8) 뒤 합쳐진다 */
+  reviews: Review[];
+  /** 2-3 랜딩 「출시 알림 받기」 대기자 (Supabase 연결 전 보관) */
+  waitlist: WaitlistEntry[];
+  inviteCodes: InviteCode[];
+  /** 앱 다운로드 수 — 스토어 콘솔 연동 전 수동 기록 */
+  downloadCount: number;
+  /** 1-2 생활력 변동 이력 (관리자 전용) */
+  trustEvents: TrustEvent[];
+  /** 2-4 금칙어 사전 */
+  moderationWords: ModerationWord[];
+  /** 1-2 상호 평가 — 주부가 광고주에게 남긴 평가 */
+  brandRatings: BrandRating[];
+  /** 운영 규칙 덮어쓰기 — 1단계 W8(Supabase) 뒤에는 `app_settings` 테이블. 지금은 이 브라우저에 저장 */
+  ruleOverrides: Partial<Record<RuleKey, unknown>>;
 }
 
 interface Actions {
@@ -83,6 +104,25 @@ interface Actions {
   adminAddNotice: (title: string, body: string, pinned: boolean) => void;
   adminDeleteNotice: (id: string) => void;
   adminForceApplication: (id: string, status: ApplicationStatus) => void;
+  /** PHP `admin_review` — 승인·보완 요청·반려(+사유)·별점. 리워드 적립은 W4 에서 연결 */
+  adminDecideReview: (id: string, status: ReviewStatus, feedback?: string, rating?: number) => { ok: boolean; message: string };
+  joinWaitlist: (contact: string, channel: "email" | "phone", source?: string) => void;
+  setDownloadCount: (n: number) => void;
+  /** 운영자 수동 조정 (사유 필수) */
+  adminAdjustTrust: (userId: string, delta: number, note: string) => void;
+  /** 기한 초과 일일 점검 — 새로 기록된 건수를 돌려준다 */
+  adminRunOverdueCheck: () => number;
+  adminAddWord: (word: string, action: WordAction) => { ok: boolean; message: string };
+  adminRemoveWord: (id: string) => void;
+  adminSetWordAction: (id: string, action: WordAction) => void;
+  /** 2-4 회원 신고 — 서로 다른 신고자 `report.autoHideCount` 명이면 우선 숨김 */
+  reportPost: (postId: string, reason: string) => { ok: boolean; message: string };
+  /** 검토 대기 글 확정: 공개 또는 숨김 */
+  adminDecideModeration: (postId: string, decision: "published" | "hidden", reason?: string) => void;
+  /** 욕설·허위 평가 가리기 */
+  adminSetRatingStatus: (id: string, status: BrandRating["status"], reason?: string) => void;
+  /** 운영 규칙 저장 — 값이 키의 타입에 맞을 때만. undefined 면 기본값으로 되돌린다. 변경은 운영 로그에 남는다 */
+  adminSetRule: (key: RuleKey, value: unknown) => { ok: boolean; message: string };
 }
 
 const seed = (): State => ({
@@ -91,10 +131,23 @@ const seed = (): State => ({
   userId: "u1",
   authSource: "demo",
   users: USERS,
-  posts: POSTS,
+  posts: [
+    // 검토용: 운영 도구 검토 목록이 비어 보이지 않게 — 자동 판단으로 검토 대기가 된 글 1건
+    { id: "p-review-demo", board: "stock", title: "이번 주 이 종목 매수 추천드려요", body: "지금이 매수 타이밍이에요. 꼭 사세요.", authorId: "u2", createdAt: "2026-10-21T09:00:00+09:00", likes: [], views: 3, tags: [], commentCount: 0, status: "review", moderationNote: "특정 종목 권유 표현으로 보여요" },
+    ...POSTS,
+  ],
   comments: COMMENTS,
-  campaigns: CAMPAIGNS,
+  // 검토용: cp1 은 "맡기기"로 — 관리자 선정 대행 할 일에 보인다
+  campaigns: CAMPAIGNS.map((c) => (c.id === "cp1" ? { ...c, selectionMode: "agency" as const } : c)),
   applications: APPLICATIONS,
+  reviews: DEMO_REVIEWS,
+  waitlist: DEMO_WAITLIST,
+  inviteCodes: DEMO_INVITE_CODES,
+  downloadCount: 23,
+  trustEvents: DEMO_TRUST_EVENTS.map((e) => ({ ...e, userId: memberToUser(e.userId) })),
+  moderationWords: DEMO_MODERATION_WORDS,
+  brandRatings: DEMO_BRAND_RATINGS,
+  ruleOverrides: {},
   trades: TRADES,
   notifications: NOTIFICATIONS,
   pointLogs: POINT_LOGS,
@@ -148,7 +201,10 @@ const baseStore = create<State & Actions>()(
       addPost: (p) => {
         const id = "p" + uid();
         const authorId = get().userId ?? "u1";
-        set((s) => ({ posts: [{ ...p, id, authorId, createdAt: now(), likes: [], views: 0, commentCount: 0 }, ...s.posts] }));
+        // 2-4: 금칙어·홍보 링크·주식 권유 — 게시판 stock 은 주식 영역
+        const verdict = moderateText({ title: p.title, body: p.body, topic: p.board === "stock" ? "주식·재테크" : undefined }, get().moderationWords, resolveRules(get().ruleOverrides));
+        const status = verdict.action === "publish" ? p.status : verdict.action === "review" ? "review" : "hidden";
+        set((s) => ({ posts: [{ ...p, status, moderationNote: moderationNote(verdict), id, authorId, createdAt: now(), likes: [], views: 0, commentCount: 0 }, ...s.posts] }));
         get().addPoints(50, "게시글 작성");
         return id;
       },
@@ -242,7 +298,15 @@ const baseStore = create<State & Actions>()(
       log: (action, target, reason) => set((s) => ({ auditLogs: [{ id: "al" + uid(), actorId: s.userId ?? "adm", action, target, reason, createdAt: now() }, ...s.auditLogs] })),
       adminSetUserRole: (userId, role) => { set((s) => ({ users: s.users.map((u) => (u.id === userId ? { ...u, role } : u)) })); get().log("역할 변경", `${userId} → ${role}`); },
       adminSetUserStatus: (userId, status, reason) => { set((s) => ({ users: s.users.map((u) => (u.id === userId ? { ...u, status } : u)) })); get().log(status === "suspended" ? "회원 정지" : "정지 해제", userId, reason); },
-      adminSetPostStatus: (postId, status, reason) => { set((s) => ({ posts: s.posts.map((p) => (p.id === postId ? { ...p, status } : p)) })); get().log(status === "hidden" ? "게시글 숨김" : "게시글 복구", postId, reason); },
+      adminSetPostStatus: (postId, status, reason) => {
+        const post = get().posts.find((p) => p.id === postId);
+        set((s) => ({
+          posts: s.posts.map((p) => (p.id === postId ? { ...p, status } : p)),
+          // 1-2: 신고 누적 숨김 = 생활력 `postHidden` (글당 한 번)
+          trustEvents: status === "hidden" && post && !hasTrustEvent(s.trustEvents, "post_hidden", "post", postId) ? [makeTrustEvent(resolveRules(get().ruleOverrides), "post_hidden", post.authorId, now(), { refType: "post", refId: postId, note: reason || "신고 누적 숨김" }), ...s.trustEvents] : s.trustEvents,
+        }));
+        get().log(status === "hidden" ? "게시글 숨김" : "게시글 복구", postId, reason);
+      },
       adminDeletePost: (postId, reason) => { set((s) => ({ posts: s.posts.filter((p) => p.id !== postId), comments: s.comments.filter((c) => c.postId !== postId) })); get().log("게시글 삭제", postId, reason); },
       adminDeleteComment: (commentId, reason) => {
         const c = get().comments.find((x) => x.id === commentId);
@@ -265,9 +329,88 @@ const baseStore = create<State & Actions>()(
       adminAddNotice: (title, body, pinned) => { set((s) => ({ notices: [{ id: "nt" + uid(), title, body, pinned, createdAt: now() }, ...s.notices] })); get().log("공지 등록", title); },
       adminDeleteNotice: (id) => { set((s) => ({ notices: s.notices.filter((n) => n.id !== id) })); get().log("공지 삭제", id); },
       adminForceApplication: (id, status) => { get().decideApplication(id, status); get().log("응모 상태 강제 변경", `${id} → ${status}`); },
+      joinWaitlist: (contact, channel, source) => set((s) => (s.waitlist.some((w) => w.contact === contact) ? s : { waitlist: [{ id: "wl" + uid(), contact, channel, source, createdAt: now() }, ...s.waitlist] })),
+      setDownloadCount: (n) => { set({ downloadCount: n }); get().log("다운로드 수 기록", String(n)); },
+      adminAdjustTrust: (userId, delta, note) => { set((s) => ({ trustEvents: [makeTrustEvent(resolveRules(get().ruleOverrides), "manual", userId, now(), { delta, note }), ...s.trustEvents] })); get().log("생활력 수동 조정", `${userId} ${delta > 0 ? "+" : ""}${delta}`, note); },
+      adminAddWord: (word, action) => {
+        const w = word.trim();
+        if (!w) return { ok: false, message: "단어를 입력해 주세요." };
+        if (get().moderationWords.some((x) => x.word === w)) return { ok: false, message: "이미 있는 단어예요." };
+        set((s) => ({ moderationWords: [{ id: "w" + uid(), word: w, action, createdAt: now() }, ...s.moderationWords] }));
+        get().log("금칙어 추가", w);
+        return { ok: true, message: `"${w}" 를 추가했어요.` };
+      },
+      adminRemoveWord: (id) => {
+        const w = get().moderationWords.find((x) => x.id === id);
+        set((s) => ({ moderationWords: s.moderationWords.filter((x) => x.id !== id) }));
+        get().log("금칙어 삭제", w?.word ?? id);
+      },
+      adminSetWordAction: (id, action) => {
+        set((s) => ({ moderationWords: s.moderationWords.map((x) => (x.id === id ? { ...x, action } : x)) }));
+      },
+      reportPost: (postId, reason) => {
+        const me = get().userId;
+        const text = reason.trim();
+        if (!me) return { ok: false, message: "로그인이 필요해요." };
+        if (!text) return { ok: false, message: "신고 사유를 적어 주세요." };
+        if (get().reports.some((r) => r.target === "post" && r.targetId === postId && r.reporterId === me)) return { ok: false, message: "이미 신고한 글이에요." };
+        const report: Report = { id: "rp" + uid(), target: "post", targetId: postId, reporterId: me, reason: text, status: "open", createdAt: now() };
+        set((s) => ({ reports: [report, ...s.reports] }));
+        if (shouldAutoHide(get().reports, "post", postId, resolveRules(get().ruleOverrides)) && get().posts.find((p) => p.id === postId)?.status !== "hidden") {
+          get().adminSetPostStatus(postId, "hidden", `신고 ${resolveRules(get().ruleOverrides).report.autoHideCount}명 누적 자동 숨김`);
+          return { ok: true, message: "신고가 쌓여 글을 우선 가렸어요. 운영팀이 확인할게요." };
+        }
+        return { ok: true, message: "신고를 접수했어요. 운영팀이 확인할게요." };
+      },
+      adminDecideModeration: (postId, decision, reason) => {
+        get().adminSetPostStatus(postId, decision, reason);
+        // 공개로 확정하면 그 글에 쌓인 신고는 기각으로 닫는다 (다음 신고부터 다시 센다)
+        if (decision === "published") set((s) => ({ reports: s.reports.map((r) => (r.target === "post" && r.targetId === postId && r.status === "open" ? { ...r, status: "dismissed" } : r)) }));
+        else set((s) => ({ reports: s.reports.map((r) => (r.target === "post" && r.targetId === postId && r.status === "open" ? { ...r, status: "resolved" } : r)) }));
+      },
+      adminSetRule: (key, value) => {
+        if (value === undefined) {
+          set((s) => { const next = { ...s.ruleOverrides }; delete next[key]; return { ruleOverrides: next }; });
+          get().log("운영 규칙 초기화", key);
+          return { ok: true, message: "기본값으로 되돌렸어요." };
+        }
+        if (!isValidRuleValue(key, value)) return { ok: false, message: "값의 형식이 맞지 않아요." };
+        set((s) => ({ ruleOverrides: { ...s.ruleOverrides, [key]: value } }));
+        get().log("운영 규칙 변경", key, JSON.stringify(value));
+        return { ok: true, message: "저장했어요." };
+      },
+      adminSetRatingStatus: (id, status, reason) => {
+        set((s) => ({ brandRatings: s.brandRatings.map((r) => (r.id === id ? { ...r, status } : r)) }));
+        get().log(status === "hidden" ? "광고주 평가 숨김" : "광고주 평가 복구", id, reason);
+      },
+      adminRunOverdueCheck: () => {
+        const added = reviewOverdueTrustEvents({ applications: DEMO_APPLICATIONS, campaigns: DEMO_CAMPAIGNS, reviews: get().reviews, events: get().trustEvents, rules: resolveRules(get().ruleOverrides), now: now(), userIdOf: memberToUser });
+        if (added.length) { set((s) => ({ trustEvents: [...added, ...s.trustEvents] })); get().log("기한 초과 점검", `${added.length}건 기록`); }
+        return added.length;
+      },
+      adminDecideReview: (id, status, feedback, rating) => {
+        const r = get().reviews.find((x) => x.id === id);
+        if (!r) return { ok: false, message: "후기를 찾을 수 없어요." };
+        const fb = (feedback ?? "").trim();
+        if ((status === "revision" || status === "rejected") && !fb) return { ok: false, message: status === "revision" ? "보완할 내용을 입력해 주세요." : "반려 사유를 입력해 주세요." };
+        if (rating !== undefined && (rating < 1 || rating > 5)) return { ok: false, message: "별점은 1~5 사이로 입력해 주세요." };
+        const app = DEMO_APPLICATIONS.find((a) => a.id === r.applicationId);
+        const uid2 = memberToUser(app?.memberId ?? "");
+        set((s) => {
+          let trustEvents = s.trustEvents;
+          // 1-2: 승인 = reviewApproved(후기당 한 번), 별점 = (별점−3)×ratingPerStar (별점이 바뀌면 다시 기록)
+          if (status === "approved" && app) {
+            if (!hasTrustEvent(trustEvents, "review_approved", "review", id)) trustEvents = [makeTrustEvent(resolveRules(get().ruleOverrides), "review_approved", uid2, now(), { refType: "review", refId: id, note: "후기 승인" }), ...trustEvents];
+            if (rating && rating !== r.rating) trustEvents = [makeTrustEvent(resolveRules(get().ruleOverrides), "review_rated", uid2, now(), { rating, refType: "review", refId: id, note: `별점 ${rating}` }), ...trustEvents.filter((e) => !(e.kind === "review_rated" && e.refType === "review" && e.refId === id))];
+          }
+          return { reviews: s.reviews.map((x) => (x.id === id ? { ...x, status, feedback: fb || undefined, rating: status === "approved" ? rating ?? x.rating : x.rating, reviewedAt: now(), reviewedBy: s.userId ?? "adm" } : x)), trustEvents };
+        });
+        get().log(`후기 검수 ${status}`, id, fb || undefined);
+        return { ok: true, message: "후기 검토 상태를 저장했어요." };
+      },
     }),
     {
-      name: "jubutech:demo:v2",
+      name: "jubutech:demo:v3",
       storage: createJSONStorage(() => localStorage),
       skipHydration: true,
       partialize: (s) => {
@@ -288,6 +431,12 @@ function useStoreShallow<T = Store>(selector?: (s: Store) => T): T {
   return baseStore(useShallow(selector ?? ((s) => s as unknown as T)));
 }
 export const useStore = Object.assign(useStoreShallow, baseStore);
+
+/** 현재 운영 규칙 (코드 기본값 + 관리자 덮어쓰기) */
+export function useRules(): AppRules {
+  const overrides = baseStore((s) => s.ruleOverrides);
+  return useMemo(() => resolveRules(overrides), [overrides]);
+}
 
 /** 현재 사용자 (guest면 null) */
 export const useMe = () => useStore((s) => (s.userId ? s.users.find((u) => u.id === s.userId) ?? null : null));

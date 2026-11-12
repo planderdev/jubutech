@@ -10,6 +10,7 @@ type MenuItem = { href: string; label: string; icon: LineIconName; count?: numbe
 const ADVERTISER: MenuItem[] = [
   { href: "/advertiser", label: "대시보드", icon: "home" },
   { href: "/advertiser/campaigns/new", label: "캠페인 만들기", icon: "plus" },
+  { href: "/advertiser/reviews", label: "후기 검수", icon: "comment" },
   { href: "/campaigns", label: "회원 화면 보기", icon: "campaign" },
 ];
 
@@ -18,16 +19,23 @@ export function WorkspacePanel({ kind }: { kind: "advertiser" | "admin" }) {
   const pathname = usePathname();
   const pendingCampaigns = useStore((s) => s.campaigns.filter((c) => c.status === "pending").length);
   const openReports = useStore((s) => s.reports.filter((r) => r.status === "open").length);
+  const moderationQueue = useStore((st) => st.posts.filter((p) => p.status === "review").length);
+  const pendingReviews = useStore((s) => s.reviews.filter((r) => r.status === "pending").length);
   const ADMIN: MenuItem[] = [
     { href: "/admin7", label: "대시보드", icon: "home" },
     { href: "/admin7/users", label: "회원", icon: "community" },
     { href: "/admin7/posts", label: "게시글·댓글", icon: "comment" },
     { href: "/admin7/reports", label: "신고", icon: "bell", count: openReports },
+    { href: "/admin7/moderation", label: "운영 도구", icon: "list", count: moderationQueue },
     { href: "/admin7/campaigns", label: "캠페인 검수", icon: "campaign", count: pendingCampaigns },
     { href: "/admin7/applications", label: "응모·미션", icon: "check" },
+    { href: "/admin7/reviews", label: "후기 검수", icon: "comment", count: pendingReviews },
+    { href: "/admin7/ratings", label: "광고주 평가", icon: "star" },
+    { href: "/admin7/waitlist", label: "대기자·초대", icon: "bell" },
     { href: "/admin7/info", label: "돈되는정보", icon: "info" },
     { href: "/admin7/points", label: "포인트", icon: "coin" },
     { href: "/admin7/notices", label: "공지", icon: "bulb" },
+    { href: "/admin7/settings", label: "운영 설정", icon: "bulb" },
     { href: "/admin7/logs", label: "운영 로그", icon: "list" },
   ];
   const menu = kind === "admin" ? ADMIN : ADVERTISER;

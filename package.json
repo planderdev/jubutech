@@ -18,6 +18,13 @@
     "logo": "python3 scripts/logo.py",
     "capture": "bash scripts/capture-landing.sh",
     "tokens:export": "python3 scripts/export_tokens.py",
-    "php": "php -S 127.0.0.1:8088 -t public public/router.php"
+    "php": "php -S 127.0.0.1:8088 -t public public/router.php",
+    "check:shared": "tsx scripts/check-shared.mts",
+    "db:seed": "tsx scripts/gen-seed.ts",
+    "db:check": "tsx scripts/db-roundtrip.mts"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.2.17",
+    "tsx": "^4.23.15"
   }
 }

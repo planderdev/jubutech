@@ -1,11 +1,12 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { useStore } from "@/lib/store";
+import { useRules, useStore } from "@/lib/store";
 import { AdminHeader, AdminTable, askReason } from "@/components/admin/admin-ui";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs } from "@/components/ui/tabs";
+import { distinctReporters } from "@jubutech/shared";
 import type { ReportStatus, ReportTarget } from "@/lib/types";
 import { relTime } from "@/lib/utils";
 
@@ -14,6 +15,7 @@ const S: Record<ReportStatus, { label: string; tone: "red" | "sage" | "mute" }> 
 
 export default function AdminReports() {
   const { reports, users, posts, comments, campaigns, adminResolveReport, adminSetPostStatus, adminDeleteComment, adminSetCampaignStatus, adminSetUserStatus } = useStore();
+  const rules = useRules();
   const [tab, setTab] = useState<"open" | "all">("open");
   const nick = (id: string) => users.find((u) => u.id === id)?.nickname ?? id;
   const targetLabel = (t: ReportTarget, id: string) => t === "post" ? posts.find((p) => p.id === id)?.title : t === "comment" ? comments.find((c) => c.id === id)?.body : t === "campaign" ? campaigns.find((c) => c.id === id)?.title : nick(id);
@@ -30,14 +32,14 @@ export default function AdminReports() {
 
   return (
     <div>
-      <AdminHeader title="신고 처리" count={reports.filter((r) => r.status === "open").length} description="조치 = 게시글 숨김 / 댓글 삭제 / 캠페인 모집 중단 / 회원 정지 후 처리 완료. 기각은 대상에 변화 없음." />
+      <AdminHeader title="신고 처리" count={reports.filter((r) => r.status === "open").length} description={`조치 = 게시글 숨김 / 댓글 삭제 / 캠페인 모집 중단 / 회원 정지 후 처리 완료. 기각은 대상에 변화 없음. 서로 다른 ${rules.report.autoHideCount}명이 신고한 글은 자동으로 숨겨지고 운영 도구 검토 목록에 올라갑니다.`} />
       <Tabs className="mb-3" active={tab} onChange={(k) => setTab(k as typeof tab)} items={[{ key: "open", label: "미처리", count: reports.filter((r) => r.status === "open").length }, { key: "all", label: "전체", count: reports.length }]} />
       <AdminTable
         rows={rows}
         searchKeys={["reason", "detail", "reporter", "targetText"]}
         bulkActions={[{ label: "기각", onClick: (ids) => ids.forEach((id) => adminResolveReport(id, "dismissed")) }]}
         columns={[
-          { key: "target", label: "대상", render: (r) => <div className="max-w-[300px]"><div className="flex items-center gap-1.5 mb-0.5"><Badge tone="outline">{T[r.target]}</Badge><Badge tone={S[r.status].tone}>{S[r.status].label}</Badge></div><Link href={targetHref(r.target, r.targetId)} className="font-semibold hover:text-red line-clamp-1">{r.targetText}</Link></div> },
+          { key: "target", label: "대상", render: (r) => <div className="max-w-[300px]"><div className="flex items-center gap-1.5 mb-0.5"><Badge tone="outline">{T[r.target]}</Badge><Badge tone={S[r.status].tone}>{S[r.status].label}</Badge></div><Link href={targetHref(r.target, r.targetId)} className="font-semibold hover:text-red line-clamp-1">{r.targetText}</Link><p className="text-[12px] text-ink-3 mt-0.5">신고 {distinctReporters(reports, r.target, r.targetId)}명{r.target === "post" && posts.find((p) => p.id === r.targetId)?.status === "hidden" ? " · 숨김 상태" : ""}</p></div> },
           { key: "reason", label: "사유", render: (r) => <div className="max-w-[260px]"><p className="font-semibold">{r.reason}</p>{r.detail && <p className="text-[12px] text-ink-2 line-clamp-2">{r.detail}</p>}</div> },
           { key: "reporter", label: "신고자", render: (r) => r.reporter },
           { key: "createdAt", label: "접수", className: "num text-ink-3", render: (r) => relTime(r.createdAt) },

@@ -1,0 +1,116 @@
+import { Alert, StyleSheet, Text, View } from "react-native";
+import { useRouter, type Href } from "expo-router";
+import Constants from "expo-constants";
+import { ACCOUNT_DELETION, LEGAL_DOC_TITLE, myPosts, type ServiceMode } from "@jubutech/shared";
+import { AppScreen, ContentSection } from "@/components/screen";
+import { Button, GroupCard, GroupSection, ListHeader, MenuRow } from "@/components/ui";
+import { TrustCard } from "@/components/trust";
+import { WalletCard } from "@/components/wallet";
+import { useAuth } from "@/lib/auth";
+import { useDemo, useMyApplications } from "@/lib/demo-store";
+import { RAD, SP, T, typo } from "@/theme";
+
+/**
+ * 마이 — PHP `myPage()` (`/mypage?mode=…`) 그대로:
+ * 프로필 카드 → (PHP 포인트 패널 자리에) 1-3 지갑 카드 → 나의 활동 → 주부테크와 함께 → 캡션.
+ * B안에서는 루트 `마이` 탭 하나가 이 화면을 쓴다. `mode` 는 나의 활동 첫 두 줄 순서(PHP 와 같음)만 바꾼다.
+ */
+export function MyPage({ mode = "campaigns" }: { mode?: ServiceMode }) {
+  const router = useRouter();
+  const { member, saved } = useDemo();
+  const mine = useMyApplications();
+  const auth = useAuth();
+  // 로그인돼 있으면 카카오 프로필 이름을, 아니면 데모 회원(서연맘)을 보여 준다. 데이터 연결(W8) 전까지 응모·지갑은 데모 회원 기준
+  const nickname = auth.user?.nickname ?? member.nickname;
+  const { inviteCodes, posts, journals: myJournals, reset, rules } = useDemo();
+  const invited = inviteCodes.find((c) => c.ownerId === member.id)?.uses.length ?? 0;
+  const version = Constants.expoConfig?.version ?? "0.1.0";
+  // 심사 요건(Apple 5.1.1(v)·Google): 앱 안에서 계정 삭제를 시작할 수 있어야 한다. 로그인 전엔 기기의 둘러보기 기록만 지운다
+  const deleteAccount = () => {
+    if (auth.status !== "signed-in") {
+      Alert.alert(ACCOUNT_DELETION.title, ACCOUNT_DELETION.demo, [{ text: ACCOUNT_DELETION.cancel, style: "cancel" }, { text: "기록 지우기", style: "destructive", onPress: () => reset() }]);
+      return;
+    }
+    Alert.alert(ACCOUNT_DELETION.title, ACCOUNT_DELETION.body, [
+      { text: ACCOUNT_DELETION.cancel, style: "cancel" },
+      { text: ACCOUNT_DELETION.confirm, style: "destructive", onPress: async () => { const r = await auth.deleteAccount(); reset(); Alert.alert(ACCOUNT_DELETION.title, r.message); } },
+    ]);
+  };
+  const applications = { icon: "gift", title: "내 응모 현황", sub: `${mine.length}건`, onPress: () => router.push("/campaigns/applications" as Href) };
+  const journals = { icon: "notebook-pen", title: "나의 매매일지", sub: `${myJournals.filter((j) => j.memberId === member.id).length}건`, onPress: () => router.push("/journal/entries" as Href) };
+  const first = mode === "journal" ? [journals, applications] : [applications, journals];
+
+  return (
+    <AppScreen heading="마이">
+      <GroupSection>
+        <GroupCard style={s.profile}>
+          <View style={s.avatar} accessibilityRole="image" accessibilityLabel={`${nickname} 아바타`}>
+            <Text style={typo("heading1", "bold", T.primary.normal)}>{nickname.slice(0, 1)}</Text>
+          </View>
+          <View style={{ flex: 1, gap: 2 }}>
+            <Text style={typo("label2", "regular", T.label.alternative)}>{auth.status === "signed-in" ? `카카오 계정 · ${auth.user?.email ?? "연결됨"}` : "오늘도 나만의 속도로"}</Text>
+            <Text style={typo("title2", "bold")}>{nickname}님</Text>
+            <Text style={typo("label2", "semibold", T.label.neutral)}>Lv. 3 · 꾸준한 새싹</Text>
+          </View>
+        </GroupCard>
+        {auth.status === "guest" || auth.status === "demo" ? (
+          <GroupCard style={[s.profile, { marginTop: SP[8], justifyContent: "space-between" }]}>
+            <View style={{ flex: 1, gap: 2 }}>
+              <Text style={typo("label1", "semibold")}>{auth.status === "demo" ? "데모 계정으로 보는 중" : "로그인하면 내 기록이 저장돼요"}</Text>
+              <Text style={typo("caption1", "regular", T.label.alternative)}>{auth.status === "demo" ? "카카오 로그인 키 등록 전" : "카카오로 3초 만에"}</Text>
+            </View>
+            <Button label="로그인" variant="weak" size="md" onPress={() => router.push("/login?next=/my" as Href)} />
+          </GroupCard>
+        ) : null}
+      </GroupSection>
+
+      <WalletCard />
+
+      <TrustCard />
+
+      <GroupSection>
+        <GroupCard>
+          <ListHeader title="나의 활동" />
+          {first.map((it) => <MenuRow key={it.title} icon={it.icon} title={it.title} sub={it.sub} onPress={it.onPress} />)}
+          <MenuRow icon="bookmark" title="저장한 정보" sub={`${saved.length}개`} subAccent={false} onPress={() => router.push("/saved" as Href)} />
+          <MenuRow icon="clipboard-check" title="진행 중인 미션" sub={`${mine.filter((a) => a.selectionStatus === "selected").length}건`} onPress={() => router.push("/campaigns/applications" as Href)} />
+          <MenuRow icon="messages-square" title="내가 쓴 글" sub={`${myPosts(posts, member.id).length}건`} subAccent={false} onPress={() => router.push("/my-posts" as Href)} last />
+        </GroupCard>
+      </GroupSection>
+
+      <GroupSection>
+        <GroupCard>
+          <ListHeader title="주부테크와 함께" />
+          <MenuRow icon="gift" title="친구 초대" sub={`${invited}명 가입`} onPress={() => router.push("/invite" as Href)} />
+          {rules.referral.enabled ? <MenuRow icon="link" title="추천 링크" onPress={() => router.push("/referral" as Href)} /> : null}
+          <MenuRow icon="megaphone" title="공지사항" onPress={() => router.push("/notices" as Href)} />
+          <MenuRow icon="message-circle" title="문의하기" onPress={() => router.push("/contact" as Href)} />
+          <MenuRow icon="sprout" title="서비스 소개·제휴 문의" onPress={() => router.push("/about" as Href)} />
+          <MenuRow icon="settings" title="설정" onPress={() => router.push("/settings" as Href)} last={auth.status !== "signed-in"} />
+          {auth.status === "signed-in" ? <MenuRow icon="x" title="로그아웃" onPress={() => auth.signOut()} last /> : null}
+        </GroupCard>
+      </GroupSection>
+
+      {/* 출시 점검(W9): 약관·개인정보·리워드 고지와 계정 삭제 — 심사자가 찾는 자리(스토어 메모와 같은 경로) */}
+      <GroupSection>
+        <GroupCard>
+          <ListHeader title="약관·앱 정보" />
+          <MenuRow icon="clipboard-check" title={LEGAL_DOC_TITLE.terms} onPress={() => router.push("/legal/terms" as Href)} />
+          <MenuRow icon="clipboard-check" title={LEGAL_DOC_TITLE.privacy} onPress={() => router.push("/legal/privacy" as Href)} />
+          <MenuRow icon="coins" title={LEGAL_DOC_TITLE.reward} onPress={() => router.push("/legal/reward" as Href)} />
+          <MenuRow icon="circle-x" title={ACCOUNT_DELETION.title} onPress={deleteAccount} />
+          <MenuRow icon="sparkles" title="앱 버전" sub={version} subAccent={false} last />
+        </GroupCard>
+      </GroupSection>
+
+      <ContentSection>
+        <Text style={[typo("caption2", "regular", T.label.alternative), { marginVertical: SP[16] }]}>검토용 빌드 · 금액은 실제 지급이 없는 예시예요 · 리워드는 체험단 활동의 대가로만 지급돼요</Text>
+      </ContentSection>
+    </AppScreen>
+  );
+}
+
+const s = StyleSheet.create({
+  profile: { flexDirection: "row", alignItems: "center", gap: SP[16], padding: SP[16] },
+  avatar: { width: SP[56], height: SP[56], borderRadius: RAD.full, backgroundColor: T.primary.soft, alignItems: "center", justifyContent: "center" },
+});

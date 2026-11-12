@@ -21,7 +21,7 @@ function CommunityList() {
   const posts = useStore((s) => s.posts);
   const users = useStore((s) => s.users);
   const list = useMemo(() => {
-    let l = (board === "all" ? posts : posts.filter((p) => p.board === board)).filter((p) => p.status !== "hidden");
+    let l = (board === "all" ? posts : posts.filter((p) => p.board === board)).filter((p) => !p.status || p.status === "published");
     if (q) l = l.filter((p) => (p.title + p.body + p.tags.join(" ")).toLowerCase().includes(q.toLowerCase()));
     if (sort === "popular") l = [...l].sort((a, b) => b.likes.length * 2 + b.commentCount - (a.likes.length * 2 + a.commentCount));
     return l;

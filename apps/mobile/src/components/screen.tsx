@@ -1,21 +1,49 @@
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { useState, type ReactNode, type RefObject } from "react";
+import { ScrollView, StyleSheet, View, type NativeScrollEvent, type NativeSyntheticEvent, type ViewStyle, type StyleProp } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { C, text } from "@/theme";
+import { AppHeader } from "@/components/app-header";
+import { ServiceSegments } from "@/components/service-segments";
+import type { ServiceMode } from "@/lib/service";
+import { BOTTOM_CTA_SPACE } from "@/components/form";
+import { SHELL, SP, T } from "@/theme";
 
-/** 공통 화면 셸: 상단바(제목) + 스크롤 콘텐츠(16px 패딩) */
-export function Screen({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
+/**
+ * `.app-shell.app-shell--grouped` — 상단 헤더 + 스크롤 본문.
+ * 홈 계열(grouped)은 회색 캔버스(`surface-alt`) 위에 흰 그룹 카드를 얹고, 플로팅 탭바 높이만큼 아래 여백을 둔다.
+ * 탭 밖 상세 화면은 `tabBar={false}`, 고정 CTA 는 `bottom` 으로 넘긴다(본문 아래 여백도 그만큼).
+ */
+export function AppScreen({ children, grouped = true, title, heading, segments, onBack, right, contentStyle, scroll = true, tabBar = true, bottom, scrollRef, onScroll: onScrollProp }: { children: ReactNode; grouped?: boolean; title?: string; /** 홈형 헤더 제목(기본: 현재 서비스 이름) */ heading?: string; /** 서비스 상단 세그먼트(B안) */ segments?: ServiceMode; onBack?: () => void; right?: ReactNode; contentStyle?: StyleProp<ViewStyle>; scroll?: boolean; tabBar?: boolean; bottom?: ReactNode; scrollRef?: RefObject<ScrollView | null>; onScroll?: (e: NativeSyntheticEvent<NativeScrollEvent>) => void }) {
   const insets = useSafeAreaInsets();
+  const [scrolled, setScrolled] = useState(false);
+  const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    setScrolled(e.nativeEvent.contentOffset.y > 4);
+    onScrollProp?.(e);
+  };
+  const bg = grouped ? T.background.normalAlternative : T.background.normalNormal;
+  const space = tabBar ? SHELL.contentBottomSpace : bottom ? BOTTOM_CTA_SPACE + SP[16] : SP[24];
+  const paddingBottom = space + insets.bottom;
   return (
-    <View style={{ flex: 1, backgroundColor: C.canvas }}>
-      <View style={[styles.top, { paddingTop: insets.top + 8 }]}>
-        <Text style={text.title16}>{title}</Text>
-        {subtitle ? <Text style={[text.body13, { color: C.ink3 }]}>{subtitle}</Text> : null}
-      </View>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>{children}</ScrollView>
+    <View style={[s.shell, { backgroundColor: bg }]}>
+      <AppHeader title={title} heading={heading} onBack={onBack} right={right} scrolled={scrolled && !segments} />
+      {segments ? <ServiceSegments service={segments} /> : null}
+      {scroll ? (
+        <ScrollView ref={scrollRef} onScroll={onScroll} scrollEventThrottle={32} contentContainerStyle={[{ paddingBottom }, contentStyle]} showsVerticalScrollIndicator={false} contentInsetAdjustmentBehavior="never" keyboardShouldPersistTaps="handled">
+          {children}
+        </ScrollView>
+      ) : (
+        <View style={[{ flex: 1, paddingBottom }, contentStyle]}>{children}</View>
+      )}
+      {bottom}
     </View>
   );
 }
-const styles = StyleSheet.create({
-  top: { paddingHorizontal: 16, paddingBottom: 12, backgroundColor: C.paper, borderBottomWidth: 1, borderBottomColor: C.edge, gap: 2 },
-  content: { padding: 16, gap: 16, paddingBottom: 32 },
+
+/** `.content-section` — 거터(16) 안쪽에 두는 본문 블록 */
+export function ContentSection({ children, style }: { children: ReactNode; style?: StyleProp<ViewStyle> }) {
+  return <View style={[s.content, style]}>{children}</View>;
+}
+
+const s = StyleSheet.create({
+  shell: { flex: 1 },
+  content: { paddingHorizontal: SHELL.gutter },
 });

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { notFound, useParams } from "next/navigation";
 import { useStore } from "@/lib/store";
+import { SELECTION_MODE_LABEL } from "@jubutech/shared";
 import { APPLICATION_STATUS, CAMPAIGN_STATUS, CHANNELS, type ApplicationStatus, type CampaignStatus } from "@/lib/types";
 import { PageHeader } from "@/components/feature/page-header";
 import { RoleGate } from "@/components/feature/role-gate";
@@ -27,22 +28,36 @@ function Manage() {
   const apps = useStore((s) => s.applications.filter((a) => a.campaignId === id && a.status !== "cancelled"));
   const users = useStore((s) => s.users);
   const { decideApplication, updateCampaignStatus } = useStore();
+  const role = useStore((s) => s.role);
   const [tab, setTab] = useState<"all" | ApplicationStatus>("all");
   if (!c) notFound();
   const list = tab === "all" ? apps : apps.filter((a) => a.status === tab);
   const selectedCount = apps.filter((a) => ["selected", "submitted", "completed"].includes(a.status)).length;
-  const nx = NEXT[c.status];
+  // 공개는 주부테크 검토 몫 — 광고주에게는 승인 버튼을 주지 않는다
+  const nx = c.status === "pending" && role !== "admin" ? undefined : NEXT[c.status];
+  const agency = c.selectionMode === "agency";
+  const canSelect = !agency || role === "admin";
 
   return (
     <div className="px-4 md:px-5">
       <nav className="label text-ink-3 pt-6"><Link href="/advertiser" className="hover:text-red">광고주 센터</Link> / 캠페인 관리</nav>
       <PageHeader eyebrow={c.brand} title={c.title} description={`${c.recruitStart.replace(/-/g, ".")} ~ ${c.recruitEnd.replace(/-/g, ".")} 모집 · 선정 발표 ${c.announceDate.replace(/-/g, ".")}`}
-        action={<div className="flex items-center gap-2 flex-wrap"><Badge tone={CAMPAIGN_STATUS[c.status].tone}>{CAMPAIGN_STATUS[c.status].label}</Badge>{nx && <Button size="sm" variant="ink" onClick={() => updateCampaignStatus(c.id, nx.to)}>{nx.label}</Button>}<Link href={`/campaigns/${c.id}`}><Button size="sm" variant="secondary">회원 화면</Button></Link></div>} />
+        action={<div className="flex items-center gap-2 flex-wrap"><Badge tone={CAMPAIGN_STATUS[c.status].tone}>{CAMPAIGN_STATUS[c.status].label}</Badge><Badge tone={agency ? "butter" : "outline"}>{SELECTION_MODE_LABEL[c.selectionMode ?? "self"]}</Badge>{nx && <Button size="sm" variant="ink" onClick={() => updateCampaignStatus(c.id, nx.to)}>{nx.label}</Button>}<Link href={`/advertiser/campaigns/${c.id}/report`}><Button size="sm" variant="secondary">결과 리포트</Button></Link><Link href={`/campaigns/${c.id}`}><Button size="sm" variant="secondary">회원 화면</Button></Link></div>} />
       <div className="grid grid-cols-2 gap-3 mb-6">
         {[["모집 인원", c.recruitCount], ["신청", apps.length], ["선정", selectedCount], ["조회", c.views]].map(([k, v]) => (
           <div key={k} className="bg-paper rounded-xl shadow-soft p-4"><p className="label text-ink-3">{k}</p><p className="num text-[24px] font-semibold mt-1">{fmtNum(Number(v))}</p></div>
         ))}
       </div>
+      {c.status === "pending" && role !== "admin" && <p className="mb-4 rounded-xl bg-inset p-3 text-[13px] text-ink-2">주부테크가 검토하고 있어요. 승인되면 모집이 시작됩니다.</p>}
+      {agency && role !== "admin" && <p className="mb-4 rounded-xl bg-inset p-3 text-[13px] text-ink-2">선정을 맡기셨어요. 주부테크가 신청자를 골라 발표일 전에 알려 드립니다.</p>}
+      {c.mission && (
+        <div className="mb-6 bg-paper rounded-xl shadow-soft p-4 text-[13px]">
+          <p className="label text-ink-3 mb-1.5">미션 카드</p>
+          <p>사진 {c.mission.photoCount}장 · {c.mission.minChars}자 이상 · 선정 후 {c.mission.dueDays}일 안에 제출</p>
+          {c.mission.requiredKeywords.length > 0 && <p className="text-ink-2 mt-0.5">키워드: {c.mission.requiredKeywords.join(", ")}</p>}
+          {c.mission.hashtags.length > 0 && <p className="text-ink-2 mt-0.5">해시태그: {c.mission.hashtags.map((h) => `#${h}`).join(" ")}</p>}
+        </div>
+      )}
       <Tabs active={tab} onChange={(k) => setTab(k as typeof tab)} items={[{ key: "all", label: "전체", count: apps.length }, ...(["pending", "selected", "submitted", "completed", "rejected"] as ApplicationStatus[]).map((k) => ({ key: k, label: APPLICATION_STATUS[k].label, count: apps.filter((a) => a.status === k).length }))]} />
       {list.length === 0 ? <div className="mt-6"><EmptyState icon="community" title="해당 상태의 신청자가 없어요" /></div> : (
         <ul className="mt-2 bg-paper rounded-xl shadow-soft divide-y divide-hairline">
@@ -63,7 +78,7 @@ function Manage() {
                 </div>
                 <div className="flex items-center gap-2 md:flex-col md:items-end shrink-0">
                   <Badge tone={st.tone}>{st.label}</Badge>
-                  {a.status === "pending" && <div className="flex gap-1.5"><Button size="sm" onClick={() => decideApplication(a.id, "selected")}>선정</Button><Button size="sm" variant="ghost" onClick={() => decideApplication(a.id, "rejected")}>미선정</Button></div>}
+                  {a.status === "pending" && canSelect && <div className="flex gap-1.5"><Button size="sm" onClick={() => decideApplication(a.id, "selected")}>선정</Button><Button size="sm" variant="ghost" onClick={() => decideApplication(a.id, "rejected")}>미선정</Button></div>}
                   {a.status === "submitted" && <div className="flex gap-1.5"><Button size="sm" onClick={() => decideApplication(a.id, "completed")}>승인·보상 지급</Button><Button size="sm" variant="ghost" onClick={() => decideApplication(a.id, "selected")}>수정 요청</Button></div>}
                 </div>
               </li>
